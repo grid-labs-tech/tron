@@ -1,0 +1,38 @@
+<svg width="200" height="200" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="logoGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#6366f1;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#8b5cf6;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+
+  <!-- Cubo 3D isométrico -->
+  <g transform="translate(100, 100)">
+    <!-- Face superior -->
+    <path
+      d="M-60 -40L20 -80L100 -40L20 0L-60 -40Z"
+      fill="url(#logoGradient)"
+      opacity="0.9"
+    />
+    <!-- Face esquerda -->
+    <path
+      d="M-60 -40L20 0L20 80L-60 40L-60 -40Z"
+      fill="url(#logoGradient)"
+      opacity="0.7"
+    />
+    <!-- Face direita -->
+    <path
+      d="M20 0L100 -40L100 40L20 80L20 0Z"
+      fill="url(#logoGradient)"
+      opacity="0.8"
+    />
+    <!-- Linhas decorativas -->
+    <path
+      d="M20 -80L20 0M-60 -40L20 0M100 -40L20 0"
+      stroke="white"
+      stroke-width="3"
+      stroke-linecap="round"
+      opacity="0.5"
+    />
+  </g>
+</svg>

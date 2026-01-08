@@ -1,0 +1,5 @@
+# This directory contains Kubernetes manifests that will be automatically applied by k3s
+# Any YAML files placed in this directory will be automatically loaded when k3s starts
+#
+# Example: Gateway API CRDs, custom operators, or other cluster-wide resources
+

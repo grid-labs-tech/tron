@@ -1,0 +1,5 @@
+.coverage
+htmlcov/
+share/
+pyvevnv.cfg
+.pytest_cache/

@@ -1,0 +1,32 @@
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: "{{ application.component_name }}"
+  namespace: "{{ application.application_name }}"
+  labels:
+    app: "{{ application.component_name }}"
+    environment: "{{ application.environment }}"
+    alias: "{{ application.component_name }}"
+    namespace: "{{  application.application_name }}"
+    tier: "tier-3"
+    type: "web"
+spec:
+  minReplicas: {{ application.settings.autoscaling.min }}
+  maxReplicas: {{ application.settings.autoscaling.max }}
+  metrics:
+  - resource:
+      name: memory
+      target:
+        averageUtilization: {{ application.settings.memory_scaling_threshold }}
+        type: Utilization
+    type: Resource
+  - resource:
+      name: cpu
+      target:
+        averageUtilization: {{ application.settings.cpu_scaling_threshold }}
+        type: Utilization
+    type: Resource
+  scaleTargetRef:
+    apiVersion: apps/v1beta1
+    kind: Deployment
+    name: "{{ application.component_name }}"

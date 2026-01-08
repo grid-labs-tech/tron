@@ -1,0 +1,125 @@
+x-shared-env: &shared_envs
+    DB_HOST: database
+    DB_USER: paas
+    DB_PASSWORD: paas
+    DB_PORT: 5432
+    DEBUG: "True"
+
+x-env-portal: &shared_env_portal
+  environment:
+    <<: *shared_envs
+    DB_NAME: portal
+    DB_ENGINE: django.db.backends.postgresql
+
+x-env-api: &shared_env_api
+  environment:
+    <<: *shared_envs
+    DB_NAME: api
+    CORS_ORIGINS: "http://localhost:3000,http://localhost:80,http://portal:3000"
+    CORS_ALLOW_CREDENTIALS: "true"
+    CORS_ALLOW_METHODS: "GET,POST,PUT,DELETE,OPTIONS"
+    CORS_ALLOW_HEADERS: "Content-Type,Authorization,Accept,Origin,X-Requested-With"
+    SECRET_KEY: "your-super-secret-key-minimum-32-characters"
+
+services:
+  database:
+    image: postgres:14.1
+    environment:
+      - POSTGRES_USER=paas
+      - POSTGRES_PASSWORD=paas
+      - POSTGRES_MULTIPLE_DATABASES=api,portal
+    ports:
+      - "5432:5432"
+    volumes:
+      - ${PWD}/volumes/postgres:/var/lib/postgresql/data
+      - ${PWD}/docker/db-entrypoint:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U paas -d api -h localhost"]
+      interval: 3s
+      timeout: 10s
+      retries: 10
+
+  portal:
+    build:
+      context: ../portal
+      dockerfile: Dockerfile
+    image: portal
+    volumes:
+      - ${PWD}/portal:/app
+      - /app/node_modules
+    ports:
+      - "3000:3000"
+    environment:
+      - VITE_API_BASE_URL=http://localhost:8000
+    depends_on:
+      - api
+
+  api:
+    build:
+      context: ../api
+      dockerfile: Dockerfile
+    image: api
+    <<: *shared_env_api
+    volumes:
+      - ${PWD}/api:/app
+    ports:
+      - 8000:8000
+    depends_on:
+      api-migrate:
+        condition: service_completed_successfully
+
+  api-migrate:
+    image: api
+    <<: *shared_env_api
+    command: alembic upgrade head
+    volumes:
+      - ${PWD}/api:/app
+    depends_on:
+      database:
+        condition: service_healthy
+
+  api-test:
+    image: api
+    environment:
+      - PYTHONPATH=./
+      - ENV=test
+    command: pytest tests/
+    volumes:
+      - ${PWD}/api:/app
+
+  k3s-server:
+    image: "rancher/k3s:${K3S_VERSION:-latest}"
+    command: server --https-listen-port 5443
+    tmpfs:
+    - /run
+    - /var/run
+    ulimits:
+      nproc: 65535
+      nofile:
+        soft: 65535
+        hard: 65535
+    privileged: true
+    environment:
+    - K3S_TOKEN=something
+    - K3S_KUBECONFIG_OUTPUT=/output/kubeconfig.yaml
+    - K3S_KUBECONFIG_MODE=666
+    volumes:
+    - ${PWD}/volumes/kubeconfig:/output
+    - ${PWD}/docker/manifests:/var/lib/rancher/k3s/server/manifests
+    ports:
+    - 5443:5443
+
+  k3s-agent:
+    image: "rancher/k3s:${K3S_VERSION:-latest}"
+    tmpfs:
+    - /run
+    - /var/run
+    ulimits:
+      nproc: 65535
+      nofile:
+        soft: 65535
+        hard: 65535
+    privileged: true
+    environment:
+    - K3S_URL=https://k3s-server:5443
+    - K3S_TOKEN=something

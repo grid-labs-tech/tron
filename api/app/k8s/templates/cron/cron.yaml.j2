@@ -1,0 +1,70 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  labels:
+    app: "{{ application.component_name }}"
+    environment: "{{ application.environment }}"
+    alias: "{{ application.component_name }}"
+    namespace: "{{ application.application_name }}"
+    tier: "tier-3"
+    type: "cron"
+  name: "{{ application.component_name }}"
+  namespace: "{{ application.application_name }}"
+spec:
+  concurrencyPolicy: Forbid
+  failedJobsHistoryLimit: 2
+  jobTemplate:
+    metadata:
+      creationTimestamp: null
+    spec:
+      backoffLimit: 2
+      completions: 1
+      manualSelector: false
+      parallelism: 1
+      template:
+        metadata:
+          labels:
+            app: {{ application.component_name }}
+            environment: "{{ application.environment }}"
+            alias: {{ application.component_name }}
+            namespace: "{{ application.application_name }}"
+            tier: "tier-3"
+            type: "cron"
+        spec:
+          automountServiceAccountToken: true
+          containers:
+          - name: "{{ application.component_name }}"
+            {% if application.settings.command is not none and application.settings.command|length > 0 -%}
+            command: ["/bin/sh", "-c"]
+            args: {{ application.settings.command }}
+            {% endif %}
+            env:
+            {% for env in application.settings.envs -%}
+            - name: {{env.key}}
+            value: {{env.value}}
+            {% endfor %}
+            image: "{{ application.image }}:{{ application.version }}"
+            imagePullPolicy: Always
+            resources:
+            requests:
+                cpu: {{ application.settings.cpu }}
+                memory: {{ application.settings.memory}}Mi
+            limits:
+                cpu: {{ application.settings.cpu }}
+                memory: {{ application.settings.memory}}Mi
+          dnsConfig:
+              options:
+              - name: ndots
+              value: "1"
+          dnsPolicy: ClusterFirst
+          enableServiceLinks: true
+          restartPolicy: Never
+          schedulerName: default-scheduler
+          securityContext: {}
+          shareProcessNamespace: false
+          terminationGracePeriodSeconds: 30
+        ttlSecondsAfterFinished: 300
+  schedule: "{{ application.settings.schedule }}"
+  startingDeadlineSeconds: 10
+  successfulJobsHistoryLimit: 3
+  suspend: false

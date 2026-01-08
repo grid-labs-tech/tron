@@ -1,0 +1,16 @@
+{% if application.settings.exposure.type == "tcp" and (application.settings.exposure.visibility == "public" or application.settings.exposure.visibility == "private") %}
+apiVersion: gateway.networking.k8s.io/v1alpha2
+kind: TCPRoute
+metadata:
+  name: "{{ application.component_name }}"
+  namespace: "{{ application.application_name }}"
+spec:
+  parentRefs:
+    - name: {{ cluster.gateway.reference.name }}
+      namespace: {{ cluster.gateway.reference.namespace }}
+      sectionName: "tcp-{{ application.settings.exposure.port }}"
+  rules:
+    - backendRefs:
+        - name: "{{ application.component_name }}"
+          port: {{ application.settings.exposure.port }}
+{% endif %}

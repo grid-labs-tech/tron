@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: "{{ application.component_name }}"
+  namespace: "{{ application.application_name }}"
+  labels:
+    app: "{{ application.component_name }}"
+    environment: "{{ application.environment }}"
+    alias: "{{ application.component_name }}"
+    namespace: "{{  application.application_name}}"
+    tier: "tier-3"
+    type: "web"
+spec:
+  ports:
+    - name: port-{{ application.settings.exposure.port }}
+      port: {{ application.settings.exposure.port }}
+      protocol: {% if application.settings and application.settings.exposure and application.settings.exposure.type == "udp" %}UDP{% else %}TCP{% endif %}
+      targetPort: {{ application.settings.exposure.port }}
+  selector:
+    app: "{{ application.component_name }}"
+  sessionAffinity: None
+  type:
+      ClusterIP
