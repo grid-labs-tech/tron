@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { X, Trash2, Plus, Globe } from 'lucide-react'
+import { X, Trash2, Plus } from 'lucide-react'
 import { environmentsApi } from '../../services/api'
 import type { Environment, EnvironmentCreate } from '../../types'
 import DataTable from '../../components/DataTable'
@@ -9,7 +9,7 @@ import { PageHeader } from '../../components/PageHeader'
 
 function Environments() {
   const [isOpen, setIsOpen] = useState(false)
-  const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null)
+  const [, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null)
   const queryClient = useQueryClient()
 
   const { data: environments = [], isLoading } = useQuery({
