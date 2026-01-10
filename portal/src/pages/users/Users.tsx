@@ -1,11 +1,8 @@
-import { useState } from 'react'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useState, useEffect } from 'react'
 import { X, Trash2, Plus, Edit, Mail, UserCheck, UserX, Shield } from 'lucide-react'
-import { usersApi } from '../../services/api'
-import type { User, UserCreate } from '../../types'
-import DataTable from '../../components/DataTable'
-import { Breadcrumbs } from '../../components/Breadcrumbs'
-import { PageHeader } from '../../components/PageHeader'
+import { useUsers, useCreateUser, useUpdateUser, useDeleteUser } from '../../features/users'
+import type { User, UserCreate } from '../../features/users'
+import { DataTable, Breadcrumbs, PageHeader } from '../../shared/components'
 import { useAuth } from '../../contexts/AuthContext'
 
 function Users() {
@@ -14,12 +11,11 @@ function Users() {
   const [editingUser, setEditingUser] = useState<User | null>(null)
   const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null)
   const [searchTerm, setSearchTerm] = useState('')
-  const queryClient = useQueryClient()
 
-  const { data: users = [], isLoading } = useQuery({
-    queryKey: ['users', searchTerm],
-    queryFn: () => usersApi.list({ search: searchTerm || undefined }),
-  })
+  const { data: users = [], isLoading } = useUsers({ search: searchTerm || undefined })
+  const createMutation = useCreateUser()
+  const updateMutation = useUpdateUser()
+  const deleteMutation = useDeleteUser()
 
   const [formData, setFormData] = useState<UserCreate & { is_active?: boolean; role?: string }>({
     email: '',
@@ -29,84 +25,97 @@ function Users() {
     role: 'user',
   })
 
-  const createMutation = useMutation({
-    mutationFn: usersApi.create,
-    onSuccess: () => {
+  useEffect(() => {
+    if (createMutation.isSuccess) {
       setNotification({ type: 'success', message: 'User created successfully' })
-      queryClient.invalidateQueries({ queryKey: ['users'] })
       setIsOpen(false)
       setEditingUser(null)
       resetForm()
       setTimeout(() => setNotification(null), 5000)
-    },
-    onError: (error: any) => {
+      createMutation.reset()
+    }
+  }, [createMutation.isSuccess])
+
+  useEffect(() => {
+    if (createMutation.isError) {
       setNotification({
         type: 'error',
-        message: error.response?.data?.detail || 'Error creating user',
+        message: (createMutation.error as any)?.response?.data?.detail || 'Error creating user',
       })
       setTimeout(() => setNotification(null), 5000)
-    },
-  })
+      createMutation.reset()
+    }
+  }, [createMutation.isError])
 
-  const updateMutation = useMutation({
-    mutationFn: ({ uuid, data }: { uuid: string; data: any }) => usersApi.update(uuid, data),
-    onSuccess: () => {
+  useEffect(() => {
+    if (updateMutation.isSuccess) {
       setNotification({ type: 'success', message: 'User updated successfully' })
-      queryClient.invalidateQueries({ queryKey: ['users'] })
       setIsOpen(false)
       setEditingUser(null)
       resetForm()
       setTimeout(() => setNotification(null), 5000)
-    },
-    onError: (error: any) => {
+      updateMutation.reset()
+    }
+  }, [updateMutation.isSuccess])
+
+  useEffect(() => {
+    if (updateMutation.isError) {
       setNotification({
         type: 'error',
-        message: error.response?.data?.detail || 'Error updating user',
+        message: (updateMutation.error as any)?.response?.data?.detail || 'Error updating user',
       })
       setTimeout(() => setNotification(null), 5000)
-    },
-  })
+      updateMutation.reset()
+    }
+  }, [updateMutation.isError])
 
-  const deleteMutation = useMutation({
-    mutationFn: usersApi.delete,
-    onSuccess: () => {
+  useEffect(() => {
+    if (deleteMutation.isSuccess) {
       setNotification({ type: 'success', message: 'User deleted successfully' })
-      queryClient.invalidateQueries({ queryKey: ['users'] })
       setTimeout(() => setNotification(null), 5000)
-    },
-    onError: (error: any) => {
+      deleteMutation.reset()
+    }
+  }, [deleteMutation.isSuccess])
+
+  useEffect(() => {
+    if (deleteMutation.isError) {
       setNotification({
         type: 'error',
-        message: error.response?.data?.detail || 'Error deleting user',
+        message: (deleteMutation.error as any)?.response?.data?.detail || 'Error deleting user',
       })
       setTimeout(() => setNotification(null), 5000)
-    },
-  })
+      deleteMutation.reset()
+    }
+  }, [deleteMutation.isError])
 
-  const toggleActiveMutation = useMutation({
-    mutationFn: ({ uuid, is_active }: { uuid: string; is_active: boolean }) =>
-      usersApi.update(uuid, { is_active }),
-    onSuccess: (_, variables) => {
+  const toggleActiveMutation = useUpdateUser()
+
+  useEffect(() => {
+    if (toggleActiveMutation.isSuccess) {
       setNotification({
         type: 'success',
-        message: variables.is_active ? 'User activated successfully' : 'User deactivated successfully',
+        message: 'User status updated successfully',
       })
-      queryClient.invalidateQueries({ queryKey: ['users'] })
       setTimeout(() => setNotification(null), 5000)
-    },
-    onError: (error: any) => {
+      toggleActiveMutation.reset()
+    }
+  }, [toggleActiveMutation.isSuccess])
+
+  useEffect(() => {
+    if (toggleActiveMutation.isError) {
       setNotification({
         type: 'error',
-        message: error.response?.data?.detail || 'Error changing user status',
+        message: (toggleActiveMutation.error as any)?.response?.data?.detail || 'Error changing user status',
       })
       setTimeout(() => setNotification(null), 5000)
-    },
-  })
+      toggleActiveMutation.reset()
+    }
+  }, [toggleActiveMutation.isError])
 
   const handleToggleActive = (user: User) => {
     const action = user.is_active ? 'deactivate' : 'activate'
     if (window.confirm(`Are you sure you want to ${action} this user?`)) {
-      toggleActiveMutation.mutate({ uuid: user.uuid, is_active: !user.is_active })
+      toggleActiveMutation.mutate({ uuid: user.uuid, data: { is_active: !user.is_active } })
     }
   }
 

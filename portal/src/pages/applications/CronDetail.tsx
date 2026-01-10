@@ -1,12 +1,11 @@
 import { useState, useEffect, useRef } from 'react'
 import { useParams } from 'react-router-dom'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { FileText, X, Clock, Trash2 } from 'lucide-react'
-import { cronsApi, instancesApi, applicationsApi } from '../../services/api'
-import { Breadcrumbs } from '../../components/Breadcrumbs'
-import { PageHeader } from '../../components/PageHeader'
-import DataTable from '../../components/DataTable'
-import type { CronJob } from '../../types'
+import { useCronComponent, useCronJobs, useDeleteCronJob, useCronJobLogs } from '../../features/components'
+import { useInstance } from '../../features/instances'
+import { useApplication } from '../../features/applications'
+import type { CronJob } from '../../features/components'
+import { Breadcrumbs, PageHeader, DataTable } from '../../shared/components'
 
 function CronDetail() {
   const { uuid: applicationUuid, instanceUuid, componentUuid } = useParams<{
@@ -15,44 +14,20 @@ function CronDetail() {
     componentUuid: string
   }>()
 
-  const { data: component } = useQuery({
-    queryKey: ['cron', componentUuid],
-    queryFn: () => cronsApi.get(componentUuid!),
-    enabled: !!componentUuid,
-  })
-
-  const { data: instance } = useQuery({
-    queryKey: ['instances', instanceUuid],
-    queryFn: () => instancesApi.get(instanceUuid!),
-    enabled: !!instanceUuid,
-  })
-
-  const { data: application } = useQuery({
-    queryKey: ['application', applicationUuid],
-    queryFn: () => applicationsApi.get(applicationUuid!),
-    enabled: !!applicationUuid,
-  })
-
+  const { data: component } = useCronComponent(componentUuid)
+  const { data: instance } = useInstance(instanceUuid)
+  const { data: application } = useApplication(applicationUuid)
   const [refreshInterval, setRefreshInterval] = useState<number>(10000) // Default: 10 seconds
-  const queryClient = useQueryClient()
 
-  const { data: jobs = [], isLoading: isLoadingJobs } = useQuery({
-    queryKey: ['cron-jobs', componentUuid],
-    queryFn: () => cronsApi.getJobs(componentUuid!),
-    enabled: !!componentUuid,
-    refetchInterval: refreshInterval > 0 ? refreshInterval : false,
-  })
-
-  const deleteJobMutation = useMutation({
-    mutationFn: (jobName: string) => cronsApi.deleteJob(componentUuid!, jobName),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['cron-jobs', componentUuid] })
-    },
-  })
+  const { data: jobs = [], isLoading: isLoadingJobs } = useCronJobs(
+    componentUuid,
+    refreshInterval > 0 ? refreshInterval : false
+  )
+  const deleteJobMutation = useDeleteCronJob()
 
   const handleDeleteJob = (jobName: string) => {
     if (confirm(`Are you sure you want to delete the job "${jobName}"? This action cannot be undone.`)) {
-      deleteJobMutation.mutate(jobName)
+      deleteJobMutation.mutate({ uuid: componentUuid!, jobName })
     }
   }
 
@@ -61,12 +36,13 @@ function CronDetail() {
   const [isLiveTail, setIsLiveTail] = useState(true)
   const logsContainerRef = useRef<HTMLPreElement>(null)
 
-  const { data: jobLogs, isLoading: isLoadingLogs } = useQuery({
-    queryKey: ['cron-job-logs', componentUuid, selectedJob],
-    queryFn: () => cronsApi.getJobLogs(componentUuid!, selectedJob!),
-    enabled: !!selectedJob && isLogsModalOpen && !!componentUuid,
-    refetchInterval: isLiveTail ? 2000 : false,
-  })
+  const { data: jobLogs, isLoading: isLoadingLogs } = useCronJobLogs(
+    componentUuid,
+    selectedJob,
+    undefined,
+    100,
+    isLiveTail && isLogsModalOpen ? 2000 : false
+  )
 
   // Scroll automático para o final quando os logs mudarem
   useEffect(() => {

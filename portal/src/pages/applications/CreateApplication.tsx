@@ -1,9 +1,15 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Plus, ChevronDown, ChevronUp } from 'lucide-react'
-import { applicationsApi, instancesApi, applicationComponentsApi, cronsApi, workersApi } from '../../services/api'
-import type { ApplicationCreate, InstanceCreate, ApplicationComponentCreate } from '../../types'
+import { useCreateApplication } from '../../features/applications'
+import { useCreateInstance } from '../../features/instances'
+import { useCreateWebappComponent, useCreateCronComponent, useCreateWorkerComponent } from '../../features/components'
+import { applicationCreateSchema } from '../../features/applications/schemas'
+import { instanceFormSchema } from '../../features/instances/schemas'
+import { componentCreateSchema } from '../../features/components/schemas'
+import { validateForm } from '../../shared/utils/validation'
+import type { ApplicationCreate, InstanceCreate } from '../../features/applications'
+import type { InstanceCreate as InstanceCreateType } from '../../features/instances'
 import {
   ApplicationForm,
   InstanceForm,
@@ -14,14 +20,19 @@ import {
   getDefaultCronSettings,
   getDefaultWorkerSettings,
 } from '../../components/applications'
-import { Breadcrumbs } from '../../components/Breadcrumbs'
-import { PageHeader } from '../../components/PageHeader'
+import { Breadcrumbs, PageHeader } from '../../shared/components'
 
 function CreateApplication() {
   const navigate = useNavigate()
-  const queryClient = useQueryClient()
   const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null)
+  const [errors, setErrors] = useState<Record<string, string>>({})
   const [isCreating, setIsCreating] = useState(false)
+
+  const createApplicationMutation = useCreateApplication()
+  const createInstanceMutation = useCreateInstance()
+  const createWebappComponentMutation = useCreateWebappComponent()
+  const createCronComponentMutation = useCreateCronComponent()
+  const createWorkerComponentMutation = useCreateWorkerComponent()
 
   // Application form
   const [applicationData, setApplicationData] = useState<ApplicationCreate>({
@@ -93,31 +104,25 @@ function CreateApplication() {
     setComponents(updated)
   }
 
-  const createApplicationMutation = useMutation({
-    mutationFn: applicationsApi.create,
-  })
-
-  const createInstanceMutation = useMutation({
-    mutationFn: instancesApi.create,
-  })
-
-  const createComponentMutation = useMutation({
-    mutationFn: applicationComponentsApi.create,
-  })
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    setNotification(null)
+    setErrors({})
 
     // Validate application
-    if (!applicationData.name) {
-      setNotification({ type: 'error', message: 'Application name is required' })
+    const appValidation = validateForm(applicationCreateSchema, applicationData)
+    if (!appValidation.success) {
+      setErrors(appValidation.errors || {})
+      setNotification({ type: 'error', message: 'Please fix application form errors' })
       setTimeout(() => setNotification(null), 5000)
       return
     }
 
-    // Validate instance
-    if (!instanceData.environment_uuid || !instanceData.image || !instanceData.version) {
-      setNotification({ type: 'error', message: 'Instance environment, image, and version are required' })
+    // Validate instance (without application_uuid, which will be set after application creation)
+    const instanceValidation = validateForm(instanceFormSchema, instanceData)
+    if (!instanceValidation.success) {
+      setErrors(instanceValidation.errors || {})
+      setNotification({ type: 'error', message: 'Please fix instance form errors' })
       setTimeout(() => setNotification(null), 5000)
       return
     }
@@ -129,25 +134,14 @@ function CreateApplication() {
       return
     }
 
-    for (const component of components) {
-      if (!component.name || !component.settings) {
-        setNotification({ type: 'error', message: 'All components must have name and settings' })
-        setTimeout(() => setNotification(null), 5000)
-        return
-      }
-      if (component.type === 'webapp') {
-        const settings = component.settings as any
-        const exposureType = settings?.exposure?.type || 'http'
-        const exposureVisibility = settings?.exposure?.visibility || 'cluster'
-        // URL is required only if exposure.type is 'http' AND visibility is not 'cluster'
-        if (exposureType === 'http' && exposureVisibility !== 'cluster' && !component.url) {
-          setNotification({ type: 'error', message: 'Webapp components with HTTP exposure type and visibility \'public\' or \'private\' must have a URL' })
-          setTimeout(() => setNotification(null), 5000)
-          return
-        }
-      }
-      if (component.type === 'cron' && 'schedule' in component.settings && !component.settings.schedule) {
-        setNotification({ type: 'error', message: 'Cron components must have a schedule' })
+    for (let i = 0; i < components.length; i++) {
+      const component = components[i]
+      const componentValidation = validateForm(componentCreateSchema, component)
+      if (!componentValidation.success) {
+        setNotification({
+          type: 'error',
+          message: `Component ${i + 1}: ${Object.values(componentValidation.errors || {}).join(', ')}`
+        })
         setTimeout(() => setNotification(null), 5000)
         return
       }
@@ -166,44 +160,28 @@ function CreateApplication() {
 
       // Step 3: Create components
       const componentPromises = components.map((component) => {
-        if (component.type === 'cron') {
-          const componentData: ApplicationComponentCreate = {
-            instance_uuid: instance.uuid,
-            name: component.name,
-            type: 'cron',
-            settings: component.settings,
-            enabled: component.enabled,
-          }
-          return cronsApi.create(componentData)
-        } else if (component.type === 'worker') {
-          const componentData: ApplicationComponentCreate = {
-            instance_uuid: instance.uuid,
-            name: component.name,
-            type: 'worker',
-            settings: component.settings,
-            enabled: component.enabled,
-          }
-          return workersApi.create(componentData)
-        } else {
-        const componentData: ApplicationComponentCreate = {
+        const componentData = {
           instance_uuid: instance.uuid,
           name: component.name,
-          type: 'webapp',
+          type: component.type,
           settings: component.settings,
           visibility: component.visibility,
           url: component.url,
           enabled: component.enabled,
         }
-        return createComponentMutation.mutateAsync(componentData)
+
+        if (component.type === 'cron') {
+          return createCronComponentMutation.mutateAsync(componentData)
+        } else if (component.type === 'worker') {
+          return createWorkerComponentMutation.mutateAsync(componentData)
+        } else {
+          return createWebappComponentMutation.mutateAsync(componentData)
         }
       })
 
       await Promise.all(componentPromises)
 
       setNotification({ type: 'success', message: 'Application, instance, and components created successfully!' })
-      queryClient.invalidateQueries({ queryKey: ['applications'] })
-      queryClient.invalidateQueries({ queryKey: ['instances'] })
-      queryClient.invalidateQueries({ queryKey: ['application-components'] })
 
       // Navigate to instance detail after 2 seconds
       setTimeout(() => {
@@ -373,15 +351,15 @@ function CreateApplication() {
             <button
               type="submit"
               disabled={
+                isCreating ||
                 createApplicationMutation.isPending ||
-                createInstanceMutation.isPending ||
-                createComponentMutation.isPending
+                createInstanceMutation.isPending
               }
               className="px-6 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-soft text-sm font-medium disabled:opacity-50"
             >
-              {createApplicationMutation.isPending ||
-              createInstanceMutation.isPending ||
-              createComponentMutation.isPending
+              {isCreating ||
+              createApplicationMutation.isPending ||
+              createInstanceMutation.isPending
                 ? 'Creating...'
                 : 'Create Application'}
             </button>

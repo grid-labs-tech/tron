@@ -1,4 +1,3 @@
-import { useQuery } from '@tanstack/react-query'
 import {
   Cloud,
   Globe,
@@ -6,9 +5,8 @@ import {
   Server,
   Box,
 } from 'lucide-react'
-import { dashboardApi } from '../../services/api'
-import { Breadcrumbs } from '../../components/Breadcrumbs'
-import { PageHeader } from '../../components/PageHeader'
+import { useDashboardOverview } from '../../features/dashboard'
+import { Breadcrumbs, PageHeader } from '../../shared/components'
 import { useAuth } from '../../contexts/AuthContext'
 import {
   ComponentsOverview,
@@ -22,10 +20,7 @@ function Home() {
   const { user } = useAuth()
   const isAdmin = user?.role === 'admin'
 
-  const { data: dashboard, isLoading } = useQuery({
-    queryKey: ['dashboard'],
-    queryFn: dashboardApi.getOverview,
-  })
+  const { data: dashboard, isLoading } = useDashboardOverview()
 
   if (isLoading) {
     return (

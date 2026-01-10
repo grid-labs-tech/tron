@@ -1,35 +1,45 @@
 import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
-import { useMutation } from '@tanstack/react-query'
 import { LogIn, Mail, Lock, AlertCircle } from 'lucide-react'
+import { loginSchema } from '../features/auth/schemas'
+import { validateForm, getFieldError } from '../shared/utils/validation'
 
 export default function Login() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [errors, setErrors] = useState<Record<string, string>>({})
   const [error, setError] = useState<string | null>(null)
   const navigate = useNavigate()
   const { login } = useAuth()
 
-  const loginMutation = useMutation({
-    mutationFn: async () => {
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setError(null)
+    setErrors({})
+
+    // Validate form
+    const validation = validateForm(loginSchema, { email, password })
+    if (!validation.success) {
+      const validationErrors = validation.errors || {}
+      // Se não houver erros específicos mas a validação falhou, mostrar erro genérico
+      if (Object.keys(validationErrors).length === 0) {
+        setError('Please fill in all required fields')
+      } else {
+        setErrors(validationErrors)
+      }
+      return
+    }
+
+    try {
       await login(email, password)
-    },
-    onSuccess: () => {
       navigate('/')
-    },
-    onError: (err: any) => {
+    } catch (err: any) {
       const errorMessage = err.response?.data?.detail ||
                           err.message ||
                           'Incorrect email or password. Please check your credentials and try again.'
       setError(errorMessage)
-    },
-  })
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setError(null)
-    loginMutation.mutate()
+    }
   }
 
   return (
@@ -94,12 +104,17 @@ export default function Login() {
                   id="email"
                   type="email"
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  className="input pl-10 w-full"
+                  onChange={(e) => {
+                    setEmail(e.target.value)
+                    if (errors.email) setErrors({ ...errors, email: '' })
+                  }}
+                  className={`input pl-10 w-full ${errors.email ? 'border-red-500' : ''}`}
                   placeholder="seu@email.com"
                   autoComplete="email"
                 />
+                {errors.email && (
+                  <p className="mt-1 text-sm text-red-600">{errors.email}</p>
+                )}
               </div>
             </div>
 
@@ -113,31 +128,26 @@ export default function Login() {
                   id="password"
                   type="password"
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  className="input pl-10 w-full"
+                  onChange={(e) => {
+                    setPassword(e.target.value)
+                    if (errors.password) setErrors({ ...errors, password: '' })
+                  }}
+                  className={`input pl-10 w-full ${errors.password ? 'border-red-500' : ''}`}
                   placeholder="••••••••"
                   autoComplete="current-password"
                 />
+                {errors.password && (
+                  <p className="mt-1 text-sm text-red-600">{errors.password}</p>
+                )}
               </div>
             </div>
 
             <button
               type="submit"
-              disabled={loginMutation.isPending}
               className="btn-primary w-full flex items-center justify-center gap-2"
             >
-              {loginMutation.isPending ? (
-                <>
-                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                  <span>Signing in...</span>
-                </>
-              ) : (
-                <>
-                  <LogIn className="w-5 h-5" />
-                  <span>Sign In</span>
-                </>
-              )}
+              <LogIn className="w-5 h-5" />
+              <span>Sign In</span>
             </button>
           </form>
 

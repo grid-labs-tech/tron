@@ -1,15 +1,16 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
-import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { authApi } from '../services/api'
+import { useUpdateProfile } from '../features/auth'
+import { updateProfileSchema } from '../features/auth/schemas'
+import { validateForm } from '../shared/utils/validation'
 import { User, Save, AlertCircle, Eye, EyeOff } from 'lucide-react'
-import { Breadcrumbs } from '../components/Breadcrumbs'
+import { Breadcrumbs } from '../shared/components'
 
 export default function Profile() {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
-  const queryClient = useQueryClient()
+  const updateProfileMutation = useUpdateProfile()
 
   const [email, setEmail] = useState(user?.email || '')
   const [fullName, setFullName] = useState(user?.full_name || '')
@@ -29,20 +30,15 @@ export default function Profile() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
+  const [errors, setErrors] = useState<Record<string, string>>({})
 
-  const updateProfileMutation = useMutation({
-    mutationFn: async (data: { email?: string; full_name?: string; password?: string; current_password?: string }) => {
-      return await authApi.updateProfile(data)
-    },
-    onSuccess: (updatedUser) => {
+  useEffect(() => {
+    if (updateProfileMutation.isSuccess && updateProfileMutation.data) {
       setSuccess('Profile updated successfully!')
       setError(null)
       setCurrentPassword('')
       setNewPassword('')
       setConfirmPassword('')
-
-      // Atualizar cache do usuário
-      queryClient.setQueryData(['user'], updatedUser)
 
       // Se mudou a senha ou email, fazer logout para forçar novo login
       if (newPassword || (email && email !== user?.email)) {
@@ -51,52 +47,33 @@ export default function Profile() {
           navigate('/login')
         }, 2000)
       }
-    },
-    onError: (err: any) => {
-      setError(err.response?.data?.detail || 'Error updating profile')
+      updateProfileMutation.reset()
+    }
+  }, [updateProfileMutation.isSuccess, updateProfileMutation.data])
+
+  useEffect(() => {
+    if (updateProfileMutation.isError) {
+      setError((updateProfileMutation.error as any)?.response?.data?.detail || 'Error updating profile')
       setSuccess(null)
-    },
-  })
+      updateProfileMutation.reset()
+    }
+  }, [updateProfileMutation.isError])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError(null)
     setSuccess(null)
-
-    // Validação de email
-    if (email && email !== user?.email) {
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-      if (!emailRegex.test(email)) {
-        setError('Invalid email')
-        return
-      }
-    }
-
-    // Validações de senha
-    if (newPassword && newPassword.length < 6) {
-      setError('New password must be at least 6 characters')
-      return
-    }
-
-    if (newPassword && newPassword !== confirmPassword) {
-      setError('Passwords do not match')
-      return
-    }
-
-    if (newPassword && !currentPassword) {
-      setError('Current password is required to change password')
-      return
-    }
+    setErrors({})
 
     // Preparar dados para atualização
-    const updateData: { email?: string; full_name?: string; password?: string; current_password?: string } = {}
+    const updateData: { email?: string | null; full_name?: string | null; password?: string | null; current_password?: string | null } = {}
 
     if (email && email !== user?.email) {
       updateData.email = email
     }
 
     if (fullName !== user?.full_name) {
-      updateData.full_name = fullName || undefined
+      updateData.full_name = fullName || null
     }
 
     if (newPassword) {
@@ -107,6 +84,22 @@ export default function Profile() {
     // Só atualizar se houver mudanças
     if (Object.keys(updateData).length === 0) {
       setError('No changes were made')
+      return
+    }
+
+    // Validate form
+    const validation = validateForm(updateProfileSchema, updateData)
+    if (!validation.success) {
+      setErrors(validation.errors || {})
+      if (validation.errors?._form) {
+        setError(validation.errors._form)
+      }
+      return
+    }
+
+    // Additional validation: passwords must match
+    if (newPassword && newPassword !== confirmPassword) {
+      setError('Passwords do not match')
       return
     }
 

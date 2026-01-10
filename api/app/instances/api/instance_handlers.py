@@ -115,12 +115,12 @@ def get_instance_events(
         return service.get_instance_events(uuid)
     except InstanceNotFoundError as e:
         raise HTTPException(status_code=404, detail=str(e))
-    except NotImplementedError:
-        # TODO: Remove when Kubernetes features are migrated
-        raise HTTPException(
-            status_code=501,
-            detail="Instance events not yet available in new structure. Use old endpoint temporarily."
-        )
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        # Log error but return empty list instead of failing
+        print(f"Error getting instance events: {e}")
+        return []
 
 
 @router.post("/instances/{uuid}/sync", response_model=dict)

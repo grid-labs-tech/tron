@@ -71,21 +71,30 @@ class ApplicationService:
         if not self.instance_service:
             # Create instance service if not provided
             instance_repository = InstanceRepository(database_session)
-            self.instance_service = InstanceService(instance_repository)
+            self.instance_service = InstanceService(instance_repository, database_session)
 
         for instance in instances:
             try:
                 self.instance_service.delete_instance(instance.uuid, database_session)
+                # Commit after each instance deletion to ensure consistency
+                database_session.commit()
             except Exception as e:
-                self.repository.rollback()
-                raise Exception(f"Failed to delete instance '{instance.uuid}': {str(e)}")
+                database_session.rollback()
+                error_msg = str(e)
+                # Log the full error for debugging
+                print(f"Error deleting instance '{instance.uuid}': {error_msg}")
+                raise Exception(f"Failed to delete instance '{instance.uuid}': {error_msg}")
 
         # Delete application
         try:
             self.repository.delete_by_id(application.id)
+            database_session.commit()
         except Exception as e:
-            self.repository.rollback()
-            raise Exception(f"Failed to delete application: {str(e)}")
+            database_session.rollback()
+            error_msg = str(e)
+            # Log the full error for debugging
+            print(f"Error deleting application '{uuid}': {error_msg}")
+            raise Exception(f"Failed to delete application: {error_msg}")
 
         return {"detail": "Application deleted successfully"}
 

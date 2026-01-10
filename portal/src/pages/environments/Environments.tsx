@@ -1,59 +1,60 @@
-import { useState } from 'react'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useState, useEffect } from 'react'
 import { X, Trash2, Plus } from 'lucide-react'
-import { environmentsApi } from '../../services/api'
-import type { Environment, EnvironmentCreate } from '../../types'
-import DataTable from '../../components/DataTable'
-import { Breadcrumbs } from '../../components/Breadcrumbs'
-import { PageHeader } from '../../components/PageHeader'
+import { useEnvironments, useCreateEnvironment, useUpdateEnvironment, useDeleteEnvironment } from '../../features/environments'
+import type { Environment, EnvironmentCreate } from '../../features/environments'
+import { DataTable, Breadcrumbs, PageHeader } from '../../shared/components'
 
 function Environments() {
   const [isOpen, setIsOpen] = useState(false)
-  const [, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null)
-  const queryClient = useQueryClient()
+  const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null)
 
-  const { data: environments = [], isLoading } = useQuery({
-    queryKey: ['environments'],
-    queryFn: environmentsApi.list,
-  })
+  const { data: environments = [], isLoading } = useEnvironments()
+  const createMutation = useCreateEnvironment()
+  const deleteMutation = useDeleteEnvironment()
 
   const [formData, setFormData] = useState<EnvironmentCreate>({
     name: '',
   })
 
-  const createMutation = useMutation({
-    mutationFn: environmentsApi.create,
-    onSuccess: () => {
+  useEffect(() => {
+    if (createMutation.isSuccess && createMutation.data) {
       setNotification({ type: 'success', message: 'Environment created successfully' })
-      queryClient.invalidateQueries({ queryKey: ['environments'] })
       setIsOpen(false)
       setFormData({ name: '' })
       setTimeout(() => setNotification(null), 5000)
-    },
-    onError: (error: any) => {
-      setNotification({
-        type: 'error',
-        message: error.response?.data?.detail || 'Error creating environment',
-      })
-      setTimeout(() => setNotification(null), 5000)
-    },
-  })
+      createMutation.reset()
+    }
+  }, [createMutation.isSuccess, createMutation.data])
 
-  const deleteMutation = useMutation({
-    mutationFn: environmentsApi.delete,
-    onSuccess: () => {
-      setNotification({ type: 'success', message: 'Environment deleted successfully' })
-      queryClient.invalidateQueries({ queryKey: ['environments'] })
-      setTimeout(() => setNotification(null), 5000)
-    },
-    onError: (error: any) => {
+  useEffect(() => {
+    if (createMutation.isError) {
       setNotification({
         type: 'error',
-        message: error.response?.data?.detail || 'Error deleting environment',
+        message: (createMutation.error as any)?.response?.data?.detail || 'Error creating environment',
       })
       setTimeout(() => setNotification(null), 5000)
-    },
-  })
+      createMutation.reset()
+    }
+  }, [createMutation.isError])
+
+  useEffect(() => {
+    if (deleteMutation.isSuccess) {
+      setNotification({ type: 'success', message: 'Environment deleted successfully' })
+      setTimeout(() => setNotification(null), 5000)
+      deleteMutation.reset()
+    }
+  }, [deleteMutation.isSuccess])
+
+  useEffect(() => {
+    if (deleteMutation.isError) {
+      setNotification({
+        type: 'error',
+        message: (deleteMutation.error as any)?.response?.data?.detail || 'Error deleting environment',
+      })
+      setTimeout(() => setNotification(null), 5000)
+      deleteMutation.reset()
+    }
+  }, [deleteMutation.isError])
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -93,6 +94,21 @@ function Environments() {
           New Environment
         </button>
       </div>
+
+      {notification && (
+        <div
+          className={`rounded-lg p-4 flex items-center justify-between ${
+            notification.type === 'success'
+              ? 'bg-green-50 border border-green-200 text-green-800'
+              : 'bg-red-50 border border-red-200 text-red-800'
+          }`}
+        >
+          <span>{notification.message}</span>
+          <button onClick={() => setNotification(null)}>
+            <X size={16} />
+          </button>
+        </div>
+      )}
 
       {/* Table */}
       <DataTable<Environment>

@@ -24,7 +24,7 @@ def get_application_service(database_session: Session = Depends(get_db)) -> Appl
 
     application_repository = ApplicationRepository(database_session)
     instance_repository = InstanceRepository(database_session)
-    instance_service = InstanceService(instance_repository)
+    instance_service = InstanceService(instance_repository, database_session)
     return ApplicationService(application_repository, instance_service)
 
 

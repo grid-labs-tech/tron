@@ -1,11 +1,8 @@
-import { useState } from 'react'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useState, useEffect } from 'react'
 import { X, Trash2, Plus, Key, Edit, Shield, Copy, Check, AlertCircle } from 'lucide-react'
-import { tokensApi } from '../../services/api'
-import type { ApiToken, ApiTokenCreate, ApiTokenUpdate } from '../../types'
-import DataTable from '../../components/DataTable'
-import { Breadcrumbs } from '../../components/Breadcrumbs'
-import { PageHeader } from '../../components/PageHeader'
+import { useTokens, useCreateToken, useUpdateToken, useDeleteToken } from '../../features/tokens'
+import type { ApiToken, ApiTokenCreate, ApiTokenUpdate } from '../../features/tokens'
+import { DataTable, Breadcrumbs, PageHeader } from '../../shared/components'
 
 function Tokens() {
   const [isOpen, setIsOpen] = useState(false)
@@ -14,12 +11,11 @@ function Tokens() {
   const [searchTerm, setSearchTerm] = useState('')
   const [newToken, setNewToken] = useState<string | null>(null)
   const [copiedToken, setCopiedToken] = useState<string | null>(null)
-  const queryClient = useQueryClient()
 
-  const { data: tokens = [], isLoading } = useQuery({
-    queryKey: ['tokens', searchTerm],
-    queryFn: () => tokensApi.list({ search: searchTerm || undefined }),
-  })
+  const { data: tokens = [], isLoading } = useTokens({ search: searchTerm || undefined })
+  const createMutation = useCreateToken()
+  const updateMutation = useUpdateToken()
+  const deleteMutation = useDeleteToken()
 
   const [formData, setFormData] = useState<ApiTokenCreate & { expires_at?: string | null }>({
     name: '',
@@ -27,60 +23,69 @@ function Tokens() {
     expires_at: null,
   })
 
-  const createMutation = useMutation({
-    mutationFn: tokensApi.create,
-    onSuccess: (response) => {
+  useEffect(() => {
+    if (createMutation.isSuccess && createMutation.data) {
       setNotification({ type: 'success', message: 'Token created successfully' })
-      setNewToken(response.token) // Guardar o token gerado
-      queryClient.invalidateQueries({ queryKey: ['tokens'] })
+      setNewToken(createMutation.data.token) // Guardar o token gerado
       setIsOpen(false)
       setEditingToken(null)
       resetForm()
       setTimeout(() => setNotification(null), 5000)
-    },
-    onError: (error: any) => {
+      createMutation.reset()
+    }
+  }, [createMutation.isSuccess, createMutation.data])
+
+  useEffect(() => {
+    if (createMutation.isError) {
       setNotification({
         type: 'error',
-        message: error.response?.data?.detail || 'Error creating token',
+        message: (createMutation.error as any)?.response?.data?.detail || 'Error creating token',
       })
       setTimeout(() => setNotification(null), 5000)
-    },
-  })
+      createMutation.reset()
+    }
+  }, [createMutation.isError])
 
-  const updateMutation = useMutation({
-    mutationFn: ({ uuid, data }: { uuid: string; data: ApiTokenUpdate }) => tokensApi.update(uuid, data),
-    onSuccess: () => {
+  useEffect(() => {
+    if (updateMutation.isSuccess) {
       setNotification({ type: 'success', message: 'Token updated successfully' })
-      queryClient.invalidateQueries({ queryKey: ['tokens'] })
       setIsOpen(false)
       setEditingToken(null)
       resetForm()
       setTimeout(() => setNotification(null), 5000)
-    },
-    onError: (error: any) => {
-      setNotification({
-        type: 'error',
-        message: error.response?.data?.detail || 'Error updating token',
-      })
-      setTimeout(() => setNotification(null), 5000)
-    },
-  })
+      updateMutation.reset()
+    }
+  }, [updateMutation.isSuccess])
 
-  const deleteMutation = useMutation({
-    mutationFn: tokensApi.delete,
-    onSuccess: () => {
-      setNotification({ type: 'success', message: 'Token deleted successfully' })
-      queryClient.invalidateQueries({ queryKey: ['tokens'] })
-      setTimeout(() => setNotification(null), 5000)
-    },
-    onError: (error: any) => {
+  useEffect(() => {
+    if (updateMutation.isError) {
       setNotification({
         type: 'error',
-        message: error.response?.data?.detail || 'Error deleting token',
+        message: (updateMutation.error as any)?.response?.data?.detail || 'Error updating token',
       })
       setTimeout(() => setNotification(null), 5000)
-    },
-  })
+      updateMutation.reset()
+    }
+  }, [updateMutation.isError])
+
+  useEffect(() => {
+    if (deleteMutation.isSuccess) {
+      setNotification({ type: 'success', message: 'Token deleted successfully' })
+      setTimeout(() => setNotification(null), 5000)
+      deleteMutation.reset()
+    }
+  }, [deleteMutation.isSuccess])
+
+  useEffect(() => {
+    if (deleteMutation.isError) {
+      setNotification({
+        type: 'error',
+        message: (deleteMutation.error as any)?.response?.data?.detail || 'Error deleting token',
+      })
+      setTimeout(() => setNotification(null), 5000)
+      deleteMutation.reset()
+    }
+  }, [deleteMutation.isError])
 
   const resetForm = () => {
     setFormData({

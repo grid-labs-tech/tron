@@ -1,28 +1,18 @@
-import { useState } from 'react'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useState, useEffect } from 'react'
 import { X, Trash2, Plus, Info, Edit, CheckCircle, XCircle } from 'lucide-react'
-import { clustersApi, environmentsApi } from '../../services/api'
-import type { Cluster, ClusterCreate } from '../../types'
-import DataTable from '../../components/DataTable'
-import { Breadcrumbs } from '../../components/Breadcrumbs'
-import { PageHeader } from '../../components/PageHeader'
+import { useClusters, useCreateCluster, useUpdateCluster, useDeleteCluster } from '../../features/clusters'
+import { useEnvironments } from '../../features/environments'
+import type { Cluster, ClusterCreate } from '../../features/clusters'
+import { DataTable, Breadcrumbs, PageHeader } from '../../shared/components'
 
 function Clusters() {
   const [isOpen, setIsOpen] = useState(false)
   const [editingCluster, setEditingCluster] = useState<Cluster | null>(null)
   const [statusModal, setStatusModal] = useState<{ code: string; message: string } | null>(null)
   const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null)
-  const queryClient = useQueryClient()
 
-  const { data: clusters = [], isLoading } = useQuery({
-    queryKey: ['clusters'],
-    queryFn: clustersApi.list,
-  })
-
-  const { data: environments = [] } = useQuery({
-    queryKey: ['environments'],
-    queryFn: environmentsApi.list,
-  })
+  const { data: clusters = [], isLoading } = useClusters()
+  const { data: environments = [] } = useEnvironments()
 
   const [formData, setFormData] = useState<ClusterCreate>({
     name: '',
@@ -31,59 +21,73 @@ function Clusters() {
     environment_uuid: '',
   })
 
-  const createMutation = useMutation({
-    mutationFn: clustersApi.create,
-    onSuccess: () => {
+  const createMutation = useCreateCluster()
+  const updateMutation = useUpdateCluster()
+  const deleteMutation = useDeleteCluster()
+
+  // Handle success/error callbacks
+  useEffect(() => {
+    if (createMutation.isSuccess && createMutation.data) {
       setNotification({ type: 'success', message: 'Cluster created successfully' })
-      queryClient.invalidateQueries({ queryKey: ['clusters'] })
       setIsOpen(false)
       setEditingCluster(null)
       setFormData({ name: '', api_address: '', token: '', environment_uuid: '' })
       setTimeout(() => setNotification(null), 5000)
-    },
-    onError: (error: any) => {
+      createMutation.reset()
+    }
+  }, [createMutation.isSuccess, createMutation.data])
+
+  useEffect(() => {
+    if (createMutation.isError) {
       setNotification({
         type: 'error',
-        message: error.response?.data?.detail || 'Error creating cluster',
+        message: (createMutation.error as any)?.response?.data?.detail || 'Error creating cluster',
       })
       setTimeout(() => setNotification(null), 5000)
-    },
-  })
+      createMutation.reset()
+    }
+  }, [createMutation.isError])
 
-  const updateMutation = useMutation({
-    mutationFn: ({ uuid, data }: { uuid: string; data: Partial<ClusterCreate> }) => clustersApi.update(uuid, data),
-    onSuccess: () => {
+  useEffect(() => {
+    if (updateMutation.isSuccess && updateMutation.data) {
       setNotification({ type: 'success', message: 'Cluster updated successfully' })
-      queryClient.invalidateQueries({ queryKey: ['clusters'] })
       setIsOpen(false)
       setEditingCluster(null)
       setFormData({ name: '', api_address: '', token: '', environment_uuid: '' })
       setTimeout(() => setNotification(null), 5000)
-    },
-    onError: (error: any) => {
-      setNotification({
-        type: 'error',
-        message: error.response?.data?.detail || 'Error updating cluster',
-      })
-      setTimeout(() => setNotification(null), 5000)
-    },
-  })
+      updateMutation.reset()
+    }
+  }, [updateMutation.isSuccess, updateMutation.data])
 
-  const deleteMutation = useMutation({
-    mutationFn: clustersApi.delete,
-    onSuccess: () => {
-      setNotification({ type: 'success', message: 'Cluster deleted successfully' })
-      queryClient.invalidateQueries({ queryKey: ['clusters'] })
-      setTimeout(() => setNotification(null), 5000)
-    },
-    onError: (error: any) => {
+  useEffect(() => {
+    if (updateMutation.isError) {
       setNotification({
         type: 'error',
-        message: error.response?.data?.detail || 'Error deleting cluster',
+        message: (updateMutation.error as any)?.response?.data?.detail || 'Error updating cluster',
       })
       setTimeout(() => setNotification(null), 5000)
-    },
-  })
+      updateMutation.reset()
+    }
+  }, [updateMutation.isError])
+
+  useEffect(() => {
+    if (deleteMutation.isSuccess) {
+      setNotification({ type: 'success', message: 'Cluster deleted successfully' })
+      setTimeout(() => setNotification(null), 5000)
+      deleteMutation.reset()
+    }
+  }, [deleteMutation.isSuccess])
+
+  useEffect(() => {
+    if (deleteMutation.isError) {
+      setNotification({
+        type: 'error',
+        message: (deleteMutation.error as any)?.response?.data?.detail || 'Error deleting cluster',
+      })
+      setTimeout(() => setNotification(null), 5000)
+      deleteMutation.reset()
+    }
+  }, [deleteMutation.isError])
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -109,7 +113,7 @@ function Clusters() {
       }
       updateMutation.mutate({ uuid: editingCluster.uuid, data: updateData })
     } else {
-    createMutation.mutate(formData)
+      createMutation.mutate(formData)
     }
   }
 

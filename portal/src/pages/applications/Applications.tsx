@@ -1,32 +1,17 @@
 import { useNavigate } from 'react-router-dom'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Trash2, Plus, Layers, Server } from 'lucide-react'
-import { applicationsApi, instancesApi } from '../../services/api'
-import type { Application, Instance } from '../../types'
-import DataTable from '../../components/DataTable'
-import { Breadcrumbs } from '../../components/Breadcrumbs'
-import { PageHeader } from '../../components/PageHeader'
+import { useApplications, useDeleteApplication } from '../../features/applications'
+import { useInstances } from '../../features/instances'
+import type { Application } from '../../features/applications'
+import type { Instance } from '../../features/instances'
+import { DataTable, Breadcrumbs, PageHeader } from '../../shared/components'
 
 function Applications() {
   const navigate = useNavigate()
-  const queryClient = useQueryClient()
 
-  const { data: applications = [], isLoading } = useQuery({
-    queryKey: ['applications'],
-    queryFn: applicationsApi.list,
-  })
-
-  const { data: instances = [] } = useQuery({
-    queryKey: ['instances'],
-    queryFn: instancesApi.list,
-  })
-
-  const deleteMutation = useMutation({
-    mutationFn: applicationsApi.delete,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['applications'] })
-    },
-  })
+  const { data: applications = [], isLoading } = useApplications()
+  const { data: instances = [] } = useInstances()
+  const deleteMutation = useDeleteApplication()
 
   const handleDelete = (uuid: string) => {
     if (confirm('Are you sure you want to delete this application?')) {

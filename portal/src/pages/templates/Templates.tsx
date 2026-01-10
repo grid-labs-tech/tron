@@ -1,7 +1,8 @@
-import { useState } from 'react'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useState, useEffect } from 'react'
+import { useMutation } from '@tanstack/react-query'
 import { X, Trash2, Plus, FileCode, Edit, ChevronDown, ChevronRight, Settings, Copy, Check } from 'lucide-react'
-import { templatesApi, componentTemplateConfigsApi } from '../../services/api'
+import { useTemplates, useCreateTemplate, useUpdateTemplate, useDeleteTemplate, useComponentTemplateConfigs } from '../../features/templates'
+import { componentTemplateConfigsApi } from '../../features/templates/api'
 import type {
   Template,
   TemplateCreate,
@@ -9,10 +10,8 @@ import type {
   ComponentTemplateConfig,
   ComponentTemplateConfigCreate,
   ComponentTemplateConfigUpdate,
-} from '../../types'
-import DataTable from '../../components/DataTable'
-import { Breadcrumbs } from '../../components/Breadcrumbs'
-import { PageHeader } from '../../components/PageHeader'
+} from '../../features/templates'
+import { DataTable, Breadcrumbs, PageHeader } from '../../shared/components'
 
 // Variáveis disponíveis para templates webapp
 const WEBAPP_VARIABLES = {
@@ -87,17 +86,12 @@ function Templates() {
   const [showVariables, setShowVariables] = useState(true)
   const [copiedPath, setCopiedPath] = useState<string | null>(null)
   const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null)
-  const queryClient = useQueryClient()
 
-  const { data: templates = [], isLoading } = useQuery({
-    queryKey: ['templates'],
-    queryFn: () => templatesApi.list(),
-  })
-
-  const { data: configs = [], isLoading: isLoadingConfigs } = useQuery({
-    queryKey: ['component-template-configs', selectedComponentType],
-    queryFn: () => componentTemplateConfigsApi.list(selectedComponentType),
-  })
+  const { data: templates = [], isLoading } = useTemplates()
+  const { data: configs = [], isLoading: isLoadingConfigs } = useComponentTemplateConfigs(selectedComponentType)
+  const createMutation = useCreateTemplate()
+  const updateMutation = useUpdateTemplate()
+  const deleteMutation = useDeleteTemplate()
 
   const [configFormData, setConfigFormData] = useState<ComponentTemplateConfigCreate>({
     component_type: 'webapp',
@@ -114,61 +108,70 @@ function Templates() {
     variables_schema: '',
   })
 
-  const createMutation = useMutation({
-    mutationFn: templatesApi.create,
-    onSuccess: () => {
+  useEffect(() => {
+    if (createMutation.isSuccess) {
       setNotification({ type: 'success', message: 'Template created successfully' })
-      queryClient.invalidateQueries({ queryKey: ['templates'] })
       setIsOpen(false)
       setEditingTemplate(null)
       setFormData({ name: '', description: '', category: 'webapp', content: '', variables_schema: '' })
       setTimeout(() => setNotification(null), 5000)
-    },
-    onError: (error: any) => {
+      createMutation.reset()
+    }
+  }, [createMutation.isSuccess])
+
+  useEffect(() => {
+    if (createMutation.isError) {
       setNotification({
         type: 'error',
-        message: error.response?.data?.detail || 'Error creating template',
+        message: (createMutation.error as any)?.response?.data?.detail || 'Error creating template',
       })
       setTimeout(() => setNotification(null), 5000)
-    },
-  })
+      createMutation.reset()
+    }
+  }, [createMutation.isError])
 
-  const updateMutation = useMutation({
-    mutationFn: ({ uuid, data }: { uuid: string; data: TemplateUpdate }) => templatesApi.update(uuid, data),
-    onSuccess: () => {
+  useEffect(() => {
+    if (updateMutation.isSuccess) {
       setNotification({ type: 'success', message: 'Template updated successfully' })
-      queryClient.invalidateQueries({ queryKey: ['templates'] })
       setIsOpen(false)
       setEditingTemplate(null)
       setSelectedTemplate(null)
       setFormData({ name: '', description: '', category: 'webapp', content: '', variables_schema: '' })
       setTimeout(() => setNotification(null), 5000)
-    },
-    onError: (error: any) => {
+      updateMutation.reset()
+    }
+  }, [updateMutation.isSuccess])
+
+  useEffect(() => {
+    if (updateMutation.isError) {
       setNotification({
         type: 'error',
-        message: error.response?.data?.detail || 'Error updating template',
+        message: (updateMutation.error as any)?.response?.data?.detail || 'Error updating template',
       })
       setTimeout(() => setNotification(null), 5000)
-    },
-  })
+      updateMutation.reset()
+    }
+  }, [updateMutation.isError])
 
-  const deleteMutation = useMutation({
-    mutationFn: templatesApi.delete,
-    onSuccess: () => {
+  useEffect(() => {
+    if (deleteMutation.isSuccess) {
       setNotification({ type: 'success', message: 'Template deleted successfully' })
-      queryClient.invalidateQueries({ queryKey: ['templates'] })
       setSelectedTemplate(null)
       setTimeout(() => setNotification(null), 5000)
-    },
-    onError: (error: any) => {
+      deleteMutation.reset()
+    }
+  }, [deleteMutation.isSuccess])
+
+  useEffect(() => {
+    if (deleteMutation.isError) {
       setNotification({
         type: 'error',
-        message: error.response?.data?.detail || 'Error deleting template',
+        message: (deleteMutation.error as any)?.response?.data?.detail || 'Error deleting template',
       })
       setTimeout(() => setNotification(null), 5000)
-    },
-  })
+      deleteMutation.reset()
+    }
+  }, [deleteMutation.isError])
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -219,11 +222,11 @@ function Templates() {
     }
   }
 
+  // Config mutations - using direct API calls since hooks not created yet
   const createConfigMutation = useMutation({
     mutationFn: componentTemplateConfigsApi.create,
     onSuccess: () => {
       setNotification({ type: 'success', message: 'Template configuration created successfully' })
-      queryClient.invalidateQueries({ queryKey: ['component-template-configs'] })
       setIsConfigOpen(false)
       setConfigFormData({
         component_type: selectedComponentType,
@@ -247,7 +250,6 @@ function Templates() {
       componentTemplateConfigsApi.update(uuid, data),
     onSuccess: () => {
       setNotification({ type: 'success', message: 'Template configuration updated successfully' })
-      queryClient.invalidateQueries({ queryKey: ['component-template-configs'] })
       setIsConfigOpen(false)
       setEditingConfig(null)
       setConfigFormData({
@@ -271,7 +273,6 @@ function Templates() {
     mutationFn: componentTemplateConfigsApi.delete,
     onSuccess: () => {
       setNotification({ type: 'success', message: 'Template configuration deleted successfully' })
-      queryClient.invalidateQueries({ queryKey: ['component-template-configs'] })
       setTimeout(() => setNotification(null), 5000)
     },
     onError: (error: any) => {

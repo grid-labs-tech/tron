@@ -1,12 +1,10 @@
 import { useState } from 'react'
 import { useParams } from 'react-router-dom'
-import { useQuery } from '@tanstack/react-query'
 import { Clock } from 'lucide-react'
-import { instancesApi, applicationsApi } from '../../services/api'
-import { Breadcrumbs } from '../../components/Breadcrumbs'
-import { PageHeader } from '../../components/PageHeader'
-import DataTable from '../../components/DataTable'
-import type { KubernetesEvent } from '../../types'
+import { useInstance, useInstanceEvents } from '../../features/instances'
+import { useApplication } from '../../features/applications'
+import type { KubernetesEvent } from '../../features/instances'
+import { Breadcrumbs, PageHeader, DataTable } from '../../shared/components'
 
 function InstanceEvents() {
   const { uuid: applicationUuid, instanceUuid } = useParams<{
@@ -14,26 +12,11 @@ function InstanceEvents() {
     instanceUuid: string
   }>()
 
-  const { data: instance } = useQuery({
-    queryKey: ['instances', instanceUuid],
-    queryFn: () => instancesApi.get(instanceUuid!),
-    enabled: !!instanceUuid,
-  })
-
-  const { data: application } = useQuery({
-    queryKey: ['application', applicationUuid],
-    queryFn: () => applicationsApi.get(applicationUuid!),
-    enabled: !!applicationUuid,
-  })
-
+  const { data: instance } = useInstance(instanceUuid)
+  const { data: application } = useApplication(applicationUuid)
   const [refreshInterval, setRefreshInterval] = useState<number>(10000) // Default: 10 seconds
 
-  const { data: events = [], isLoading: isLoadingEvents } = useQuery({
-    queryKey: ['instance-events', instanceUuid],
-    queryFn: () => instancesApi.getEvents(instanceUuid!),
-    enabled: !!instanceUuid,
-    refetchInterval: refreshInterval > 0 ? refreshInterval : false,
-  })
+  const { data: events = [], isLoading: isLoadingEvents } = useInstanceEvents(instanceUuid)
 
   const formatAge = (seconds: number): string => {
     if (seconds < 60) {

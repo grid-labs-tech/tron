@@ -150,14 +150,62 @@ def test_delete_application_success(application_service, mock_repository):
     mock_application.instances = []  # No instances
 
     mock_repository.find_by_uuid.return_value = mock_application
+    mock_db = MagicMock()
 
     with patch('app.applications.core.application_service.InstanceService') as mock_instance_service_class:
         mock_instance_service = MagicMock()
         mock_instance_service_class.return_value = mock_instance_service
 
-        result = application_service.delete_application(app_uuid, MagicMock())
+        result = application_service.delete_application(app_uuid, mock_db)
 
         assert result == {"detail": "Application deleted successfully"}
         # Validator calls find_by_uuid, then service calls it again
         assert mock_repository.find_by_uuid.call_count >= 1
         mock_repository.delete_by_id.assert_called_once_with(mock_application.id)
+        mock_db.commit.assert_called()
+
+
+def test_delete_application_with_instances(application_service, mock_repository):
+    """Test application deletion with instances."""
+    app_uuid = uuid4()
+    mock_application = MagicMock()
+    mock_application.uuid = app_uuid
+    mock_application.id = 1
+
+    # Create mock instances
+    mock_instance1 = MagicMock()
+    mock_instance1.uuid = uuid4()
+    mock_instance2 = MagicMock()
+    mock_instance2.uuid = uuid4()
+    mock_application.instances = [mock_instance1, mock_instance2]
+
+    mock_repository.find_by_uuid.return_value = mock_application
+    mock_db = MagicMock()
+
+    with patch('app.applications.core.application_service.InstanceService') as mock_instance_service_class, \
+         patch('app.applications.core.application_service.InstanceRepository') as mock_instance_repo_class:
+        mock_instance_service = MagicMock()
+        mock_instance_service.delete_instance.return_value = {"detail": "Instance deleted successfully"}
+        mock_instance_service_class.return_value = mock_instance_service
+
+        result = application_service.delete_application(app_uuid, mock_db)
+
+        assert result == {"detail": "Application deleted successfully"}
+        # Should delete both instances
+        assert mock_instance_service.delete_instance.call_count == 2
+        assert mock_instance_service.delete_instance.call_args_list[0][0][0] == mock_instance1.uuid
+        assert mock_instance_service.delete_instance.call_args_list[1][0][0] == mock_instance2.uuid
+        # Should commit after each instance deletion
+        assert mock_db.commit.call_count >= 2
+        mock_repository.delete_by_id.assert_called_once_with(mock_application.id)
+
+
+def test_delete_application_not_found(application_service, mock_repository):
+    """Test deleting non-existent application."""
+    app_uuid = uuid4()
+    mock_repository.find_by_uuid.return_value = None
+
+    with pytest.raises(ApplicationNotFoundError):
+        application_service.delete_application(app_uuid, MagicMock())
+
+    mock_repository.delete_by_id.assert_not_called()
