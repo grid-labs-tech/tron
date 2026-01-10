@@ -96,7 +96,7 @@ export default function Profile() {
     }
 
     if (fullName !== user?.full_name) {
-      updateData.full_name = fullName || null
+      updateData.full_name = fullName || undefined
     }
 
     if (newPassword) {
