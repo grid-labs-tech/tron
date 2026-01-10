@@ -1,0 +1,61 @@
+FROM python:3.13-alpine AS builder
+
+ARG _WORKDIR=/app
+
+WORKDIR ${_WORKDIR}
+
+# Install build dependencies
+RUN apk add --virtual .build-dependencies \
+            --no-cache \
+            python3-dev \
+            build-base \
+            linux-headers \
+            pcre-dev \
+            gcc \
+            musl-dev \
+            postgresql-libs \
+            postgresql-dev
+
+# Copy requirements and install dependencies
+COPY requirements.txt /tmp/
+RUN pip install --upgrade pip \
+    && pip install --user --no-cache-dir -r /tmp/requirements.txt
+
+# Production stage
+FROM python:3.13-alpine
+
+ARG _WORKDIR=/app
+
+WORKDIR ${_WORKDIR}
+
+# Install runtime dependencies only
+RUN apk add --no-cache \
+    pcre \
+    postgresql-libs \
+    curl
+
+# Copy Python packages from builder
+COPY --from=builder /root/.local /root/.local
+
+# Make sure scripts in .local are usable
+ENV PATH=/root/.local/bin:$PATH
+
+# Copy application code
+COPY . ${_WORKDIR}
+
+# Create non-root user
+RUN addgroup -g 1000 appuser && \
+    adduser -D -u 1000 -G appuser appuser && \
+    chown -R appuser:appuser ${_WORKDIR}
+
+USER appuser
+
+# Expose port
+EXPOSE 8000
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+    CMD curl -f http://localhost:8000/health || exit 1
+
+# Run production server
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "4"]
