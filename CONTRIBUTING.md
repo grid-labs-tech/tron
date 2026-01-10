@@ -7,6 +7,93 @@ This document explains how to get started, how to propose changes, and how to co
 
 ---
 
+## 🚀 Development Environment Setup
+
+### Prerequisites
+
+- Docker
+- Docker Compose
+- Git
+
+### Starting the Local Environment
+
+1. **Clone the repository**:
+   ```bash
+   git clone https://github.com/grid-labs-tech/tron.git
+   cd tron
+   ```
+
+2. **Start the complete environment**:
+   ```bash
+   make start
+   ```
+
+   This command will:
+   - Start all services (API, Portal, PostgreSQL, K3s)
+   - Run database migrations
+   - Load initial templates
+   - Create default administrator user
+   - Configure local cluster
+
+3. **Access the portal**:
+   - URL: http://localhost:3000
+   - Email: `admin@example.com`
+   - Password: `admin`
+
+### Development Commands
+
+```bash
+# Start environment
+make start
+
+# Stop environment
+make stop
+
+# Restart environment
+make restart
+
+# View logs
+make logs
+
+# Check status
+make status
+
+# Rebuild images
+make build
+
+# Create new migration
+make api-migration
+
+# Apply migrations
+make api-migrate
+
+# Run tests
+make api-test
+```
+
+### Project Structure
+
+```
+tron/
+├── api/              # FastAPI backend
+│   ├── app/          # Main application
+│   ├── alembic/      # Database migrations
+│   └── tests/        # Tests
+├── portal/           # React frontend
+│   └── src/          # Source code
+├── scripts/          # Automation scripts
+├── docker/           # Docker Compose configurations
+└── volumes/          # Persistent volumes
+```
+
+### API Documentation
+
+During development, interactive API documentation is available at:
+- **Swagger UI**: http://localhost:8000/docs
+- **ReDoc**: http://localhost:8000/redoc
+
+---
+
 ## 🧩 Types of Contributions
 
 You can contribute in many ways, including:
@@ -160,3 +247,14 @@ By contributing, you agree that:
 Thank you for helping improve Tron!
 Your contributions make the project better for everyone.
 
+---
+
+## 👥 Contributors
+
+We thank everyone who contributes to the Tron project! 🎉
+
+<a href="https://github.com/grid-labs-tech/tron/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=grid-labs-tech/tron" alt="Contributors" />
+</a>
+
+Made with [contrib.rocks](https://contrib.rocks).

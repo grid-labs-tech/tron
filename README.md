@@ -24,88 +24,28 @@ View and manage components within an instance. Configure webapps, workers, and c
 
 ![Instance](images/instance.jpg)
 
-## 🚀 Quick Start
+## 🚀 Installation
 
-### Prerequisites
+### Installing via Helm Chart
 
-- Docker
-- Docker Compose
-
-### Running the Project
-
-Run a single command to start the entire environment:
+The simplest way to install Tron on a Kubernetes cluster is through the Helm Chart:
 
 ```bash
-make start
+# Add the Helm repository
+helm repo add grid-labs-tech https://grid-labs-tech.github.io/charts
+helm repo update
+
+# Install Tron
+helm install tron grid-labs-tech/tron
 ```
 
-This command will:
-- ✅ Start the FastAPI API (http://localhost:8000)
-- ✅ Start the React Portal (http://localhost:3000)
-- ✅ Start the PostgreSQL database
-- ✅ Start the Kubernetes cluster (K3s)
-- ✅ Run database migrations
-- ✅ Load initial templates
-- ✅ Create default administrator user
-- ✅ Configure API token
-- ✅ Create "local" environment
-- ✅ Configure local cluster
-
-### Access the Portal
-
-After running `make start`, access:
-
-**URL**: [http://localhost:3000](http://localhost:3000)
-
-**Default credentials**:
-- **Email**: `admin@example.com`
-- **Password**: `admin`
+For more details on configuration and available values, see the [Helm Chart repository](https://github.com/grid-labs-tech/charts/tree/main/tron).
 
 ## 📚 API Documentation
 
-Interactive API documentation is available at:
-- **Swagger UI**: [http://localhost:8000/docs](http://localhost:8000/docs)
-- **ReDoc**: [http://localhost:8000/redoc](http://localhost:8000/redoc)
-
-## 🛠️ Useful Commands
-
-### Environment Management
-
-```bash
-# Start environment
-make start
-
-# Stop environment
-make stop
-
-# View logs
-make logs
-
-# Check service status
-make status
-
-# Rebuild images
-make build
-```
-
-### Database Migrations
-
-```bash
-# Create new migration
-make api-migration
-
-# Apply migrations
-make api-migrate
-```
-
-### Using kubectl with K3s
-
-To interact with the local K3s cluster:
-
-```bash
-export KUBECONFIG=./volumes/kubeconfig/kubeconfig.yaml
-kubectl get nodes
-```
+After installation, interactive API documentation will be available through the web portal or directly at the API endpoint:
+- **Swagger UI**: `/docs`
+- **ReDoc**: `/redoc`
 
 ## 🏗️ Architecture
 
@@ -214,7 +154,82 @@ This structure allows you to:
 - Manage different component types (web, workers, cron jobs) within the same instance
 - Scale and configure each component independently
 
-## 🔧 Development
+## 👥 Contributing
+
+Want to contribute to Tron development? See our [contributing documentation](CONTRIBUTING.md) for more details.
+
+### Local Development
+
+To develop and test locally, you can use Docker Compose:
+
+#### Prerequisites
+
+- Docker
+- Docker Compose
+
+#### Starting the Environment
+
+Run a single command to start the entire environment:
+
+```bash
+make start
+```
+
+This command will:
+- ✅ Start the FastAPI API (http://localhost:8000)
+- ✅ Start the React Portal (http://localhost:3000)
+- ✅ Start the PostgreSQL database
+- ✅ Start the Kubernetes cluster (K3s)
+- ✅ Run database migrations
+- ✅ Load initial templates
+- ✅ Create default administrator user
+- ✅ Configure API token
+- ✅ Create "local" environment
+- ✅ Configure local cluster
+
+#### Access the Portal
+
+After running `make start`, access:
+
+**URL**: [http://localhost:3000](http://localhost:3000)
+
+**Default credentials**:
+- **Email**: `admin@example.com`
+- **Password**: `admin`
+
+#### Useful Commands
+
+```bash
+# Start environment
+make start
+
+# Stop environment
+make stop
+
+# View logs
+make logs
+
+# Check service status
+make status
+
+# Rebuild images
+make build
+
+# Create new migration
+make api-migration
+
+# Apply migrations
+make api-migrate
+```
+
+#### Using kubectl with K3s
+
+To interact with the local K3s cluster:
+
+```bash
+export KUBECONFIG=./volumes/kubeconfig/kubeconfig.yaml
+kubectl get nodes
+```
 
 ### Project Structure
 
@@ -230,6 +245,18 @@ tron/
 ### Environment Variables
 
 Main environment variables can be configured in the `docker/docker-compose.yaml` file or through `.env` files.
+
+### Contributors
+
+We thank everyone who contributes to the Tron project! 🎉
+
+#### Our Contributors
+
+<a href="https://github.com/grid-labs-tech/tron/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=grid-labs-tech/tron" alt="Contributors" />
+</a>
+
+Made with [contrib.rocks](https://contrib.rocks).
 
 ---
 
