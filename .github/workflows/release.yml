@@ -1,0 +1,95 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+      - 'v0.1.0'
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_PREFIX: ${{ github.repository_owner }}/tron
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: read
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract version from tag
+        id: version
+        run: |
+          VERSION=${GITHUB_REF#refs/tags/v}
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Version: $VERSION"
+
+      - name: Build and push API image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./api
+          file: ./api/Dockerfile.prod
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-api:${{ steps.version.outputs.version }}
+            ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-api:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          platforms: linux/amd64,linux/arm64
+
+      - name: Build and push Portal image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./portal
+          file: ./portal/Dockerfile.prod
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-portal:${{ steps.version.outputs.version }}
+            ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-portal:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          platforms: linux/amd64,linux/arm64
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          name: Release ${{ steps.version.outputs.version }}
+          body: |
+            ## Release ${{ steps.version.outputs.version }}
+
+            ### Images
+            - API: `${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-api:${{ steps.version.outputs.version }}`
+            - Portal: `${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-portal:${{ steps.version.outputs.version }}`
+
+            ### Installation
+            ```bash
+            helm repo add grid-labs-tech https://grid-labs-tech.github.io/charts
+            helm repo update
+            helm install tron grid-labs-tech/tron --version ${{ steps.version.outputs.version }}
+            ```
+          draft: false
+          prerelease: ${{ contains(steps.version.outputs.version, '-') }}
+
+      - name: Update Helm Chart
+        run: |
+          echo "Helm chart update would go here"
+          echo "This step can be configured to update the charts repository"
+          echo "Version: ${{ steps.version.outputs.version }}"
+          echo "API Image: ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-api:${{ steps.version.outputs.version }}"
+          echo "Portal Image: ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-portal:${{ steps.version.outputs.version }}"
