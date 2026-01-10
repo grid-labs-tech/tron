@@ -9,16 +9,16 @@ export function CommandInput({ command, onChange, isArray = false }: CommandInpu
     const commandArray = Array.isArray(command) ? command : []
 
     const addCommand = () => {
-      onChange([...commandArray, ''])
+      onChange([...commandArray, ''] as any)
     }
 
     const updateCommand = (index: number, value: string) => {
       const updated = commandArray.map((cmd, i) => (i === index ? value : cmd))
-      onChange(updated)
+      onChange(updated as any)
     }
 
     const removeCommand = (index: number) => {
-      onChange(commandArray.filter((_, i) => i !== index))
+      onChange(commandArray.filter((_, i) => i !== index) as any)
     }
 
     return (
