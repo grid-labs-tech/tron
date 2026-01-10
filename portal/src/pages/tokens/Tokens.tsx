@@ -404,8 +404,8 @@ function Tokens() {
                   <label className="flex items-center gap-2">
                     <input
                       type="checkbox"
-                      checked={formData.is_active ?? editingToken.is_active}
-                      onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })}
+                      checked={(formData as any).is_active ?? (editingToken as any).is_active}
+                      onChange={(e) => setFormData({ ...formData, ...({ is_active: e.target.checked } as any) })}
                       className="rounded border-neutral-300 text-primary-600 focus:ring-primary-500"
                     />
                     <span className="text-sm font-medium text-neutral-700">Active token</span>
