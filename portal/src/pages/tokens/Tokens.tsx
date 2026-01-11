@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { X, Trash2, Plus, Key, Edit, Shield, Copy, Check, AlertCircle } from 'lucide-react'
 import { useTokens, useCreateToken, useUpdateToken, useDeleteToken } from '../../features/tokens'
-import type { ApiToken, ApiTokenCreate, ApiTokenUpdate } from '../../features/tokens'
+import type { ApiToken, ApiTokenCreate } from '../../features/tokens'
 import { DataTable, Breadcrumbs, PageHeader } from '../../shared/components'
 
 function Tokens() {
@@ -33,18 +33,19 @@ function Tokens() {
       setTimeout(() => setNotification(null), 5000)
       createMutation.reset()
     }
-  }, [createMutation.isSuccess, createMutation.data])
+  }, [createMutation.isSuccess, createMutation.data, createMutation])
 
   useEffect(() => {
     if (createMutation.isError) {
       setNotification({
         type: 'error',
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         message: (createMutation.error as any)?.response?.data?.detail || 'Error creating token',
       })
       setTimeout(() => setNotification(null), 5000)
       createMutation.reset()
     }
-  }, [createMutation.isError])
+  }, [createMutation.isError, createMutation])
 
   useEffect(() => {
     if (updateMutation.isSuccess) {
@@ -55,18 +56,19 @@ function Tokens() {
       setTimeout(() => setNotification(null), 5000)
       updateMutation.reset()
     }
-  }, [updateMutation.isSuccess])
+  }, [updateMutation.isSuccess, updateMutation])
 
   useEffect(() => {
     if (updateMutation.isError) {
       setNotification({
         type: 'error',
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         message: (updateMutation.error as any)?.response?.data?.detail || 'Error updating token',
       })
       setTimeout(() => setNotification(null), 5000)
       updateMutation.reset()
     }
-  }, [updateMutation.isError])
+  }, [updateMutation.isError, updateMutation])
 
   useEffect(() => {
     if (deleteMutation.isSuccess) {
@@ -74,18 +76,19 @@ function Tokens() {
       setTimeout(() => setNotification(null), 5000)
       deleteMutation.reset()
     }
-  }, [deleteMutation.isSuccess])
+  }, [deleteMutation.isSuccess, deleteMutation])
 
   useEffect(() => {
     if (deleteMutation.isError) {
       setNotification({
         type: 'error',
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         message: (deleteMutation.error as any)?.response?.data?.detail || 'Error deleting token',
       })
       setTimeout(() => setNotification(null), 5000)
       deleteMutation.reset()
     }
-  }, [deleteMutation.isError])
+  }, [deleteMutation.isError, deleteMutation])
 
   const resetForm = () => {
     setFormData({
@@ -395,6 +398,7 @@ function Tokens() {
                 <select
                   id="role"
                   value={formData.role}
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
                   onChange={(e) => setFormData({ ...formData, role: e.target.value as any })}
                   className="select w-full"
                 >
@@ -409,7 +413,9 @@ function Tokens() {
                   <label className="flex items-center gap-2">
                     <input
                       type="checkbox"
+                      // eslint-disable-next-line @typescript-eslint/no-explicit-any
                       checked={(formData as any).is_active ?? (editingToken as any).is_active}
+                      // eslint-disable-next-line @typescript-eslint/no-explicit-any
                       onChange={(e) => setFormData({ ...formData, ...({ is_active: e.target.checked } as any) })}
                       className="rounded border-neutral-300 text-primary-600 focus:ring-primary-500"
                     />

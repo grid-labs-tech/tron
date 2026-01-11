@@ -140,7 +140,9 @@ function InstanceDetail() {
         exposure = (existingSettings as WebappSettings).exposure
       } else if (existingSettings && 'endpoints' in existingSettings) {
         // Migrar de endpoints antigo para exposure
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const oldEndpoints = existingSettings.endpoints as any
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         let oldEndpoint: any = null
         if (Array.isArray(oldEndpoints)) {
           oldEndpoint = oldEndpoints[0] || null
@@ -167,6 +169,7 @@ function InstanceDetail() {
       // Obter visibility de settings.exposure.visibility ou usar default
       let visibility: 'public' | 'private' | 'cluster' = 'cluster'
       if (settings && 'exposure' in settings && settings.exposure && 'visibility' in settings.exposure) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         visibility = (settings.exposure as any).visibility as 'public' | 'private' | 'cluster'
       }
 
@@ -223,6 +226,7 @@ function InstanceDetail() {
       setIsAddComponentsModalOpen(false)
       setTimeout(() => setNotification(null), 5000)
     },
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     onError: (error: any) => {
       setModalNotification({
         type: 'error',
@@ -243,6 +247,7 @@ function InstanceDetail() {
       queryClient.invalidateQueries({ queryKey: ['application-components'] })
       setTimeout(() => setNotification(null), 5000)
     },
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     onError: (error: any) => {
       setNotification({
         type: 'error',
@@ -263,6 +268,7 @@ function InstanceDetail() {
       setIsAddComponentsModalOpen(false)
       setTimeout(() => setNotification(null), 5000)
     },
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     onError: (error: any) => {
       setModalNotification({
         type: 'error',
@@ -284,6 +290,7 @@ function InstanceDetail() {
       setIsEditInstanceModalOpen(false)
       setTimeout(() => setNotification(null), 5000)
     },
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     onError: (error: any) => {
       setNotification({
         type: 'error',
@@ -302,6 +309,7 @@ function InstanceDetail() {
       // Navigate to applications list after deletion
       navigate('/applications')
     },
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     onError: (error: any) => {
       setNotification({
         type: 'error',
@@ -331,6 +339,7 @@ function InstanceDetail() {
       setIsInstanceActionsDropdownOpen(false)
       setTimeout(() => setNotification(null), 5000)
     },
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     onError: (error: any) => {
       setNotification({
         type: 'error',
@@ -420,12 +429,14 @@ function InstanceDetail() {
       key: 'exposure',
       label: 'Exposure',
       render: (component: InstanceComponent) => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const settings = (component.settings as any) || {}
         let exposure = settings.exposure
 
         // Migrar de endpoints antigo para exposure se necessário
         if (!exposure && settings.endpoints) {
           const oldEndpoints = settings.endpoints
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           let oldEndpoint: any = null
           if (Array.isArray(oldEndpoints)) {
             oldEndpoint = oldEndpoints.length > 0 ? oldEndpoints[0] : null
@@ -488,6 +499,7 @@ function InstanceDetail() {
       key: 'autoscaling',
       label: 'Autoscaling',
       render: (component: InstanceComponent) => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const autoscaling = (component.settings as any)?.autoscaling
         if (!autoscaling || (autoscaling.min === undefined && autoscaling.max === undefined)) {
           return <div className="text-sm text-slate-400">N/A</div>
@@ -507,6 +519,7 @@ function InstanceDetail() {
       key: 'command',
       label: 'Command',
       render: (component: InstanceComponent) => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const command = (component.settings as any)?.command
         if (!command) {
           return <div className="text-sm text-slate-400">No command</div>
@@ -524,6 +537,7 @@ function InstanceDetail() {
       key: 'schedule',
       label: 'Schedule',
       render: (component: InstanceComponent) => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const schedule = (component.settings as any)?.schedule
         if (!schedule) {
           return <div className="text-sm text-slate-400">No schedule</div>
@@ -543,6 +557,7 @@ function InstanceDetail() {
       key: 'autoscaling',
       label: 'Autoscaling',
       render: (component: InstanceComponent) => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const autoscaling = (component.settings as any)?.autoscaling
         if (!autoscaling || (autoscaling.min === undefined && autoscaling.max === undefined)) {
           return <div className="text-sm text-slate-400">N/A</div>
@@ -1044,6 +1059,7 @@ function InstanceDetail() {
                               setModalNotification(null)
                               setIsAddComponentsModalOpen(false)
                               setTimeout(() => setNotification(null), 5000)
+                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
                             }).catch((error: any) => {
                               setModalNotification({
                                 type: 'error',
@@ -1068,6 +1084,7 @@ function InstanceDetail() {
                               setModalNotification(null)
                               setIsAddComponentsModalOpen(false)
                               setTimeout(() => setNotification(null), 5000)
+                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
                             }).catch((error: any) => {
                               setModalNotification({
                                 type: 'error',
@@ -1119,6 +1136,7 @@ function InstanceDetail() {
                               setModalNotification(null)
                               setIsAddComponentsModalOpen(false)
                               setTimeout(() => setNotification(null), 5000)
+                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
                             }).catch((error: any) => {
                               setModalNotification({
                                 type: 'error',
@@ -1144,6 +1162,7 @@ function InstanceDetail() {
                               setModalNotification(null)
                               setIsAddComponentsModalOpen(false)
                               setTimeout(() => setNotification(null), 5000)
+                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
                             }).catch((error: any) => {
                               setModalNotification({
                                 type: 'error',

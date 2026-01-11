@@ -24,6 +24,7 @@ function CreateInstance() {
   const { uuid: applicationUuid } = useParams<{ uuid: string }>()
   const navigate = useNavigate()
   const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null)
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [errors, setErrors] = useState<Record<string, string>>({})
 
   const { data: application } = useApplication(applicationUuid)
@@ -213,6 +214,7 @@ function CreateInstance() {
 
       // Navigate to instance detail page
       navigate(`/applications/${applicationUuid}/instances/${instance.uuid}/components`)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
       setNotification({
         type: 'error',

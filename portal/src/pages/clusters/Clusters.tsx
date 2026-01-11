@@ -35,18 +35,19 @@ function Clusters() {
       setTimeout(() => setNotification(null), 5000)
       createMutation.reset()
     }
-  }, [createMutation.isSuccess, createMutation.data])
+  }, [createMutation.isSuccess, createMutation.data, createMutation])
 
   useEffect(() => {
     if (createMutation.isError) {
       setNotification({
         type: 'error',
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         message: (createMutation.error as any)?.response?.data?.detail || 'Error creating cluster',
       })
       setTimeout(() => setNotification(null), 5000)
       createMutation.reset()
     }
-  }, [createMutation.isError])
+  }, [createMutation.isError, createMutation])
 
   useEffect(() => {
     if (updateMutation.isSuccess && updateMutation.data) {
@@ -57,18 +58,19 @@ function Clusters() {
       setTimeout(() => setNotification(null), 5000)
       updateMutation.reset()
     }
-  }, [updateMutation.isSuccess, updateMutation.data])
+  }, [updateMutation.isSuccess, updateMutation.data, updateMutation])
 
   useEffect(() => {
     if (updateMutation.isError) {
       setNotification({
         type: 'error',
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         message: (updateMutation.error as any)?.response?.data?.detail || 'Error updating cluster',
       })
       setTimeout(() => setNotification(null), 5000)
       updateMutation.reset()
     }
-  }, [updateMutation.isError])
+  }, [updateMutation.isError, updateMutation])
 
   useEffect(() => {
     if (deleteMutation.isSuccess) {
@@ -76,18 +78,19 @@ function Clusters() {
       setTimeout(() => setNotification(null), 5000)
       deleteMutation.reset()
     }
-  }, [deleteMutation.isSuccess])
+  }, [deleteMutation.isSuccess, deleteMutation])
 
   useEffect(() => {
     if (deleteMutation.isError) {
       setNotification({
         type: 'error',
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         message: (deleteMutation.error as any)?.response?.data?.detail || 'Error deleting cluster',
       })
       setTimeout(() => setNotification(null), 5000)
       deleteMutation.reset()
     }
-  }, [deleteMutation.isError])
+  }, [deleteMutation.isError, deleteMutation])
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()

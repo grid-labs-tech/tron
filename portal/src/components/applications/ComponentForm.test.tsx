@@ -4,38 +4,43 @@ import { ComponentForm } from './ComponentForm'
 import type { ComponentFormData } from './types'
 
 // Mock dos sub-formulários
+interface MockFormProps {
+  settings?: Record<string, unknown>
+  onChange?: (settings: Record<string, unknown>) => void
+}
+
 vi.mock('./WebappForm', () => ({
-  WebappForm: ({ settings, onChange }: any) => (
+  WebappForm: ({ settings, onChange }: MockFormProps) => (
     <div data-testid="webapp-form">
       <input
         data-testid="webapp-exposure"
-        value={settings?.exposure?.visibility || ''}
-        onChange={(e) => onChange({ ...settings, exposure: { visibility: e.target.value } })}
+        value={(settings?.exposure as { visibility?: string })?.visibility || ''}
+        onChange={(e) => onChange?.({ ...settings, exposure: { visibility: e.target.value } })}
       />
     </div>
   ),
 }))
 
 vi.mock('./CronForm', () => ({
-  CronForm: ({ settings, onChange }: any) => (
+  CronForm: ({ settings, onChange }: MockFormProps) => (
     <div data-testid="cron-form">
       <input
         data-testid="cron-schedule"
-        value={settings?.schedule || ''}
-        onChange={(e) => onChange({ ...settings, schedule: e.target.value })}
+        value={(settings?.schedule as string) || ''}
+        onChange={(e) => onChange?.({ ...settings, schedule: e.target.value })}
       />
     </div>
   ),
 }))
 
 vi.mock('./WorkerForm', () => ({
-  WorkerForm: ({ settings, onChange }: any) => (
+  WorkerForm: ({ settings, onChange }: MockFormProps) => (
     <div data-testid="worker-form">
       <input
         data-testid="worker-metrics"
-        value={settings?.custom_metrics?.enabled ? 'enabled' : 'disabled'}
+        value={(settings?.custom_metrics as { enabled?: boolean })?.enabled ? 'enabled' : 'disabled'}
         onChange={(e) =>
-          onChange({
+          onChange?.({
             ...settings,
             custom_metrics: { enabled: e.target.value === 'enabled' },
           })

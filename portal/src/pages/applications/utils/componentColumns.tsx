@@ -61,11 +61,13 @@ export const getWebappColumns = () => [
     key: 'exposure',
     label: 'Exposure',
     render: (component: InstanceComponent) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const settings = (component.settings as any) || {}
       let exposure = settings.exposure
 
       if (!exposure && settings.endpoints) {
         const oldEndpoints = settings.endpoints
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         let oldEndpoint: any = null
         if (Array.isArray(oldEndpoints)) {
           oldEndpoint = oldEndpoints.length > 0 ? oldEndpoints[0] : null
@@ -127,6 +129,7 @@ export const getWebappColumns = () => [
     key: 'autoscaling',
     label: 'Autoscaling',
     render: (component: InstanceComponent) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const autoscaling = (component.settings as any)?.autoscaling
       if (!autoscaling || (autoscaling.min === undefined && autoscaling.max === undefined)) {
         return <div className="text-sm text-slate-400">N/A</div>
@@ -145,6 +148,7 @@ export const getCronColumns = () => [
     key: 'command',
     label: 'Command',
     render: (component: InstanceComponent) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const command = (component.settings as any)?.command
       if (!command) {
         return <div className="text-sm text-slate-400">No command</div>
@@ -161,6 +165,7 @@ export const getCronColumns = () => [
     key: 'schedule',
     label: 'Schedule',
     render: (component: InstanceComponent) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const schedule = (component.settings as any)?.schedule
       if (!schedule) {
         return <div className="text-sm text-slate-400">No schedule</div>
@@ -179,6 +184,7 @@ export const getWorkerColumns = () => [
     key: 'autoscaling',
     label: 'Autoscaling',
     render: (component: InstanceComponent) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const autoscaling = (component.settings as any)?.autoscaling
       if (!autoscaling || (autoscaling.min === undefined && autoscaling.max === undefined)) {
         return <div className="text-sm text-slate-400">N/A</div>

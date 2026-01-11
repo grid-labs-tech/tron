@@ -117,18 +117,19 @@ function Templates() {
       setTimeout(() => setNotification(null), 5000)
       createMutation.reset()
     }
-  }, [createMutation.isSuccess])
+  }, [createMutation.isSuccess, createMutation])
 
   useEffect(() => {
     if (createMutation.isError) {
       setNotification({
         type: 'error',
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         message: (createMutation.error as any)?.response?.data?.detail || 'Error creating template',
       })
       setTimeout(() => setNotification(null), 5000)
       createMutation.reset()
     }
-  }, [createMutation.isError])
+  }, [createMutation.isError, createMutation])
 
   useEffect(() => {
     if (updateMutation.isSuccess) {
@@ -140,18 +141,19 @@ function Templates() {
       setTimeout(() => setNotification(null), 5000)
       updateMutation.reset()
     }
-  }, [updateMutation.isSuccess])
+  }, [updateMutation.isSuccess, updateMutation])
 
   useEffect(() => {
     if (updateMutation.isError) {
       setNotification({
         type: 'error',
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         message: (updateMutation.error as any)?.response?.data?.detail || 'Error updating template',
       })
       setTimeout(() => setNotification(null), 5000)
       updateMutation.reset()
     }
-  }, [updateMutation.isError])
+  }, [updateMutation.isError, updateMutation])
 
   useEffect(() => {
     if (deleteMutation.isSuccess) {
@@ -160,18 +162,19 @@ function Templates() {
       setTimeout(() => setNotification(null), 5000)
       deleteMutation.reset()
     }
-  }, [deleteMutation.isSuccess])
+  }, [deleteMutation.isSuccess, deleteMutation])
 
   useEffect(() => {
     if (deleteMutation.isError) {
       setNotification({
         type: 'error',
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         message: (deleteMutation.error as any)?.response?.data?.detail || 'Error deleting template',
       })
       setTimeout(() => setNotification(null), 5000)
       deleteMutation.reset()
     }
-  }, [deleteMutation.isError])
+  }, [deleteMutation.isError, deleteMutation])
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -236,6 +239,7 @@ function Templates() {
       })
       setTimeout(() => setNotification(null), 5000)
     },
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     onError: (error: any) => {
       setNotification({
         type: 'error',
@@ -260,6 +264,7 @@ function Templates() {
       })
       setTimeout(() => setNotification(null), 5000)
     },
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     onError: (error: any) => {
       setNotification({
         type: 'error',
@@ -275,6 +280,7 @@ function Templates() {
       setNotification({ type: 'success', message: 'Template configuration deleted successfully' })
       setTimeout(() => setNotification(null), 5000)
     },
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     onError: (error: any) => {
       setNotification({
         type: 'error',
@@ -327,6 +333,7 @@ function Templates() {
     setTimeout(() => setCopiedPath(null), 2000)
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const renderVariablesTree = (obj: any, prefix = '', level = 0) => {
     return Object.entries(obj).map(([key, value]) => {
       const fullPath = prefix ? `${prefix}.${key}` : key

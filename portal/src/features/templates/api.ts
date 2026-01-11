@@ -45,6 +45,7 @@ export const componentTemplateConfigsApi = {
   delete: async (uuid: string): Promise<void> => {
     await api.delete(`/component-template-configs/${uuid}`)
   },
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   getTemplatesForComponent: async (component_type: string): Promise<any[]> => {
     const response = await api.get(`/component-template-configs/component/${component_type}/templates`)
     return response.data

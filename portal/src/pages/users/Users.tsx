@@ -34,18 +34,19 @@ function Users() {
       setTimeout(() => setNotification(null), 5000)
       createMutation.reset()
     }
-  }, [createMutation.isSuccess])
+  }, [createMutation.isSuccess, createMutation])
 
   useEffect(() => {
     if (createMutation.isError) {
       setNotification({
         type: 'error',
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         message: (createMutation.error as any)?.response?.data?.detail || 'Error creating user',
       })
       setTimeout(() => setNotification(null), 5000)
       createMutation.reset()
     }
-  }, [createMutation.isError])
+  }, [createMutation.isError, createMutation])
 
   useEffect(() => {
     if (updateMutation.isSuccess) {
@@ -56,18 +57,19 @@ function Users() {
       setTimeout(() => setNotification(null), 5000)
       updateMutation.reset()
     }
-  }, [updateMutation.isSuccess])
+  }, [updateMutation.isSuccess, updateMutation])
 
   useEffect(() => {
     if (updateMutation.isError) {
       setNotification({
         type: 'error',
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         message: (updateMutation.error as any)?.response?.data?.detail || 'Error updating user',
       })
       setTimeout(() => setNotification(null), 5000)
       updateMutation.reset()
     }
-  }, [updateMutation.isError])
+  }, [updateMutation.isError, updateMutation])
 
   useEffect(() => {
     if (deleteMutation.isSuccess) {
@@ -75,18 +77,19 @@ function Users() {
       setTimeout(() => setNotification(null), 5000)
       deleteMutation.reset()
     }
-  }, [deleteMutation.isSuccess])
+  }, [deleteMutation.isSuccess, deleteMutation])
 
   useEffect(() => {
     if (deleteMutation.isError) {
       setNotification({
         type: 'error',
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         message: (deleteMutation.error as any)?.response?.data?.detail || 'Error deleting user',
       })
       setTimeout(() => setNotification(null), 5000)
       deleteMutation.reset()
     }
-  }, [deleteMutation.isError])
+  }, [deleteMutation.isError, deleteMutation])
 
   const toggleActiveMutation = useUpdateUser()
 
@@ -99,18 +102,19 @@ function Users() {
       setTimeout(() => setNotification(null), 5000)
       toggleActiveMutation.reset()
     }
-  }, [toggleActiveMutation.isSuccess])
+  }, [toggleActiveMutation.isSuccess, toggleActiveMutation])
 
   useEffect(() => {
     if (toggleActiveMutation.isError) {
       setNotification({
         type: 'error',
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         message: (toggleActiveMutation.error as any)?.response?.data?.detail || 'Error changing user status',
       })
       setTimeout(() => setNotification(null), 5000)
       toggleActiveMutation.reset()
     }
-  }, [toggleActiveMutation.isError])
+  }, [toggleActiveMutation.isError, toggleActiveMutation])
 
   const handleToggleActive = (user: User) => {
     const action = user.is_active ? 'deactivate' : 'activate'
@@ -164,6 +168,7 @@ function Users() {
 
     if (editingUser) {
       // Atualizar usuário
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const updateData: any = {
         email: formData.email,
         full_name: formData.full_name || null,

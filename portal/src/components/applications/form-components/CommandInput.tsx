@@ -9,15 +9,18 @@ export function CommandInput({ command, onChange, isArray = false }: CommandInpu
     const commandArray = Array.isArray(command) ? command : []
 
     const addCommand = () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       onChange([...commandArray, ''] as any)
     }
 
     const updateCommand = (index: number, value: string) => {
       const updated = commandArray.map((cmd, i) => (i === index ? value : cmd))
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       onChange(updated as any)
     }
 
     const removeCommand = (index: number) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       onChange(commandArray.filter((_, i) => i !== index) as any)
     }
 

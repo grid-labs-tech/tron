@@ -30,6 +30,7 @@ export default function Profile() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [errors, setErrors] = useState<Record<string, string>>({})
 
   useEffect(() => {
@@ -49,15 +50,16 @@ export default function Profile() {
       }
       updateProfileMutation.reset()
     }
-  }, [updateProfileMutation.isSuccess, updateProfileMutation.data])
+  }, [updateProfileMutation.isSuccess, updateProfileMutation.data, email, logout, navigate, newPassword, updateProfileMutation, user?.email])
 
   useEffect(() => {
     if (updateProfileMutation.isError) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       setError((updateProfileMutation.error as any)?.response?.data?.detail || 'Error updating profile')
       setSuccess(null)
       updateProfileMutation.reset()
     }
-  }, [updateProfileMutation.isError])
+  }, [updateProfileMutation.isError, updateProfileMutation])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()

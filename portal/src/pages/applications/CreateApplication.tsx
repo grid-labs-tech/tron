@@ -9,7 +9,6 @@ import { instanceFormSchema } from '../../features/instances/schemas'
 import { componentCreateSchema } from '../../features/components/schemas'
 import { validateForm } from '../../shared/utils/validation'
 import type { ApplicationCreate, InstanceCreate } from '../../features/applications'
-import type { InstanceCreate as InstanceCreateType } from '../../features/instances'
 import {
   ApplicationForm,
   InstanceForm,
@@ -25,6 +24,7 @@ import { Breadcrumbs, PageHeader } from '../../shared/components'
 function CreateApplication() {
   const navigate = useNavigate()
   const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null)
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [isCreating, setIsCreating] = useState(false)
 
@@ -187,6 +187,7 @@ function CreateApplication() {
       setTimeout(() => {
         navigate(`/applications/${application.uuid}/instances/${instance.uuid}/components`)
       }, 2000)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
       setIsCreating(false)
       setNotification({

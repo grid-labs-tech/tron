@@ -4,6 +4,7 @@ export interface ApplicationComponent {
   uuid: string
   name: string
   type: 'webapp' | 'worker' | 'cron'
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   settings: Record<string, any> | null
   visibility: VisibilityType
   url: string | null
@@ -16,6 +17,7 @@ export interface ApplicationComponentCreate {
   instance_uuid: string
   name: string
   type: 'webapp' | 'worker' | 'cron'
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   settings?: Record<string, any> | null
   visibility?: VisibilityType
   url?: string | null

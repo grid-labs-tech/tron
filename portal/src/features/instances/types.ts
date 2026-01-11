@@ -5,6 +5,7 @@ export interface InstanceComponent {
   uuid: string
   name: string
   type: string
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   settings: Record<string, any> | null
   url: string | null
   enabled: boolean

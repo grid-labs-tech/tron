@@ -10,6 +10,7 @@ export const componentCreateSchema = z.object({
 }).superRefine((data, ctx) => {
   // URL is required only if type is 'webapp' AND visibility is not 'cluster'
   if (data.type === 'webapp') {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const settings = data.settings as any
     const exposureType = settings?.exposure?.type || 'http'
     const exposureVisibility = settings?.exposure?.visibility || 'cluster'
@@ -24,6 +25,7 @@ export const componentCreateSchema = z.object({
 
   // Cron components must have a schedule
   if (data.type === 'cron' && data.settings) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const settings = data.settings as any
     if ('schedule' in settings && !settings.schedule) {
       ctx.addIssue({

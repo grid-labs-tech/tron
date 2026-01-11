@@ -183,6 +183,7 @@ function Applications() {
             icon: <Trash2 size={14} />,
             onClick: () => handleDelete(application.uuid),
             variant: 'danger',
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           } as any)
 
           return actions

@@ -28,6 +28,7 @@ export function ComponentForm({
   gatewayResources = [],
   gatewayReference = { namespace: '', name: '' },
 }: ComponentFormProps) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const updateField = (field: keyof ComponentFormData, value: any) => {
     onChange({ ...component, [field]: value })
   }

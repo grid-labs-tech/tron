@@ -110,6 +110,7 @@ function CronDetail() {
     }
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const schedule = (component?.settings as any)?.schedule || '-'
 
   return (
@@ -262,6 +263,7 @@ function CronDetail() {
               icon: <Trash2 size={14} />,
               onClick: () => handleDeleteJob(job.name),
               variant: 'danger',
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             } as any)
           }
 

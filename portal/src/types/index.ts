@@ -97,10 +97,13 @@ export interface WebappDeploy {
   memory: number
   cpu_scaling_threshold: number
   memory_scaling_threshold: number
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   custom_metrics: Record<string, any>
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   endpoints: Record<string, any>
   envs: Array<{ key: string; value: string }> | null
   command: string | null
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   healthcheck: Record<string, any>
   created_at: string
   updated_at: string
@@ -116,10 +119,13 @@ export interface WebappDeployCreate {
   memory: number
   cpu_scaling_threshold: number
   memory_scaling_threshold: number
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   custom_metrics: Record<string, any>
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   endpoints: Record<string, any>
   envs: Array<{ key: string; value: string }> | null
   command: string | null
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   healthcheck: Record<string, any>
 }
 
@@ -176,6 +182,7 @@ export interface ApplicationComponent {
   uuid: string
   name: string
   type: 'webapp' | 'worker' | 'cron'
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   settings: Record<string, any> | null
   visibility: VisibilityType
   url: string | null
@@ -188,6 +195,7 @@ export interface ApplicationComponentCreate {
   instance_uuid: string
   name: string
   type: 'webapp' | 'worker' | 'cron'
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   settings?: Record<string, any> | null
   visibility?: VisibilityType
   url?: string | null
@@ -198,6 +206,7 @@ export interface InstanceComponent {
   uuid: string
   name: string
   type: string
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   settings: Record<string, any> | null
   url: string | null
   enabled: boolean

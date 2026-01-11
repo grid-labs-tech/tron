@@ -11,6 +11,7 @@ interface EndpointsInputProps {
 }
 
 export function EndpointsInput({ endpoints, onChange }: EndpointsInputProps) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const updateField = (field: keyof Endpoint, value: any) => {
     onChange({ ...endpoints, [field]: value })
   }

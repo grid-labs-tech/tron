@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { X, Trash2, Plus } from 'lucide-react'
-import { useEnvironments, useCreateEnvironment, useUpdateEnvironment, useDeleteEnvironment } from '../../features/environments'
+import { useEnvironments, useCreateEnvironment, useDeleteEnvironment } from '../../features/environments'
 import type { Environment, EnvironmentCreate } from '../../features/environments'
 import { DataTable, Breadcrumbs, PageHeader } from '../../shared/components'
 
@@ -24,18 +24,19 @@ function Environments() {
       setTimeout(() => setNotification(null), 5000)
       createMutation.reset()
     }
-  }, [createMutation.isSuccess, createMutation.data])
+  }, [createMutation.isSuccess, createMutation.data, createMutation])
 
   useEffect(() => {
     if (createMutation.isError) {
       setNotification({
         type: 'error',
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         message: (createMutation.error as any)?.response?.data?.detail || 'Error creating environment',
       })
       setTimeout(() => setNotification(null), 5000)
       createMutation.reset()
     }
-  }, [createMutation.isError])
+  }, [createMutation.isError, createMutation])
 
   useEffect(() => {
     if (deleteMutation.isSuccess) {
@@ -43,18 +44,19 @@ function Environments() {
       setTimeout(() => setNotification(null), 5000)
       deleteMutation.reset()
     }
-  }, [deleteMutation.isSuccess])
+  }, [deleteMutation.isSuccess, deleteMutation])
 
   useEffect(() => {
     if (deleteMutation.isError) {
       setNotification({
         type: 'error',
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         message: (deleteMutation.error as any)?.response?.data?.detail || 'Error deleting environment',
       })
       setTimeout(() => setNotification(null), 5000)
       deleteMutation.reset()
     }
-  }, [deleteMutation.isError])
+  }, [deleteMutation.isError, deleteMutation])
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()

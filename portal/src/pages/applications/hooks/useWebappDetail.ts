@@ -47,7 +47,7 @@ export const useWebappDetail = (componentUuid: string | undefined, refreshInterv
       }, 100)
       execCommandMutation.reset()
     }
-  }, [execCommandMutation.isSuccess, execCommandMutation.data])
+  }, [execCommandMutation.isSuccess, execCommandMutation.data, execCommandMutation])
 
   const handleViewLogs = (podName: string) => {
     setSelectedPod(podName)

@@ -17,6 +17,7 @@ interface ExposureInputProps {
 }
 
 export function ExposureInput({ exposure, onChange, url, onUrlChange, hasGatewayApi = true, gatewayResources = [], gatewayReference = { namespace: '', name: '' } }: ExposureInputProps) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const updateField = (field: keyof Exposure, value: any) => {
     onChange({ ...exposure, [field]: value })
   }

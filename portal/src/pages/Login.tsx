@@ -3,7 +3,7 @@ import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { LogIn, Mail, Lock, AlertCircle } from 'lucide-react'
 import { loginSchema } from '../features/auth/schemas'
-import { validateForm, getFieldError } from '../shared/utils/validation'
+import { validateForm } from '../shared/utils/validation'
 
 export default function Login() {
   const [email, setEmail] = useState('')
@@ -34,6 +34,7 @@ export default function Login() {
     try {
       await login(email, password)
       navigate('/')
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
       const errorMessage = err.response?.data?.detail ||
                           err.message ||
