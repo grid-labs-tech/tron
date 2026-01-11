@@ -44,6 +44,7 @@ jobs:
       - name: Run tests with coverage
         working-directory: ./api
         env:
+          PYTHONPATH: ${{ github.workspace }}/api
           DB_HOST: localhost
           DB_USER: postgres
           DB_PASSWORD: postgres
