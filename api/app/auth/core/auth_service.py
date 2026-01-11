@@ -12,7 +12,7 @@ from app.users.infra.user_repository import UserRepository
 from app.auth.infra.token_repository import TokenRepository
 from app.auth.infra.token_model import Token
 
-# Configurações
+# Configuration
 SECRET_KEY = os.getenv("SECRET_KEY", "your-secret-key-change-in-production-minimum-32-characters")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "30"))

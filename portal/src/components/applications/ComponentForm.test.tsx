@@ -3,7 +3,7 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { ComponentForm } from './ComponentForm'
 import type { ComponentFormData } from './types'
 
-// Mock dos sub-formulários
+// Mock sub-forms
 interface MockFormProps {
   settings?: Record<string, unknown>
   onChange?: (settings: Record<string, unknown>) => void

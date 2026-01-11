@@ -23,7 +23,7 @@ class Token(Base):
     role = Column(String, default=TokenRole.USER.value, nullable=False)
     is_active = Column(Boolean, default=True, nullable=False)
 
-    # Associação com usuário (opcional - pode ser token criado por um usuário)
+    # Association with user (optional - can be token created by a user)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
     user = relationship("User", backref="tokens")
 

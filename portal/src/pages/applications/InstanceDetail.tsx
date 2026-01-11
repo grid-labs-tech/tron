@@ -26,13 +26,13 @@ function InstanceDetail() {
     enabled: !!applicationUuid,
   })
 
-  // Buscar clusters para verificar se algum tem gateway_api disponível
+  // Fetch clusters to check if any has gateway_api available
   const { data: clusters } = useQuery({
     queryKey: ['clusters'],
     queryFn: () => clustersApi.list(),
   })
 
-  // Verificar se algum cluster do environment do instance tem gateway_api disponível
+  // Check if any cluster in the instance's environment has gateway_api available
   const hasGatewayApi = useMemo(() => {
     if (!instance || !clusters || !instance.environment) return false
     const environmentClusters = clusters.filter(
@@ -41,13 +41,13 @@ function InstanceDetail() {
     return environmentClusters.some((cluster) => cluster.gateway?.api?.enabled === true)
   }, [instance, clusters])
 
-  // Obter recursos do Gateway API disponíveis nos clusters do environment
+  // Get Gateway API resources available in environment clusters
   const gatewayResources = useMemo(() => {
     if (!instance || !clusters || !instance.environment) return []
     const environmentClusters = clusters.filter(
       (cluster) => cluster.environment?.uuid === instance.environment.uuid
     )
-    // Pegar recursos de todos os clusters que têm Gateway API habilitado
+    // Get resources from all clusters that have Gateway API enabled
     const allResources = new Set<string>()
     environmentClusters.forEach((cluster) => {
       if (cluster.gateway?.api?.enabled && cluster.gateway.api.resources) {
@@ -57,13 +57,13 @@ function InstanceDetail() {
     return Array.from(allResources)
   }, [instance, clusters])
 
-  // Obter referência do Gateway (namespace e name) dos clusters do environment
+  // Get Gateway reference (namespace and name) from environment clusters
   const gatewayReference = useMemo(() => {
     if (!instance || !clusters || !instance.environment) return { namespace: '', name: '' }
     const environmentClusters = clusters.filter(
       (cluster) => cluster.environment?.uuid === instance.environment.uuid
     )
-    // Pegar o primeiro gateway reference encontrado que tenha namespace e name preenchidos
+    // Get the first gateway reference found that has namespace and name filled
     for (const cluster of environmentClusters) {
       if (cluster.gateway?.reference) {
         const namespace = cluster.gateway.reference.namespace || ''
@@ -134,12 +134,12 @@ function InstanceDetail() {
     if (componentType === 'webapp') {
       const defaultSettings = getDefaultWebappSettings()
       const existingSettings = (componentData.settings as ComponentFormData['settings']) || defaultSettings
-      // Migrar endpoints para exposure se necessário
+      // Migrate endpoints to exposure if necessary
       let exposure = defaultSettings.exposure
       if (existingSettings && 'exposure' in existingSettings) {
         exposure = (existingSettings as WebappSettings).exposure
       } else if (existingSettings && 'endpoints' in existingSettings) {
-        // Migrar de endpoints antigo para exposure
+        // Migrate from old endpoints to exposure
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const oldEndpoints = existingSettings.endpoints as any
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -157,7 +157,7 @@ function InstanceDetail() {
           }
         }
       }
-      // Garantir que autoscaling existe, mesclando com valores padrão se necessário
+      // Ensure autoscaling exists, merging with default values if necessary
       const settings = {
         ...defaultSettings,
         ...existingSettings,
@@ -166,7 +166,7 @@ function InstanceDetail() {
           ? existingSettings.autoscaling
           : defaultSettings.autoscaling,
       }
-      // Obter visibility de settings.exposure.visibility ou usar default
+      // Get visibility from settings.exposure.visibility or use default
       let visibility: 'public' | 'private' | 'cluster' = 'cluster'
       if (settings && 'exposure' in settings && settings.exposure && 'visibility' in settings.exposure) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -193,7 +193,7 @@ function InstanceDetail() {
     } else {
       const defaultSettings = getDefaultWorkerSettings()
       const existingSettings = (componentData.settings as ComponentFormData['settings']) || defaultSettings
-      // Garantir que autoscaling existe, mesclando com valores padrão se necessário
+      // Ensure autoscaling exists, merging with default values if necessary
       const settings = {
         ...defaultSettings,
         ...existingSettings,
@@ -423,7 +423,7 @@ function InstanceDetail() {
     },
   ], [])
 
-  // Colunas específicas para webapp
+  // Columns specific to webapp
   const webappColumns = useMemo(() => [
     {
       key: 'exposure',
@@ -433,7 +433,7 @@ function InstanceDetail() {
         const settings = (component.settings as any) || {}
         let exposure = settings.exposure
 
-        // Migrar de endpoints antigo para exposure se necessário
+        // Migrate from old endpoints to exposure if necessary
         if (!exposure && settings.endpoints) {
           const oldEndpoints = settings.endpoints
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -469,7 +469,7 @@ function InstanceDetail() {
       key: 'visibility',
       label: 'Visibility',
       render: (component: InstanceComponent) => {
-        // Obter visibility de settings.exposure.visibility
+        // Get visibility from settings.exposure.visibility
         let visibility = 'cluster'
         const settings = component.settings || {}
         if (settings.exposure && settings.exposure.visibility) {
@@ -513,7 +513,7 @@ function InstanceDetail() {
     },
   ], [])
 
-  // Colunas específicas para cron
+  // Columns specific to cron
   const cronColumns = useMemo(() => [
     {
       key: 'command',
@@ -524,7 +524,7 @@ function InstanceDetail() {
         if (!command) {
           return <div className="text-sm text-slate-400">No command</div>
         }
-        // Se for array, juntar com espaços; se for string, exibir diretamente
+        // If array, join with spaces; if string, display directly
         const commandStr = Array.isArray(command) ? command.join(' ') : command
         return (
           <div className="text-sm text-slate-600 font-mono text-xs">
@@ -551,7 +551,7 @@ function InstanceDetail() {
     },
   ], [])
 
-  // Colunas específicas para worker
+  // Columns specific to worker
   const workerColumns = useMemo(() => [
     {
       key: 'autoscaling',
@@ -571,7 +571,7 @@ function InstanceDetail() {
     },
   ], [])
 
-  // Função para obter colunas baseado no tipo
+  // Function to get columns based on type
   const getColumnsForType = (componentType: 'webapp' | 'worker' | 'cron') => {
     if (componentType === 'webapp') {
       return [
@@ -1095,7 +1095,7 @@ function InstanceDetail() {
                               }, 100)
                             })
                           } else {
-                            // exposure.visibility já está em settings.exposure.visibility
+                            // exposure.visibility is already in settings.exposure.visibility
                             const settings = component.settings as WebappSettings
                             const finalSettings = {
                               ...settings,
@@ -1108,11 +1108,11 @@ function InstanceDetail() {
                             const componentData: Partial<ApplicationComponentCreate> = {
                               type: 'webapp',
                               settings: finalSettings,
-                              // visibility não é mais enviado no payload do webapp, apenas exposure.visibility
+                              // visibility is no longer sent in webapp payload, only exposure.visibility
                               enabled: component.enabled,
                             }
-                            // Incluir URL apenas se exposure.type for 'http' AND visibility não for 'cluster'
-                            // Se não for HTTP ou visibility for cluster, não incluir o campo url no payload (não enviar null)
+                            // Include URL only if exposure.type is 'http' AND visibility is not 'cluster'
+                            // If not HTTP or visibility is cluster, do not include url field in payload (do not send null)
                             if (exposureType === 'http' && exposureVisibility !== 'cluster') {
                               componentData.url = component.url || null
                             }
@@ -1173,7 +1173,7 @@ function InstanceDetail() {
                               }, 100)
                             })
                           } else {
-                            // exposure.visibility já está em settings.exposure.visibility
+                            // exposure.visibility is already in settings.exposure.visibility
                             const settings = component.settings as WebappSettings
                             const finalSettings = {
                               ...settings,
@@ -1188,11 +1188,11 @@ function InstanceDetail() {
                               name: component.name,
                               type: 'webapp',
                               settings: finalSettings,
-                              // visibility não é mais enviado no payload do webapp, apenas exposure.visibility
+                              // visibility is no longer sent in webapp payload, only exposure.visibility
                               enabled: component.enabled,
                             }
-                            // Incluir URL apenas se exposure.type for 'http' AND visibility não for 'cluster' e URL não for null
-                            // Se não for HTTP ou visibility for cluster, não incluir o campo url no payload
+                            // Include URL only if exposure.type is 'http' AND visibility is not 'cluster' and URL is not null
+                            // If not HTTP or visibility is cluster, do not include url field in payload
                             if (exposureType === 'http' && exposureVisibility !== 'cluster' && component.url) {
                               componentData.url = component.url
                             }

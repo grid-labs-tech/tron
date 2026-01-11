@@ -22,28 +22,28 @@ export function ExposureInput({ exposure, onChange, url, onUrlChange, hasGateway
     onChange({ ...exposure, [field]: value })
   }
 
-  // Limpar URL quando o tipo mudar para TCP ou UDP, ou quando visibility mudar para cluster
+  // Clear URL when type changes to TCP or UDP, or when visibility changes to cluster
   useEffect(() => {
     if ((exposure.type !== 'http' || exposure.visibility === 'cluster') && url && onUrlChange) {
       onUrlChange(null)
     }
   }, [exposure.type, exposure.visibility]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Mapeamento de exposure.type para recursos do Gateway API
+  // Mapping of exposure.type to Gateway API resources
   const typeToResource: Record<'http' | 'tcp' | 'udp', string> = {
     http: 'HTTPRoute',
     tcp: 'TCPRoute',
     udp: 'UDPRoute',
   }
 
-  // Filtrar tipos disponíveis baseado na visibilidade e recursos do Gateway API
+  // Filter available types based on visibility and Gateway API resources
   const getAvailableTypes = (): Array<'http' | 'tcp' | 'udp'> => {
-    // Se visibility for cluster, todos os tipos estão disponíveis
+    // If visibility is cluster, all types are available
     if (exposure.visibility === 'cluster') {
       return ['http', 'tcp', 'udp']
     }
 
-    // Se visibility for public ou private, apenas tipos com recursos disponíveis no Gateway API
+    // If visibility is public or private, only types with available resources in Gateway API
     if (exposure.visibility === 'public' || exposure.visibility === 'private') {
       return (['http', 'tcp', 'udp'] as const).filter((type) => {
         const requiredResource = typeToResource[type]
@@ -56,17 +56,17 @@ export function ExposureInput({ exposure, onChange, url, onUrlChange, hasGateway
 
   const availableTypes = getAvailableTypes()
 
-  // Verificar se o gateway reference está preenchido
+  // Check if gateway reference is filled
   const hasGatewayReference = gatewayReference.namespace && gatewayReference.name
 
-  // Se o tipo atual não estiver disponível, mudar para o primeiro disponível
+  // If current type is not available, change to first available
   useEffect(() => {
     if (!availableTypes.includes(exposure.type) && availableTypes.length > 0) {
       onChange({ ...exposure, type: availableTypes[0] })
     }
   }, [exposure.visibility, gatewayResources.join(',')]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Se visibility for public/private mas não houver gateway reference, forçar para cluster
+  // If visibility is public/private but there's no gateway reference, force to cluster
   useEffect(() => {
     if ((exposure.visibility === 'public' || exposure.visibility === 'private') && !hasGatewayReference) {
       onChange({ ...exposure, visibility: 'cluster' })
@@ -120,7 +120,7 @@ export function ExposureInput({ exposure, onChange, url, onUrlChange, hasGateway
               value={exposure.visibility}
               onChange={(e) => {
                 const newVisibility = e.target.value as 'public' | 'private' | 'cluster'
-                // Se gateway_api não estiver disponível ou não houver gateway reference, forçar cluster
+                // If gateway_api is not available or there's no gateway reference, force cluster
                 if ((!hasGatewayApi || !hasGatewayReference) && (newVisibility === 'public' || newVisibility === 'private')) {
                   updateField('visibility', 'cluster')
                 } else {

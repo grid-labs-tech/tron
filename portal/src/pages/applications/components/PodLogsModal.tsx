@@ -22,7 +22,7 @@ export const PodLogsModal = ({
 }: PodLogsModalProps) => {
   const logsContainerRef = useRef<HTMLPreElement>(null)
 
-  // Scroll automático para o final quando os logs mudarem ou quando o modal abrir
+  // Auto-scroll to end when logs change or when modal opens
   useEffect(() => {
     if (isOpen && logsContainerRef.current) {
       setTimeout(() => {
@@ -33,7 +33,7 @@ export const PodLogsModal = ({
     }
   }, [logs, isOpen, isLiveTail])
 
-  // Scroll automático quando livetail estiver ativo e novos logs chegarem
+  // Auto-scroll when livetail is active and new logs arrive
   useEffect(() => {
     if (isLiveTail && logsContainerRef.current && logs) {
       logsContainerRef.current.scrollTop = logsContainerRef.current.scrollHeight

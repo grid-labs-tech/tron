@@ -20,7 +20,7 @@ class ComponentTemplateConfig(Base):
     template_id = Column(Integer, ForeignKey("templates.id"), nullable=False)
     template = relationship("Template", back_populates="component_configs")
 
-    render_order = Column(Integer, nullable=False, default=0)  # Ordem de renderização
+    render_order = Column(Integer, nullable=False, default=0)  # Render order
     enabled = Column(String, nullable=False, default="true")  # "true" ou "false" como string para compatibilidade
 
     created_at = Column(DateTime, server_default=func.now(), nullable=False)

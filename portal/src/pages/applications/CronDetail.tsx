@@ -44,7 +44,7 @@ function CronDetail() {
     isLiveTail && isLogsModalOpen ? 2000 : false
   )
 
-  // Scroll automático para o final quando os logs mudarem
+  // Auto-scroll to end when logs change
   useEffect(() => {
     if (isLogsModalOpen && logsContainerRef.current) {
       setTimeout(() => {
@@ -256,7 +256,7 @@ function CronDetail() {
             },
           ]
 
-          // Adicionar ação de delete apenas se o status for Active
+          // Add delete action only if status is Active
           if (job.status === 'Active') {
             actions.push({
               label: 'Delete',

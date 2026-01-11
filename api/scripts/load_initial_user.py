@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 """
-Script para carregar usuário admin inicial
+Script to load initial admin user
 """
 import sys
 import os
 
-# Adicionar o diretório raiz ao path
+# Add root directory to path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
 from sqlalchemy.orm import Session
@@ -15,32 +15,32 @@ import bcrypt
 
 
 def load_initial_user():
-    """Carrega usuário admin inicial se não existir"""
+    """Load initial admin user if it doesn't exist"""
     db: Session = SessionLocal()
 
     try:
-        # Verificar se já existe um usuário admin (usar string diretamente para evitar problema com enum)
+        # Check if admin user already exists (use string directly to avoid enum issues)
         existing_admin = db.query(User).filter(
             User.email == 'admin@example.com'
         ).first()
 
-        # Verificar se é admin (comparar com string)
+        # Check if it's admin (compare with string)
         if existing_admin and existing_admin.role == UserRole.ADMIN.value:
-            print("✓ Usuário admin já existe. Pulando criação.")
+            print("✓ Admin user already exists. Skipping creation.")
             return
 
-        # Criar hash da senha usando bcrypt diretamente
-        # (evita problemas de compatibilidade com passlib)
+        # Create password hash using bcrypt directly
+        # (avoids compatibility issues with passlib)
         password = 'admin'
         salt = bcrypt.gensalt()
         hashed_password = bcrypt.hashpw(password.encode('utf-8'), salt).decode('utf-8')
 
-        # Criar usuário admin
+        # Create admin user
         admin_user = User(
             email='admin@example.com',
             hashed_password=hashed_password,
             full_name='Administrator',
-            role=UserRole.ADMIN.value,  # Agora é String, funciona normalmente
+            role=UserRole.ADMIN.value,  # Now it's String, works normally
             is_active=True
         )
 
@@ -48,17 +48,17 @@ def load_initial_user():
         db.commit()
         db.refresh(admin_user)
 
-        # Buscar o usuário criado para exibir o UUID
+        # Fetch the created user to display the UUID
         admin_user = db.query(User).filter(User.email == 'admin@example.com').first()
 
-        print("✓ Usuário admin criado com sucesso!")
+        print("✓ Admin user created successfully!")
         print(f"  Email: admin@example.com")
-        print(f"  Senha: admin")
+        print(f"  Password: admin")
         print(f"  UUID: {admin_user.uuid}")
 
     except Exception as e:
         db.rollback()
-        print(f"✗ Erro ao criar usuário admin: {e}")
+        print(f"✗ Error creating admin user: {e}")
         sys.exit(1)
     finally:
         db.close()

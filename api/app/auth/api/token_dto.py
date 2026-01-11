@@ -65,7 +65,7 @@ class TokenResponse(TokenBase):
 class TokenCreateResponse(BaseModel):
     uuid: str
     name: str
-    token: str  # Token gerado (só aparece na criação)
+    token: str  # Generated token (only appears on creation)
     role: str
     expires_at: Optional[str] = None
     created_at: str

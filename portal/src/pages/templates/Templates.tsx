@@ -13,7 +13,7 @@ import type {
 } from '../../features/templates'
 import { DataTable, Breadcrumbs, PageHeader } from '../../shared/components'
 
-// Variáveis disponíveis para templates webapp
+// Available variables for webapp templates
 const WEBAPP_VARIABLES = {
   application: {
     component_name: 'string',
@@ -61,8 +61,8 @@ const WEBAPP_VARIABLES = {
     },
   },
   environment: {
-    // Chaves dinâmicas baseadas nas settings do environment
-    // Exemplo: { "key1": "value1", "key2": "value2", ... }
+    // Dynamic keys based on environment settings
+    // Example: { "key1": "value1", "key2": "value2", ... }
     '[key: string]': 'string',
   },
   cluster: {

@@ -20,17 +20,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(true)
   const queryClient = useQueryClient()
 
-  // Verificar token ao carregar
+  // Check token on load
   useEffect(() => {
     const token = localStorage.getItem('access_token')
     if (token) {
-      // Buscar dados do usuário
+      // Fetch user data
       authApi.getMe()
         .then((userData) => {
           setUser(userData)
         })
         .catch(() => {
-          // Token inválido, limpar
+          // Invalid token, clear
           localStorage.removeItem('access_token')
           localStorage.removeItem('refresh_token')
         })
@@ -47,14 +47,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     localStorage.setItem('access_token', response.access_token)
     localStorage.setItem('refresh_token', response.refresh_token)
 
-    // Buscar dados do usuário e atualizar
+    // Fetch user data and update
     const userData = await authApi.getMe()
     setUser(userData)
   }, [])
 
   const register = useCallback(async (data: UserCreate) => {
     await authApi.register(data)
-    // Após registro, fazer login automaticamente
+    // After registration, automatically log in
     await login(data.email, data.password)
   }, [login])
 

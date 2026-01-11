@@ -107,7 +107,7 @@ function Clusters() {
     }
 
     if (editingCluster) {
-      // Sempre enviar environment_uuid e token na atualização
+      // Always send environment_uuid and token in update
       const updateData: ClusterCreate = {
         name: formData.name,
         api_address: formData.api_address,
@@ -126,7 +126,7 @@ function Clusters() {
     setFormData({
       name: cluster.name,
       api_address: cluster.api_address,
-      token: '', // Token não é retornado pela API por segurança
+      token: '', // Token is not returned by API for security
       environment_uuid: environmentUuid,
     })
     setIsOpen(true)

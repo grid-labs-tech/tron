@@ -52,7 +52,7 @@ function DataTable<T>({
   const filteredData = useMemo(() => {
     let result = data
 
-    // Aplicar filtro de busca
+    // Apply search filter
     if (searchTerm.trim()) {
       const searchLower = searchTerm.toLowerCase().trim()
       const searchableColumns = columns.filter((col) => col.searchable !== false)
@@ -73,7 +73,7 @@ function DataTable<T>({
       })
     }
 
-    // Aplicar ordenação
+    // Apply sorting
     if (sortColumn) {
       const column = columns.find((col) => col.key === sortColumn)
       if (column && column.sortable === true) {
@@ -81,16 +81,16 @@ function DataTable<T>({
           const aValue = a[sortColumn as keyof T]
           const bValue = b[sortColumn as keyof T]
 
-          // Tratar valores nulos/undefined
+          // Handle null/undefined values
           if (aValue === null || aValue === undefined) return 1
           if (bValue === null || bValue === undefined) return -1
 
-          // Comparação numérica
+          // Numeric comparison
           if (typeof aValue === 'number' && typeof bValue === 'number') {
             return sortDirection === 'asc' ? aValue - bValue : bValue - aValue
           }
 
-          // Comparação de strings
+          // String comparison
           const aStr = String(aValue).toLowerCase()
           const bStr = String(bValue).toLowerCase()
 
@@ -111,10 +111,10 @@ function DataTable<T>({
     if (!column || column.sortable !== true) return
 
     if (sortColumn === columnKey) {
-      // Alternar direção se já está ordenando por esta coluna
+      // Toggle direction if already sorting by this column
       setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc')
     } else {
-      // Nova coluna, começar com ascendente
+      // New column, start with ascending
       setSortColumn(columnKey)
       setSortDirection('asc')
     }

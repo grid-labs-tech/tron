@@ -14,8 +14,8 @@ class Template(Base):
     name = Column(String, nullable=False, index=True)
     description = Column(String, nullable=True)
     category = Column(String, nullable=False, index=True)  # webapp, cron, worker, etc.
-    content = Column(Text, nullable=False)  # Conteúdo do template Jinja2
-    variables_schema = Column(Text, nullable=True)  # JSON com schema das variáveis disponíveis
+    content = Column(Text, nullable=False)  # Jinja2 template content
+    variables_schema = Column(Text, nullable=True)  # JSON with schema of available variables
 
     created_at = Column(DateTime, server_default=func.now(), nullable=False)
     updated_at = Column(DateTime, server_default=func.now(), server_onupdate=func.now(), nullable=False)

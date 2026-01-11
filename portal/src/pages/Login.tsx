@@ -22,7 +22,7 @@ export default function Login() {
     const validation = validateForm(loginSchema, { email, password })
     if (!validation.success) {
       const validationErrors = validation.errors || {}
-      // Se não houver erros específicos mas a validação falhou, mostrar erro genérico
+      // If there are no specific errors but validation failed, show generic error
       if (Object.keys(validationErrors).length === 0) {
         setError('Please fill in all required fields')
       } else {

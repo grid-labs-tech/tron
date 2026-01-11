@@ -10,9 +10,9 @@ from app.templates.core.component_template_config_service import ComponentTempla
 
 class KubernetesApplicationComponentManager:
     """
-    Gerencia a renderização de templates Kubernetes para componentes de aplicação.
-    Utiliza a configuração de templates (component_template_config) para determinar
-    quais templates devem ser renderizados e em que ordem.
+    Manages the rendering of Kubernetes templates for application components.
+    Uses template configuration (component_template_config) to determine
+    which templates should be rendered and in what order.
     """
 
     @staticmethod
@@ -24,20 +24,20 @@ class KubernetesApplicationComponentManager:
         gateway_reference: Optional[dict] = None
     ):
         """
-        Renderiza templates Kubernetes para um componente de aplicação.
+        Render Kubernetes templates for an application component.
 
         Args:
-            application_component: Dict com informações do componente (name, uuid, settings, etc.)
-            component_type: Tipo do componente (webapp, worker, cron)
-            settings: Dict opcional com configurações do ambiente
-            db: Sessão do banco de dados (obrigatória)
-            gateway_reference: Dict opcional com informações do gateway (namespace, name)
+            application_component: Dict with component information (name, uuid, settings, etc.)
+            component_type: Component type (webapp, worker, cron)
+            settings: Optional dict with environment settings
+            db: Database session (required)
+            gateway_reference: Optional dict with gateway information (namespace, name)
 
         Returns:
-            Lista de dicionários YAML renderizados, ordenados por render_order
+            List of rendered YAML dictionaries, ordered by render_order
 
         Raises:
-            ValueError: Se não houver templates configurados ou erro na renderização
+            ValueError: If no templates are configured or error in rendering
         """
         if db is None:
             raise ValueError("Database session is required")
@@ -45,14 +45,14 @@ class KubernetesApplicationComponentManager:
         if settings is None:
             settings = {}
 
-        # Valores padrão para gateway_reference se não fornecido
+        # Default values for gateway_reference if not provided
         if gateway_reference is None:
             gateway_reference = {
                 "namespace": "",
                 "name": ""
             }
 
-        # Preparar variáveis para os templates
+        # Prepare variables for templates
         variables = {
             "application": application_component,
             "environment": settings,
@@ -63,8 +63,8 @@ class KubernetesApplicationComponentManager:
             }
         }
 
-        # Buscar templates configurados para o tipo de componente
-        # Os templates já vêm ordenados por render_order
+        # Fetch configured templates for component type
+        # Templates already come ordered by render_order
         config_repository = ComponentTemplateConfigRepository(db)
         template_repository = TemplateRepository(db)
         service = ComponentTemplateConfigService(config_repository, template_repository)
@@ -78,13 +78,13 @@ class KubernetesApplicationComponentManager:
 
         combined_payloads = []
 
-        # Renderizar cada template na ordem configurada
+        # Render each template in configured order
         for template in templates:
             try:
                 rendered_yaml = KubernetesApplicationComponentManager.render_template_from_string(
                     template.content, variables
                 )
-                # Filtrar documentos None (quando template não renderiza nada devido a condições)
+                # Filter None documents (when template doesn't render anything due to conditions)
                 if rendered_yaml is not None:
                     combined_payloads.append(rendered_yaml)
             except Exception as e:
@@ -97,18 +97,18 @@ class KubernetesApplicationComponentManager:
     @staticmethod
     def render_template_from_string(template_content: str, variables: dict):
         """
-        Renderiza um template Jinja2 a partir de uma string.
+        Render a Jinja2 template from a string.
 
         Args:
-            template_content: Conteúdo do template Jinja2
-            variables: Dicionário com variáveis para renderização
+            template_content: Jinja2 template content
+            variables: Dictionary with variables for rendering
 
         Returns:
-            Dicionário Python representando o YAML renderizado
+            Python dictionary representing the rendered YAML
 
         Raises:
-            FileNotFoundError: Se houver erro na criação do template
-            ValueError: Se houver erro no parsing do YAML
+            FileNotFoundError: If there's an error creating the template
+            ValueError: If there's an error parsing the YAML
         """
         env = Environment(loader=BaseLoader())
 
@@ -119,16 +119,16 @@ class KubernetesApplicationComponentManager:
 
         rendered_yaml = template.render(variables)
 
-        # Se o template renderizou uma string vazia ou apenas espaços em branco, retornar None
+        # If template rendered an empty string or only whitespace, return None
         if not rendered_yaml or not rendered_yaml.strip():
             return None
 
         try:
-            # Usar safe_load para um único documento YAML
+            # Use safe_load for a single YAML document
             parsed_yaml = yaml.safe_load(rendered_yaml)
             return parsed_yaml
         except yaml.YAMLError as e:
-            # Debug: log erro de parsing para httproute
+            # Debug: log parsing error for httproute
             if 'httproute' in template_content.lower():
                 import logging
                 logger = logging.getLogger(__name__)

@@ -143,7 +143,7 @@ function Users() {
     setEditingUser(user)
     setFormData({
       email: user.email,
-      password: '', // Não preencher senha
+      password: '', // Do not fill password
       full_name: user.full_name || '',
       is_active: user.is_active,
       role: user.role,
@@ -167,7 +167,7 @@ function Users() {
     }
 
     if (editingUser) {
-      // Atualizar usuário
+      // Update user
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const updateData: any = {
         email: formData.email,
@@ -176,14 +176,14 @@ function Users() {
         role: formData.role,
       }
 
-      // Só incluir senha se foi preenchida
+      // Only include password if it was filled
       if (formData.password) {
         updateData.password = formData.password
       }
 
       updateMutation.mutate({ uuid: editingUser.uuid, data: updateData })
     } else {
-      // Criar usuário
+      // Create user
       if (!formData.password) {
         setNotification({ type: 'error', message: 'Password is required for new users' })
         setTimeout(() => setNotification(null), 5000)
@@ -328,7 +328,7 @@ function Users() {
           actions={(user) => {
             const actions = []
 
-            // Não permitir editar/deletar/desativar o próprio usuário
+            // Do not allow editing/deleting/deactivating own user
             if (user.uuid !== currentUser?.uuid) {
               actions.push({
                 label: user.is_active ? 'Deactivate' : 'Activate',

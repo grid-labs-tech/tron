@@ -28,7 +28,7 @@ export function ScheduleInput({ schedule, onChange }: ScheduleInputProps) {
   const [isCustom, setIsCustom] = useState(false)
   const [customValue, setCustomValue] = useState('')
 
-  // Verificar se o schedule atual corresponde a alguma opção pré-definida
+  // Check if current schedule matches any predefined option
   useEffect(() => {
     const matchingOption = SCHEDULE_OPTIONS.find(opt => opt.value === schedule)
     if (matchingOption && matchingOption.value !== 'CUSTOM') {

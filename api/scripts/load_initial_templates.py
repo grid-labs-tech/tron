@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 """
-Script para carregar templates iniciais e configurações de component_template_config.
-Este script deve ser executado após as migrations para popular o banco com dados iniciais.
+Script to load initial templates and component_template_config configurations.
+This script should be executed after migrations to populate the database with initial data.
 """
 
 import os
 import sys
 from pathlib import Path
 
-# Adicionar o diretório raiz ao path para importar os módulos
+# Add root directory to path to import modules
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from sqlalchemy.orm import Session
@@ -20,13 +20,13 @@ from app.templates.infra.component_template_config_model import ComponentTemplat
 
 
 def read_template_file(file_path: Path) -> str:
-    """Lê o conteúdo de um arquivo de template."""
+    """Read the content of a template file."""
     with open(file_path, 'r', encoding='utf-8') as f:
         return f.read()
 
 
 def get_variables_schema() -> str:
-    """Retorna o schema JSON das variáveis disponíveis para os templates."""
+    """Return the JSON schema of variables available for templates."""
     return """{
   "application": {
     "component_name": "string",
@@ -86,7 +86,7 @@ def get_variables_schema() -> str:
 
 
 def load_templates(db: Session):
-    """Carrega os templates iniciais na tabela templates."""
+    """Load initial templates into the templates table."""
     templates_base_dir = Path(__file__).parent.parent / "app" / "k8s" / "templates"
     webapp_dir = templates_base_dir / "webapp"
     cron_dir = templates_base_dir / "cron"
@@ -164,7 +164,7 @@ def load_templates(db: Session):
     created_templates = []
 
     for template_data in templates_data:
-        # Verificar se o template já existe (por nome e categoria)
+        # Check if template already exists (by name and category)
         existing_template = (
             db.query(TemplateModel)
             .filter(
@@ -175,9 +175,9 @@ def load_templates(db: Session):
         )
 
         if existing_template:
-            print(f"Template '{template_data['name']}' já existe, verificando configuração...")
-            # Verificar se já existe component_template_config para este template
-            # A constraint única é por component_type e template_id
+            print(f"Template '{template_data['name']}' already exists, checking configuration...")
+            # Check if component_template_config already exists for this template
+            # The unique constraint is by component_type and template_id
             existing_config = (
                 db.query(ComponentTemplateConfigModel)
                 .filter(
@@ -188,7 +188,7 @@ def load_templates(db: Session):
             )
 
             if not existing_config:
-                # Criar a configuração se não existir
+                # Create configuration if it doesn't exist
                 try:
                     config = ComponentTemplateConfigModel(
                         uuid=uuid4(),
@@ -199,28 +199,28 @@ def load_templates(db: Session):
                     )
                     db.add(config)
                     db.flush()
-                    print(f"  ✓ Configuração criada para template '{template_data['name']}'")
+                    print(f"  ✓ Configuration created for template '{template_data['name']}'")
                 except Exception as e:
-                    print(f"  ⚠ Erro ao criar configuração: {e}")
+                    print(f"  ⚠ Error creating configuration: {e}")
             else:
-                # Atualizar render_order se necessário
+                # Update render_order if necessary
                 if existing_config.render_order != template_data["render_order"]:
                     existing_config.render_order = template_data["render_order"]
-                    print(f"  ✓ Render order atualizado para template '{template_data['name']}'")
+                    print(f"  ✓ Render order updated for template '{template_data['name']}'")
                 else:
-                    print(f"  ✓ Configuração já existe para template '{template_data['name']}'")
+                    print(f"  ✓ Configuration already exists for template '{template_data['name']}'")
 
             created_templates.append(existing_template)
             continue
 
-        # Ler o conteúdo do arquivo
+        # Read file content
         if not template_data["file_path"].exists():
-            print(f"AVISO: Arquivo não encontrado: {template_data['file_path']}")
+            print(f"WARNING: File not found: {template_data['file_path']}")
             continue
 
         content = read_template_file(template_data["file_path"])
 
-        # Criar o template
+        # Create the template
         new_template = TemplateModel(
             uuid=uuid4(),
             name=template_data["name"],
@@ -231,9 +231,9 @@ def load_templates(db: Session):
         )
 
         db.add(new_template)
-        db.flush()  # Flush para obter o ID
+        db.flush()  # Flush to get the ID
 
-        # Criar a configuração de component_template_config
+        # Create component_template_config configuration
         config = ComponentTemplateConfigModel(
             uuid=uuid4(),
             component_type=template_data["category"],
@@ -244,23 +244,23 @@ def load_templates(db: Session):
 
         db.add(config)
         created_templates.append(new_template)
-        print(f"✓ Template '{template_data['name']}' criado com sucesso")
+        print(f"✓ Template '{template_data['name']}' created successfully")
 
     db.commit()
     return created_templates
 
 
 def main():
-    """Função principal."""
-    print("🚀 Carregando templates iniciais...")
+    """Main function."""
+    print("🚀 Loading initial templates...")
 
     db: Session = SessionLocal()
     try:
         templates = load_templates(db)
-        print(f"\n✅ {len(templates)} template(s) processado(s) com sucesso!")
+        print(f"\n✅ {len(templates)} template(s) processed successfully!")
     except Exception as e:
         db.rollback()
-        print(f"\n❌ Erro ao carregar templates: {e}")
+        print(f"\n❌ Error loading templates: {e}")
         sys.exit(1)
     finally:
         db.close()
