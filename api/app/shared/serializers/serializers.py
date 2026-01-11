@@ -1,23 +1,23 @@
 
 def serialize_application_component(application_component):
     """
-    Serializa um ApplicationComponent para uso nos templates Kubernetes.
-    Inclui informações do componente, instância, aplicação e ambiente.
+    Serialize an ApplicationComponent for use in Kubernetes templates.
+    Includes information from component, instance, application and environment.
     """
-    # Fazer uma cópia do settings para não modificar o original
+    # Make a copy of settings to avoid modifying the original
     import copy
     settings = copy.deepcopy(application_component.settings) if application_component.settings else {}
 
-    # Garantir que command seja sempre uma lista quando não for None
-    # Isso é necessário porque o schema pode retornar string, lista ou None
-    # mas os templates esperam lista ou None
+    # Ensure command is always a list when not None
+    # This is necessary because the schema can return string, list or None
+    # but templates expect list or None
     if settings and 'command' in settings:
         command = settings.get('command')
         if command is not None:
-            # Se já for uma lista, manter como está
+            # If already a list, keep as is
             if isinstance(command, list):
-                pass  # Já é lista
-            # Se for string, converter para lista (já foi processado pelo schema, mas garantir)
+                pass  # Already a list
+            # If string, convert to list (already processed by schema, but ensure)
             elif isinstance(command, str):
                 import shlex
                 command_str = command.strip()
@@ -25,17 +25,17 @@ def serialize_application_component(application_component):
                     settings['command'] = shlex.split(command_str)
                 else:
                     settings['command'] = None
-            # Se for None, manter None
+            # If None, keep None
         else:
             settings['command'] = None
 
-    # Garantir que todos os campos do settings sejam preservados
-    # Isso é importante para campos como schedule, cpu, memory, envs, etc.
-    # O deepcopy já faz isso, mas garantimos explicitamente
+    # Ensure all settings fields are preserved
+    # This is important for fields like schedule, cpu, memory, envs, etc.
+    # deepcopy already does this, but we ensure explicitly
     if not settings:
         settings = {}
 
-    # Garantir que webapps sempre tenham exposure definido
+    # Ensure webapps always have exposure defined
     component_type = application_component.type.value if hasattr(application_component.type, 'value') else str(application_component.type)
     if component_type == 'webapp' and 'exposure' not in settings:
         settings['exposure'] = {
@@ -50,11 +50,11 @@ def serialize_application_component(application_component):
             'visibility': 'cluster'
         }
 
-    # Converter Enums para strings nos settings (especialmente exposure.visibility)
+    # Convert Enums to strings in settings (especially exposure.visibility)
     if settings and 'exposure' in settings and isinstance(settings.get('exposure'), dict):
         exposure = settings['exposure']
         if 'visibility' in exposure:
-            # Se visibility for um Enum, converter para string
+            # If visibility is an Enum, convert to string
             visibility_value = exposure['visibility']
             if hasattr(visibility_value, 'value'):
                 exposure['visibility'] = visibility_value.value
@@ -76,7 +76,7 @@ def serialize_application_component(application_component):
         "settings": settings
     }
 
-# Mantido para compatibilidade (deprecated)
+# Kept for compatibility (deprecated)
 def serialize_webapp_deploy(webapp_deploy):
     return serialize_application_component(webapp_deploy)
 

@@ -31,19 +31,19 @@ class TokenService:
 
     def create_token(self, dto: TokenCreate, user_id: Optional[int] = None) -> TokenCreateResponse:
         """Create a new token."""
-        # Gerar token aleatório
+        # Generate random token
         plain_token = AuthService.generate_token()
         token_hash = AuthService.hash_token(plain_token)
 
-        # Criar token no banco
+        # Create token in database
         token = self._build_token_entity(dto, token_hash, user_id)
         token = self.repository.create(token)
 
-        # Retornar resposta com o token em texto plano (só aparece na criação)
+        # Return response with plain text token (only appears on creation)
         return TokenCreateResponse(
             uuid=str(token.uuid),
             name=token.name,
-            token=plain_token,  # Token em texto plano - só aparece aqui
+            token=plain_token,  # Plain text token - only appears here
             role=token.role,
             expires_at=token.expires_at.isoformat() if token.expires_at else None,
             created_at=token.created_at.isoformat()

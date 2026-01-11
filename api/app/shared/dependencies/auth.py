@@ -42,7 +42,7 @@ async def get_current_user_or_token(
                 detail="Token inativo"
             )
 
-        # Verificar expiração
+        # Check expiration
         if token.expires_at and token.expires_at < datetime.now(timezone.utc):
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
@@ -125,7 +125,7 @@ async def get_current_user(
 
 def require_role(allowed_roles: list[UserRole]):
     def role_checker(current_user: User = Depends(get_current_user)):
-        # Converter allowed_roles para valores (strings) para comparação
+        # Convert allowed_roles to values (strings) for comparison
         allowed_role_values = [role.value if isinstance(role, UserRole) else role for role in allowed_roles]
         if current_user.role not in allowed_role_values:
             raise HTTPException(

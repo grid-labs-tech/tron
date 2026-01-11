@@ -55,7 +55,7 @@ K8S_API_MAPPING = {
 class K8sClient:
     def __init__(self, url: str, token: str, verify_ssl: bool = False):
         """
-        Inicializa o cliente Kubernetes com os parâmetros fornecidos.
+        Initialize the Kubernetes client with the provided parameters.
         """
         self.configuration = client.Configuration()
         self.configuration.host = url
@@ -66,7 +66,7 @@ class K8sClient:
 
     def validate_connection(self):
         """
-        Valida a conexão ao Kubernetes tentando listar os namespaces.
+        Validate the connection to Kubernetes by attempting to list namespaces.
         """
         try:
             v1 = client.CoreV1Api(self.api_client)
@@ -85,30 +85,30 @@ class K8sClient:
 
     def get_namespaces(self):
         """
-        Retorna uma lista de namespaces do cluster Kubernetes.
+        Return a list of namespaces from the Kubernetes cluster.
         """
         try:
             v1 = client.CoreV1Api(self.api_client)
             return v1.list_namespace().items
         except ApiException as e:
-            print(f"Erro ao listar namespaces: {e}")
+            print(f"Error listing namespaces: {e}")
             return []
 
     def create_namespace(self, name: str):
         """
-        Cria um novo namespace no cluster Kubernetes.
+        Create a new namespace in the Kubernetes cluster.
         """
         body = client.V1Namespace(metadata=client.V1ObjectMeta(name=name))
         try:
             v1 = client.CoreV1Api(self.api_client)
             return v1.create_namespace(body=body)
         except ApiException as e:
-            print(f"Erro ao criar namespace: {e}")
+            print(f"Error creating namespace: {e}")
             return None
 
     def get_available_cpu(self):
         """
-        Retorna a quantidade total de CPU disponível no cluster Kubernetes.
+        Return the total amount of CPU available in the Kubernetes cluster.
         """
         try:
             v1 = client.CoreV1Api(self.api_client)
@@ -121,12 +121,12 @@ class K8sClient:
 
             return total_cpu
         except ApiException as e:
-            print(f"Erro ao obter a quantidade de CPU disponível: {e}")
+            print(f"Error getting available CPU amount: {e}")
             return None
 
     def get_available_memory(self):
         """
-        Obtém a quantidade de memória disponível no cluster Kubernetes.
+        Get the amount of memory available in the Kubernetes cluster.
         """
         v1 = client.CoreV1Api(self.api_client)
         nodes = v1.list_node().items
@@ -147,7 +147,7 @@ class K8sClient:
         return available_memory
 
     def ensure_namespace_exists(self, namespace_name):
-        """Cria o namespace se ele não existir."""
+        """Create the namespace if it does not exist."""
         v1 = client.CoreV1Api(self.api_client)
         try:
             v1.read_namespace(name=namespace_name)
@@ -161,29 +161,29 @@ class K8sClient:
 
     def delete_namespace(self, namespace_name):
         """
-        Deleta um namespace do Kubernetes.
-        Quando um namespace é deletado, todos os recursos dentro dele são automaticamente deletados.
+        Delete a namespace from Kubernetes.
+        When a namespace is deleted, all resources within it are automatically deleted.
         """
         v1 = client.CoreV1Api(self.api_client)
         try:
             v1.delete_namespace(name=namespace_name, body=client.V1DeleteOptions())
         except ApiException as e:
             if e.status == 404:
-                # Namespace já não existe, não é um erro
+                # Namespace already does not exist, not an error
                 return
             else:
                 raise e
 
     def delete_pod(self, namespace: str, pod_name: str):
         """
-        Deleta um pod específico do Kubernetes.
+        Delete a specific pod from Kubernetes.
 
         Args:
-            namespace: Nome do namespace
-            pod_name: Nome do pod
+            namespace: Namespace name
+            pod_name: Pod name
 
         Returns:
-            True se deletado com sucesso, False caso contrário
+            True if deleted successfully, False otherwise
         """
         try:
             v1 = client.CoreV1Api(self.api_client)
@@ -191,25 +191,25 @@ class K8sClient:
             return True
         except ApiException as e:
             if e.status == 404:
-                # Pod já não existe, não é um erro
+                # Pod already does not exist, not an error
                 return True
             else:
-                print(f"Erro ao deletar pod {pod_name}: {e}")
+                print(f"Error deleting pod {pod_name}: {e}")
                 raise e
 
     def get_pod_logs(self, namespace: str, pod_name: str, container_name: str = None, tail_lines: int = 100, follow: bool = False):
         """
-        Obtém os logs de um pod do Kubernetes.
+        Get logs from a Kubernetes pod.
 
         Args:
-            namespace: Nome do namespace
-            pod_name: Nome do pod
-            container_name: Nome do container (opcional, se o pod tiver múltiplos containers)
-            tail_lines: Número de linhas finais a retornar (padrão: 100)
-            follow: Se True, segue os logs em tempo real (padrão: False)
+            namespace: Namespace name
+            pod_name: Pod name
+            container_name: Container name (optional, if pod has multiple containers)
+            tail_lines: Number of tail lines to return (default: 100)
+            follow: If True, follow logs in real time (default: False)
 
         Returns:
-            String com os logs do pod
+            String with pod logs
         """
         try:
             v1 = client.CoreV1Api(self.api_client)
@@ -226,26 +226,26 @@ class K8sClient:
             if e.status == 404:
                 raise HTTPException(status_code=404, detail=f"Pod {pod_name} not found")
             else:
-                print(f"Erro ao obter logs do pod {pod_name}: {e}")
+                print(f"Error getting pod logs {pod_name}: {e}")
                 raise HTTPException(status_code=e.status, detail=f"Failed to get logs: {str(e)}")
 
     def exec_pod_command(self, namespace: str, pod_name: str, command: list[str], container_name: str = None):
         """
-        Executa um comando em um pod do Kubernetes.
+        Execute a command in a Kubernetes pod.
 
         Args:
-            namespace: Nome do namespace
-            pod_name: Nome do pod
-            command: Lista com o comando e argumentos (ex: ['ls', '-la'])
-            container_name: Nome do container (opcional, se o pod tiver múltiplos containers)
+            namespace: Namespace name
+            pod_name: Pod name
+            command: List with command and arguments (e.g., ['ls', '-la'])
+            container_name: Container name (optional, if pod has multiple containers)
 
         Returns:
-            Tupla (stdout, stderr, return_code)
+            Tuple (stdout, stderr, return_code)
         """
         try:
             v1 = client.CoreV1Api(self.api_client)
 
-            # Executar comando usando stream
+            # Execute command using stream
             exec_command = stream(
                 v1.connect_get_namespaced_pod_exec,
                 pod_name,
@@ -280,44 +280,44 @@ class K8sClient:
             if e.status == 404:
                 raise HTTPException(status_code=404, detail=f"Pod {pod_name} not found")
             else:
-                print(f"Erro ao executar comando no pod {pod_name}: {e}")
+                print(f"Error executing command in pod {pod_name}: {e}")
                 raise HTTPException(status_code=e.status, detail=f"Failed to execute command: {str(e)}")
         except Exception as e:
-            print(f"Erro ao executar comando no pod {pod_name}: {e}")
+            print(f"Error executing command in pod {pod_name}: {e}")
             raise HTTPException(status_code=500, detail=f"Failed to execute command: {str(e)}")
 
     def cleanup_orphaned_gateway_resources(self, namespace: str, component_name: str, expected_resources: list):
         """
-        Remove recursos Gateway API (HTTPRoute, TCPRoute, UDPRoute) que não deveriam mais existir.
+        Remove Gateway API resources (HTTPRoute, TCPRoute, UDPRoute) that should no longer exist.
 
         Args:
-            namespace: Namespace onde os recursos estão
-            component_name: Nome do componente
-            expected_resources: Lista de dicionários com os recursos esperados (renderizados dos templates)
+            namespace: Namespace where resources are located
+            component_name: Component name
+            expected_resources: List of dictionaries with expected resources (rendered from templates)
         """
-        # Identificar quais recursos Gateway API deveriam existir
+        # Identify which Gateway API resources should exist
         expected_gateway_kinds = set()
         for resource in expected_resources:
             if resource and isinstance(resource, dict):
                 kind = resource.get("kind")
                 api_version = resource.get("apiVersion", "")
-                # Verificar se é um recurso Gateway API
+                # Check if it is a Gateway API resource
                 if kind in ["HTTPRoute", "TCPRoute", "UDPRoute"] and "gateway.networking.k8s.io" in api_version:
                     expected_gateway_kinds.add(kind)
 
-        # Lista de recursos Gateway API que podem existir
+        # List of Gateway API resources that may exist
         gateway_resources = [
             ("HTTPRoute", "gateway.networking.k8s.io/v1", "httproutes"),
             ("TCPRoute", "gateway.networking.k8s.io/v1alpha2", "tcproutes"),
             ("UDPRoute", "gateway.networking.k8s.io/v1alpha2", "udproutes"),
         ]
 
-        # Para cada tipo de recurso Gateway API, verificar se deveria existir
+        # For each Gateway API resource type, check if it should exist
         for kind, api_version, resource_name in gateway_resources:
-            # Se não está na lista de esperados, tentar deletar se existir
+            # If not in expected list, try to delete if it exists
             if kind not in expected_gateway_kinds:
                 try:
-                    # Tentar deletar o recurso se existir
+                    # Try to delete the resource if it exists
                     api_parts = api_version.split('/')
                     api_group = api_parts[0]
                     api_version_part = api_parts[1]
@@ -334,34 +334,34 @@ class K8sClient:
                     print(f"Deleted orphaned {kind} '{component_name}' from namespace '{namespace}'")
                 except ApiException as e:
                     if e.status == 404:
-                        # Recurso não existe, tudo bem
+                        # Resource does not exist, that's fine
                         pass
                     else:
-                        # Log mas não falha - não é crítico
+                        # Log but don't fail - not critical
                         print(f"Warning: Could not delete {kind} '{component_name}': {e}")
 
     def apply_or_delete_yaml_to_k8s(self, yaml_documents, operation="create"):
-        # Para operações upsert, limpar recursos Gateway API órfãos antes de aplicar
+        # For upsert operations, clean up orphaned Gateway API resources before applying
         if operation == "upsert":
-            # Coletar informações dos documentos para identificar namespace e component_name
+            # Collect information from documents to identify namespace and component_name
             namespace = None
             component_name = None
 
-            # Procurar primeiro por recursos Gateway API para obter o nome correto
+            # First search for Gateway API resources to get the correct name
             for doc in yaml_documents:
                 if doc and isinstance(doc, dict):
                     kind = doc.get("kind")
                     api_version = doc.get("apiVersion", "")
                     metadata = doc.get("metadata", {})
 
-                    # Se for um recurso Gateway API, usar esse nome
+                    # If it's a Gateway API resource, use that name
                     if kind in ["HTTPRoute", "TCPRoute", "UDPRoute"] and "gateway.networking.k8s.io" in api_version:
                         component_name = metadata.get("name")
                         namespace = metadata.get("namespace")
                         if namespace and component_name:
                             break
 
-            # Se não encontrou em recursos Gateway API, procurar em qualquer documento
+            # If not found in Gateway API resources, search in any document
             if not (namespace and component_name):
                 for doc in yaml_documents:
                     if doc and isinstance(doc, dict) and doc.get("metadata"):
@@ -371,16 +371,16 @@ class K8sClient:
                         if namespace and component_name:
                             break
 
-            # Se encontrou namespace e component_name, limpar recursos órfãos
+            # If found namespace and component_name, clean up orphaned resources
             if namespace and component_name:
                 try:
                     self.cleanup_orphaned_gateway_resources(namespace, component_name, yaml_documents)
                 except Exception as e:
-                    # Log mas não falha - não é crítico
+                    # Log but don't fail - not critical
                     print(f"Warning: Could not cleanup orphaned Gateway resources: {e}")
 
         for document in yaml_documents:
-            # Pular documentos None ou inválidos (quando template não renderiza nada)
+            # Skip None or invalid documents (when template doesn't render anything)
             if document is None or not isinstance(document, dict):
                 continue
 
@@ -408,45 +408,45 @@ class K8sClient:
 
             api_mapping = K8S_API_MAPPING.get(kind)
 
-            # Se o recurso não está no mapeamento padrão, usar API REST diretamente
-            # Isso é necessário para recursos customizados como Gateway API (HTTPRoute, TCPRoute, UDPRoute)
+            # If resource is not in default mapping, use REST API directly
+            # This is necessary for custom resources like Gateway API (HTTPRoute, TCPRoute, UDPRoute)
             if not api_mapping:
-                # Extrair o grupo e versão da API do apiVersion
-                # Formato: grupo/versão (ex: gateway.networking.k8s.io/v1)
-                # ou apenas versão para APIs core (ex: v1)
+                # Extract API group and version from apiVersion
+                # Format: group/version (e.g., gateway.networking.k8s.io/v1)
+                # or just version for core APIs (e.g., v1)
                 api_parts = api_version.split('/')
                 if len(api_parts) == 2:
                     api_group, api_version_part = api_parts
                 else:
-                    # API core (ex: v1)
+                    # Core API (e.g., v1)
                     api_group = ""
                     api_version_part = api_version
 
-                # Converter o kind para o nome do recurso no path da API
-                # Gateway API usa lowercase plural: HTTPRoute -> httproutes, TCPRoute -> tcproutes
+                # Convert kind to resource name in API path
+                # Gateway API uses lowercase plural: HTTPRoute -> httproutes, TCPRoute -> tcproutes
                 def kind_to_resource_name(kind_str):
-                    """Converte um Kind para o nome do recurso no path da API"""
-                    # Converter para lowercase
+                    """Convert a Kind to the resource name in the API path"""
+                    # Convert to lowercase
                     lower = kind_str.lower()
-                    # Adicionar 's' se não terminar com 's'
+                    # Add 's' if it doesn't end with 's'
                     if not lower.endswith('s'):
                         return lower + 's'
                     return lower
 
                 resource_name = kind_to_resource_name(kind)
 
-                # Determinar o path da API baseado no grupo
+                # Determine API path based on group
                 if api_group:
-                    # API customizada: /apis/{group}/{version}/namespaces/{namespace}/{resource}/{name}
+                    # Custom API: /apis/{group}/{version}/namespaces/{namespace}/{resource}/{name}
                     api_path_base = f"/apis/{api_group}/{api_version_part}/namespaces/{namespace}/{resource_name}"
                 else:
-                    # API core: /api/{version}/namespaces/{namespace}/{resource}/{name}
+                    # Core API: /api/{version}/namespaces/{namespace}/{resource}/{name}
                     api_path_base = f"/api/{api_version_part}/namespaces/{namespace}/{resource_name}"
 
-                # Aplicar usando API REST diretamente
+                # Apply using REST API directly
                 try:
                     if operation == "create":
-                        # POST para criar
+                        # POST to create
                         self.api_client.call_api(
                             api_path_base,
                             'POST',
@@ -456,9 +456,9 @@ class K8sClient:
                             _preload_content=True
                         )
                     elif operation == "update":
-                        # PUT para atualizar - precisa obter resourceVersion primeiro
+                        # PUT to update - need to get resourceVersion first
                         try:
-                            # Ler o recurso existente para obter o resourceVersion
+                            # Read existing resource to get resourceVersion
                             existing_response = self.api_client.call_api(
                                 f"{api_path_base}/{name}",
                                 'GET',
@@ -468,7 +468,7 @@ class K8sClient:
                             )
                             existing_resource = existing_response[0] if isinstance(existing_response, tuple) else existing_response
 
-                            # Incluir resourceVersion no documento se existir
+                            # Include resourceVersion in document if it exists
                             if existing_resource and 'metadata' in existing_resource:
                                 existing_metadata = existing_resource['metadata']
                                 if 'resourceVersion' in existing_metadata:
@@ -477,10 +477,10 @@ class K8sClient:
                                     document['metadata']['resourceVersion'] = existing_metadata['resourceVersion']
                         except ApiException as read_e:
                             if read_e.status != 404:
-                                # Se não conseguir ler e não for 404, relançar o erro
+                                # If can't read and it's not 404, re-raise the error
                                 raise read_e
 
-                        # PUT para atualizar
+                        # PUT to update
                         self.api_client.call_api(
                             f"{api_path_base}/{name}",
                             'PUT',
@@ -490,9 +490,9 @@ class K8sClient:
                             _preload_content=True
                         )
                     elif operation == "upsert":
-                        # Tenta atualizar primeiro, se não existir, cria
+                        # Try to update first, if it doesn't exist, create
                         try:
-                            # Ler o recurso existente para obter o resourceVersion
+                            # Read existing resource to get resourceVersion
                             existing_response = self.api_client.call_api(
                                 f"{api_path_base}/{name}",
                                 'GET',
@@ -502,7 +502,7 @@ class K8sClient:
                             )
                             existing_resource = existing_response[0] if isinstance(existing_response, tuple) else existing_response
 
-                            # Incluir resourceVersion no documento se existir
+                            # Include resourceVersion in document if it exists
                             if existing_resource and 'metadata' in existing_resource:
                                 existing_metadata = existing_resource['metadata']
                                 if 'resourceVersion' in existing_metadata:
@@ -510,7 +510,7 @@ class K8sClient:
                                         document['metadata'] = {}
                                     document['metadata']['resourceVersion'] = existing_metadata['resourceVersion']
 
-                            # PUT para atualizar
+                            # PUT to update
                             self.api_client.call_api(
                                 f"{api_path_base}/{name}",
                                 'PUT',
@@ -521,7 +521,7 @@ class K8sClient:
                             )
                         except ApiException as e:
                             if e.status == 404:
-                                # Recurso não existe, criar
+                                # Resource does not exist, create
                                 self.api_client.call_api(
                                     api_path_base,
                                     'POST',
@@ -533,7 +533,7 @@ class K8sClient:
                             else:
                                 raise e
                     elif operation == "delete":
-                        # DELETE para remover
+                        # DELETE to remove
                         try:
                             self.api_client.call_api(
                                 f"{api_path_base}/{name}",
@@ -545,7 +545,7 @@ class K8sClient:
                             )
                         except ApiException as e:
                             if e.status == 404:
-                                # Recurso já não existe, isso é aceitável
+                                # Resource already does not exist, that's acceptable
                                 pass
                             else:
                                 raise e
@@ -555,7 +555,7 @@ class K8sClient:
                         detail=f"Failed to {operation} {kind} '{name}': {str(e)}"
                     )
             else:
-                # Usar o mapeamento padrão para recursos conhecidos
+                # Use default mapping for known resources
                 api_class, create_method, delete_method, replace_method = api_mapping
 
                 api_instance = api_class(self.api_client)
@@ -569,36 +569,36 @@ class K8sClient:
                         name=name, namespace=namespace, body=document
                     )
                 elif operation == "upsert":
-                    # Tenta atualizar primeiro, se não existir, cria
+                    # Try to update first, if it doesn't exist, create
                     try:
-                        # Para Deployments, preservar o número de réplicas atual se não especificado
+                        # For Deployments, preserve current replica count if not specified
                         if kind == "Deployment" and "spec" in document:
                             try:
                                 read_method = getattr(api_instance, "read_namespaced_deployment", None)
                                 if read_method:
                                     existing_deployment = read_method(name=name, namespace=namespace)
 
-                                    # Se o novo documento não especifica replicas, preservar o valor atual
-                                    # Isso evita que o Kubernetes resete para o valor padrão (1) ou conflite com HPA
+                                    # If new document doesn't specify replicas, preserve current value
+                                    # This prevents Kubernetes from resetting to default (1) or conflicting with HPA
                                     if "replicas" not in document.get("spec", {}):
                                         if hasattr(existing_deployment.spec, "replicas") and existing_deployment.spec.replicas is not None:
                                             document["spec"]["replicas"] = existing_deployment.spec.replicas
 
-                                    # Preservar também resourceVersion e outras metadatas necessárias para evitar conflitos
-                                    # O resourceVersion é necessário para o replace funcionar corretamente
+                                    # Also preserve resourceVersion and other necessary metadata to avoid conflicts
+                                    # resourceVersion is necessary for replace to work correctly
                                     if hasattr(existing_deployment.metadata, "resource_version") and existing_deployment.metadata.resource_version:
                                         if "metadata" not in document:
                                             document["metadata"] = {}
                                         document["metadata"]["resourceVersion"] = existing_deployment.metadata.resource_version
 
-                                        # Preservar também generation se existir
+                                        # Also preserve generation if it exists
                                         if hasattr(existing_deployment.metadata, "generation") and existing_deployment.metadata.generation:
                                             document["metadata"]["generation"] = existing_deployment.metadata.generation
                             except ApiException as read_e:
-                                # Se não conseguir ler (404 ou outro erro), continua normalmente
-                                # Isso significa que o deployment não existe ainda, então criaremos
+                                # If can't read (404 or other error), continue normally
+                                # This means the deployment doesn't exist yet, so we'll create it
                                 if read_e.status != 404:
-                                    # Se for outro erro, loga mas continua
+                                    # If it's another error, log but continue
                                     print(f"Warning: Could not read existing deployment to preserve replicas: {read_e}")
 
                         getattr(api_instance, replace_method)(
@@ -606,7 +606,7 @@ class K8sClient:
                         )
                     except ApiException as e:
                         if e.status == 404:
-                            # Recurso não existe, criar
+                            # Resource does not exist, create
                             getattr(api_instance, create_method)(
                                 namespace=namespace, body=document
                             )
@@ -619,8 +619,8 @@ class K8sClient:
                         )
                     except ApiException as e:
                         if e.status == 404:
-                            # Recurso já não existe no Kubernetes, isso é aceitável
-                            # O objetivo é deletar e se já não existe, consideramos sucesso
+                            # Resource already does not exist in Kubernetes, that's acceptable
+                            # The goal is to delete and if it doesn't exist, we consider it success
                             pass
                         else:
                             raise e
@@ -629,14 +629,14 @@ class K8sClient:
 
     def list_pods(self, namespace: str, label_selector: str = None):
         """
-        Lista pods de um namespace, opcionalmente filtrados por label selector.
+        List pods from a namespace, optionally filtered by label selector.
 
         Args:
-            namespace: Nome do namespace
-            label_selector: Seletor de labels (ex: "app=myapp")
+            namespace: Namespace name
+            label_selector: Label selector (e.g., "app=myapp")
 
         Returns:
-            Lista de pods com informações formatadas
+            List of pods with formatted information
         """
         try:
             v1 = client.CoreV1Api(self.api_client)
@@ -646,10 +646,10 @@ class K8sClient:
             else:
                 pods = v1.list_namespaced_pod(namespace=namespace).items
 
-            # Formatar dados dos pods
+            # Format pod data
             formatted_pods = []
             for pod in pods:
-                # Calcular CPU e Memory dos containers
+                # Calculate CPU and Memory from containers
                 cpu_requests = 0
                 cpu_limits = 0
                 memory_requests = 0
@@ -657,7 +657,7 @@ class K8sClient:
 
                 for container in pod.spec.containers:
                     if container.resources:
-                        # Acessar requests (é um dict no Kubernetes Python client)
+                        # Access requests (it's a dict in Kubernetes Python client)
                         if container.resources.requests:
                             requests = container.resources.requests
                             if 'cpu' in requests:
@@ -667,7 +667,7 @@ class K8sClient:
                                 mem_str = str(requests['memory'])
                                 memory_requests += self._parse_memory(mem_str)
 
-                        # Acessar limits (é um dict no Kubernetes Python client)
+                        # Access limits (it's a dict in Kubernetes Python client)
                         if container.resources.limits:
                             limits = container.resources.limits
                             if 'cpu' in limits:
@@ -677,7 +677,7 @@ class K8sClient:
                                 mem_str = str(limits['memory'])
                                 memory_limits += self._parse_memory(mem_str)
 
-                # Status do pod
+                # Pod status
                 status = "Unknown"
                 if pod.status.phase:
                     status = pod.status.phase
@@ -689,14 +689,14 @@ class K8sClient:
                         if container_status.restart_count:
                             restarts += container_status.restart_count
 
-                # Age (tempo desde a criação)
+                # Age (time since creation)
                 age_seconds = 0
                 if pod.metadata.creation_timestamp:
                     from datetime import datetime, timezone
                     now = datetime.now(timezone.utc)
                     age_seconds = int((now - pod.metadata.creation_timestamp).total_seconds())
 
-                # Host IP (IP do nó onde o pod está rodando)
+                # Host IP (IP of the node where the pod is running)
                 host_ip = pod.status.host_ip if pod.status.host_ip else None
 
                 formatted_pods.append({
@@ -713,20 +713,20 @@ class K8sClient:
 
             return formatted_pods
         except ApiException as e:
-            print(f"Erro ao listar pods: {e}")
+            print(f"Error listing pods: {e}")
             return []
 
     def list_jobs(self, namespace: str, label_selector: str = None):
         """
-        Lista Jobs de um namespace, opcionalmente filtrados por label selector.
-        Usado para listar Jobs criados por CronJobs.
+        List Jobs from a namespace, optionally filtered by label selector.
+        Used to list Jobs created by CronJobs.
 
         Args:
-            namespace: Nome do namespace
-            label_selector: Seletor de labels (ex: "app=myapp")
+            namespace: Namespace name
+            label_selector: Label selector (e.g., "app=myapp")
 
         Returns:
-            Lista de jobs com informações formatadas
+            List of jobs with formatted information
         """
         try:
             batch_v1 = client.BatchV1Api(self.api_client)
@@ -736,10 +736,10 @@ class K8sClient:
             else:
                 jobs = batch_v1.list_namespaced_job(namespace=namespace).items
 
-            # Formatar dados dos jobs
+            # Format job data
             formatted_jobs = []
             for job in jobs:
-                # Status do job
+                # Job status
                 status = "Unknown"
                 if job.status.succeeded:
                     status = "Succeeded"
@@ -748,7 +748,7 @@ class K8sClient:
                 elif job.status.active:
                     status = "Active"
                 elif job.status.conditions:
-                    # Verificar condições para status mais específico
+                    # Check conditions for more specific status
                     for condition in job.status.conditions:
                         if condition.type == "Complete" and condition.status == "True":
                             status = "Succeeded"
@@ -757,7 +757,7 @@ class K8sClient:
                             status = "Failed"
                             break
 
-                # Contagem de sucessos e falhas
+                # Count of successes and failures
                 succeeded = job.status.succeeded if job.status.succeeded else 0
                 failed = job.status.failed if job.status.failed else 0
                 active = job.status.active if job.status.active else 0
@@ -772,14 +772,14 @@ class K8sClient:
                 if job.status.completion_time:
                     completion_time = job.status.completion_time.isoformat()
 
-                # Age (tempo desde a criação)
+                # Age (time since creation)
                 age_seconds = 0
                 if job.metadata.creation_timestamp:
                     from datetime import datetime, timezone
                     now = datetime.now(timezone.utc)
                     age_seconds = int((now - job.metadata.creation_timestamp).total_seconds())
 
-                # Duração (se completado)
+                # Duration (if completed)
                 duration_seconds = None
                 if start_time and completion_time:
                     from datetime import datetime
@@ -799,36 +799,36 @@ class K8sClient:
                     "duration_seconds": duration_seconds,
                 })
 
-            # Ordenar por criação (mais recente primeiro)
+            # Sort by creation (most recent first)
             formatted_jobs.sort(key=lambda x: x["age_seconds"], reverse=False)
 
             return formatted_jobs
         except ApiException as e:
-            print(f"Erro ao listar jobs: {e}")
+            print(f"Error listing jobs: {e}")
             return []
 
     def delete_job(self, namespace: str, job_name: str):
         """
-        Deleta um Job específico de um namespace.
-        Usado para deletar Jobs criados por CronJobs.
+        Delete a specific Job from a namespace.
+        Used to delete Jobs created by CronJobs.
 
         Args:
-            namespace: Nome do namespace
-            job_name: Nome do Job a ser deletado
+            namespace: Namespace name
+            job_name: Name of the Job to be deleted
 
         Returns:
-            True se o job foi deletado com sucesso
+            True if the job was deleted successfully
 
         Raises:
-            HTTPException: Se o job não for encontrado ou houver erro ao deletar
+            HTTPException: If the job is not found or there's an error deleting
         """
         try:
             batch_v1 = client.BatchV1Api(self.api_client)
-            # Deletar o job
+            # Delete the job
             batch_v1.delete_namespaced_job(
                 name=job_name,
                 namespace=namespace,
-                propagation_policy="Background"  # Deleta pods associados também
+                propagation_policy="Background"  # Also deletes associated pods
             )
             return True
         except ApiException as e:
@@ -840,7 +840,7 @@ class K8sClient:
             )
 
     def _parse_cpu(self, cpu_str: str) -> float:
-        """Converte string de CPU (ex: '500m', '1', '0.5') para float."""
+        """Convert CPU string (e.g., '500m', '1', '0.5') to float."""
         if not cpu_str:
             return 0.0
         cpu_str = cpu_str.strip()
@@ -850,14 +850,14 @@ class K8sClient:
 
     def list_events(self, namespace: str, field_selector: str = None):
         """
-        Lista eventos de um namespace, opcionalmente filtrados por field selector.
+        List events from a namespace, optionally filtered by field selector.
 
         Args:
-            namespace: Nome do namespace
-            field_selector: Filtro opcional (ex: "involvedObject.name=pod-name")
+            namespace: Namespace name
+            field_selector: Optional filter (e.g., "involvedObject.name=pod-name")
 
         Returns:
-            Lista de eventos formatados
+            List of formatted events
         """
         try:
             v1 = client.CoreV1Api(self.api_client)
@@ -870,17 +870,17 @@ class K8sClient:
             else:
                 events = v1.list_namespaced_event(namespace=namespace).items
 
-            # Formatar dados dos eventos
+            # Format event data
             formatted_events = []
             for event in events:
-                # Calcular age (tempo desde a criação)
+                # Calculate age (time since creation)
                 age_seconds = 0
                 if event.first_timestamp:
                     from datetime import datetime, timezone
                     now = datetime.now(timezone.utc)
                     age_seconds = int((now - event.first_timestamp).total_seconds())
 
-                # Contagem de ocorrências
+                # Count of occurrences
                 count = event.count if event.count else 1
 
                 formatted_events.append({
@@ -904,27 +904,27 @@ class K8sClient:
                     "age_seconds": age_seconds,
                 })
 
-            # Ordenar por timestamp (mais recente primeiro)
+            # Sort by timestamp (most recent first)
             formatted_events.sort(key=lambda x: x["age_seconds"], reverse=False)
 
             return formatted_events
         except ApiException as e:
-            print(f"Erro ao listar eventos: {e}")
+            print(f"Error listing events: {e}")
             return []
 
     def check_api_available(self, api_group: str) -> bool:
         """
-        Verifica se uma API group está disponível no cluster Kubernetes.
+        Check if an API group is available in the Kubernetes cluster.
 
         Args:
-            api_group: Nome do API group (ex: 'gateway.networking.k8s.io')
+            api_group: API group name (e.g., 'gateway.networking.k8s.io')
 
         Returns:
-            True se a API está disponível, False caso contrário
+            True if the API is available, False otherwise
         """
         try:
-            # Usar a API REST diretamente para verificar se o grupo existe
-            # Fazendo uma requisição GET para /apis/{api_group}
+            # Use REST API directly to check if the group exists
+            # Making a GET request to /apis/{api_group}
             path = f"/apis/{api_group}"
 
             try:
@@ -936,68 +936,68 @@ class K8sClient:
                     _preload_content=False
                 )
 
-                # call_api retorna uma tupla: (data, status, headers)
+                # call_api returns a tuple: (data, status, headers)
                 data, status, headers = response
 
-                # Se a requisição foi bem-sucedida (status 200), o grupo existe
+                # If the request was successful (status 200), the group exists
                 if status == 200:
-                    print(f"API group {api_group} encontrado via API REST")
+                    print(f"API group {api_group} found via REST API")
                     return True
                 else:
-                    print(f"API group {api_group} retornou status {status}")
+                    print(f"API group {api_group} returned status {status}")
                     return False
 
             except ApiException as api_err:
-                # Se der erro 404, o grupo não está disponível
+                # If error 404, the group is not available
                 if api_err.status == 404:
-                    print(f"API group {api_group} não encontrado (404)")
+                    print(f"API group {api_group} not found (404)")
                     return False
                 else:
-                    print(f"Erro ao verificar API group {api_group}: {api_err}")
+                    print(f"Error checking API group {api_group}: {api_err}")
                     return False
 
         except ApiException as e:
-            print(f"Erro ao verificar API group {api_group}: {e}")
+            print(f"Error checking API group {api_group}: {e}")
             return False
         except Exception as e:
-            print(f"Erro inesperado ao verificar API group {api_group}: {e}")
+            print(f"Unexpected error checking API group {api_group}: {e}")
             import traceback
             traceback.print_exc()
             return False
 
     def get_gateway_api_resources(self) -> list[str]:
         """
-        Lista os recursos Gateway API disponíveis no cluster usando a API de descoberta.
-        Equivalente ao comando 'kubectl api-resources --api-group=gateway.networking.k8s.io'
+        List Gateway API resources available in the cluster using the discovery API.
+        Equivalent to the command 'kubectl api-resources --api-group=gateway.networking.k8s.io'
 
         Returns:
-            Lista de recursos disponíveis (ex: ['HTTPRoute', 'TCPRoute', 'UDPRoute'])
+            List of available resources (e.g., ['HTTPRoute', 'TCPRoute', 'UDPRoute'])
         """
         available_resources = []
 
         try:
-            # Usar a API de descoberta para listar recursos do grupo gateway.networking.k8s.io
-            # Isso é equivalente ao comando kubectl api-resources --api-group=gateway.networking.k8s.io
+            # Use discovery API to list resources from gateway.networking.k8s.io group
+            # This is equivalent to the command kubectl api-resources --api-group=gateway.networking.k8s.io
             discovery_api = client.DiscoveryV1Api(self.api_client)
 
-            # Obter todos os recursos da API
+            # Get all API resources
             api_resources = discovery_api.get_api_resources(group="gateway.networking.k8s.io")
 
-            # Filtrar apenas os recursos do grupo gateway.networking.k8s.io
+            # Filter only resources from gateway.networking.k8s.io group
             for resource in api_resources.resources:
-                # Adicionar o kind do recurso (ex: HTTPRoute, TCPRoute, UDPRoute)
+                # Add the resource kind (e.g., HTTPRoute, TCPRoute, UDPRoute)
                 if resource.kind:
                     available_resources.append(resource.kind)
 
-            # Remover duplicatas e ordenar
+            # Remove duplicates and sort
             available_resources = sorted(list(set(available_resources)))
 
         except ApiException as e:
-            # Se der erro, tentar método alternativo verificando versões conhecidas
+            # If error, try alternative method checking known versions
             print(f"Warning: Error getting Gateway API resources via discovery: {e}")
             available_resources = self._fallback_get_gateway_resources()
         except Exception as e:
-            # Erro inesperado, tentar método alternativo
+            # Unexpected error, try alternative method
             print(f"Warning: Unexpected error getting Gateway API resources: {e}")
             available_resources = self._fallback_get_gateway_resources()
 
@@ -1005,15 +1005,15 @@ class K8sClient:
 
     def _fallback_get_gateway_resources(self) -> list[str]:
         """
-        Método alternativo para verificar recursos Gateway API quando a API de descoberta falha.
-        Verifica recursos conhecidos diretamente.
+        Alternative method to check Gateway API resources when discovery API fails.
+        Checks known resources directly.
 
         Returns:
-            Lista de recursos disponíveis
+            List of available resources
         """
         available_resources = []
 
-        # Recursos Gateway API conhecidos e suas versões
+        # Known Gateway API resources and their versions
         gateway_resources = [
             ("HTTPRoute", "gateway.networking.k8s.io/v1", "httproutes"),
             ("TCPRoute", "gateway.networking.k8s.io/v1alpha2", "tcproutes"),
@@ -1022,12 +1022,12 @@ class K8sClient:
 
         for resource_kind, api_version, resource_name in gateway_resources:
             try:
-                # Extrair grupo e versão
+                # Extract group and version
                 api_parts = api_version.split('/')
                 api_group = api_parts[0]
                 api_version_part = api_parts[1]
 
-                # Tentar listar o recurso (mesmo que vazio, se a API existir, retornará 200)
+                # Try to list the resource (even if empty, if the API exists, it will return 200)
                 path = f"/apis/{api_group}/{api_version_part}/{resource_name}"
 
                 response = self.api_client.call_api(
@@ -1040,46 +1040,46 @@ class K8sClient:
 
                 data, status, headers = response
 
-                # Se retornou 200, o recurso está disponível
+                # If returned 200, the resource is available
                 if status == 200:
                     available_resources.append(resource_kind)
             except ApiException as e:
-                # Se der 404, o recurso não está disponível
+                # If error 404, the resource is not available
                 if e.status != 404:
-                    # Outro erro, logar mas continuar
+                    # Other error, log but continue
                     print(f"Warning: Error checking {resource_kind} availability: {e}")
             except Exception as e:
-                # Erro inesperado, logar mas continuar
+                # Unexpected error, log but continue
                 print(f"Warning: Unexpected error checking {resource_kind} availability: {e}")
 
         return available_resources
 
     def get_gateway_reference(self) -> dict | None:
         """
-        Busca o primeiro Gateway disponível no cluster e retorna seu nome e namespace.
-        Tenta buscar em namespaces comuns primeiro, depois lista todos os namespaces.
+        Search for the first available Gateway in the cluster and return its name and namespace.
+        Tries to search in common namespaces first, then lists all namespaces.
 
         Returns:
-            Dict com 'namespace' e 'name' do Gateway, ou None se não encontrar
+            Dict with Gateway 'namespace' and 'name', or None if not found
         """
         try:
-            # Tentar diferentes versões da API Gateway
+            # Try different Gateway API versions
             api_versions = [
                 "gateway.networking.k8s.io/v1",
                 "gateway.networking.k8s.io/v1beta1",
             ]
 
-            # Namespaces comuns para tentar primeiro
+            # Common namespaces to try first
             common_namespaces = ["kube-system", "default", "gateway-system"]
 
             for api_version in api_versions:
                 try:
-                    # Extrair grupo e versão
+                    # Extract group and version
                     api_parts = api_version.split('/')
                     api_group = api_parts[0]
                     api_version_part = api_parts[1]
 
-                    # Primeiro, tentar buscar em namespaces comuns
+                    # First, try to search in common namespaces
                     for namespace in common_namespaces:
                         try:
                             path = f"/apis/{api_group}/{api_version_part}/namespaces/{namespace}/gateways"
@@ -1097,7 +1097,7 @@ class K8sClient:
                             if status == 200 and isinstance(data, dict):
                                 items = data.get('items', [])
                                 if items and len(items) > 0:
-                                    # Pegar o primeiro Gateway encontrado
+                                    # Get the first Gateway found
                                     gateway = items[0]
                                     metadata = gateway.get('metadata', {})
                                     name = metadata.get('name', '')
@@ -1108,17 +1108,17 @@ class K8sClient:
                                             "name": name
                                         }
                         except ApiException as e:
-                            # Se der 404, tentar próximo namespace
+                            # If error 404, try next namespace
                             if e.status == 404:
                                 continue
-                            # Outro erro, logar mas continuar
+                            # Other error, log but continue
                             print(f"Warning: Error getting Gateway from namespace {namespace}: {e}")
                         except Exception as e:
-                            # Erro inesperado, logar mas continuar
+                            # Unexpected error, log but continue
                             print(f"Warning: Unexpected error getting Gateway from namespace {namespace}: {e}")
 
-                    # Se não encontrou em namespaces comuns, tentar listar todos os Gateways
-                    # (algumas versões da API podem suportar isso)
+                    # If not found in common namespaces, try to list all Gateways
+                    # (some API versions may support this)
                     try:
                         path = f"/apis/{api_group}/{api_version_part}/gateways"
 
@@ -1135,7 +1135,7 @@ class K8sClient:
                         if status == 200 and isinstance(data, dict):
                             items = data.get('items', [])
                             if items and len(items) > 0:
-                                # Pegar o primeiro Gateway encontrado
+                                # Get the first Gateway found
                                 gateway = items[0]
                                 metadata = gateway.get('metadata', {})
                                 name = metadata.get('name', '')
@@ -1147,20 +1147,20 @@ class K8sClient:
                                         "name": name
                                     }
                     except ApiException as e:
-                        # Se der 404 ou 405 (método não permitido), tentar próxima versão
+                        # If error 404 or 405 (method not allowed), try next version
                         if e.status in [404, 405]:
                             continue
-                        # Outro erro, logar mas continuar
+                        # Other error, log but continue
                         print(f"Warning: Error listing all Gateways via {api_version}: {e}")
                     except Exception as e:
-                        # Erro inesperado, logar mas continuar
+                        # Unexpected error, log but continue
                         print(f"Warning: Unexpected error listing all Gateways via {api_version}: {e}")
 
                 except Exception as e:
-                    # Erro inesperado, logar mas continuar
+                    # Unexpected error, log but continue
                     print(f"Warning: Unexpected error getting Gateway via {api_version}: {e}")
 
-            # Se não encontrou em nenhuma versão, retornar None
+            # If not found in any version, return None
             return None
 
         except Exception as e:
@@ -1168,12 +1168,12 @@ class K8sClient:
             return None
 
     def _parse_memory(self, memory_str: str) -> int:
-        """Converte string de memória (ex: '512Mi', '1Gi', '1000M') para MB."""
+        """Convert memory string (e.g., '512Mi', '1Gi', '1000M') to MB."""
         if not memory_str:
             return 0
         memory_str = memory_str.strip()
 
-        # Remover sufixos e converter
+        # Remove suffixes and convert
         if memory_str.endswith('Ki'):
             return int(memory_str[:-2]) // 1024
         elif memory_str.endswith('Mi'):
@@ -1191,5 +1191,5 @@ class K8sClient:
         elif memory_str.endswith('T'):
             return int(memory_str[:-1]) * 1000 * 1000
         else:
-            # Assumir bytes
+            # Assume bytes
             return int(memory_str) // (1024 * 1024)
