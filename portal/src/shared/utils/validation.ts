@@ -7,26 +7,26 @@ export const validateForm = <T>(schema: z.ZodSchema<T>, data: unknown): { succes
   } catch (error) {
     if (error instanceof z.ZodError) {
       const errors: Record<string, string> = {}
-      // ZodError sempre tem a propriedade issues (não errors)
+      // ZodError always has the issues property (not errors)
       if (error.issues && Array.isArray(error.issues)) {
         error.issues.forEach((issue) => {
-          // Verifica se há path e se não está vazio
+          // Check if there's a path and if it's not empty
           if (issue.path && Array.isArray(issue.path) && issue.path.length > 0) {
             const fieldName = issue.path[0] as string
-            // Se já existe erro para este campo, mantém o primeiro ou concatena
+            // If error already exists for this field, keep the first or concatenate
             if (!errors[fieldName]) {
               errors[fieldName] = issue.message
             }
           } else {
-            // Se não houver path ou path estiver vazio, usar _form como fallback
-            // Se já existe _form, concatena ou mantém o primeiro
+            // If there's no path or path is empty, use _form as fallback
+            // If _form already exists, concatenate or keep the first
             if (!errors._form) {
               errors._form = issue.message
             }
           }
         })
       }
-      // Se não houver erros específicos, adicionar erro genérico
+      // If there are no specific errors, add generic error
       if (Object.keys(errors).length === 0) {
         errors._form = 'Validation failed'
       }

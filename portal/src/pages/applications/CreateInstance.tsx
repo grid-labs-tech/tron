@@ -42,7 +42,7 @@ function CreateInstance() {
     enabled: true,
   })
 
-  // Verificar se algum cluster do environment selecionado tem gateway_api disponível
+  // Check if any cluster in the selected environment has gateway_api available
   const hasGatewayApi = useMemo(() => {
     if (!instanceData.environment_uuid || !clusters) return false
     const environmentClusters = clusters.filter(
@@ -51,13 +51,13 @@ function CreateInstance() {
     return environmentClusters.some((cluster) => cluster.gateway?.api?.enabled === true)
   }, [instanceData.environment_uuid, clusters])
 
-  // Obter recursos do Gateway API disponíveis nos clusters do environment selecionado
+  // Get Gateway API resources available in clusters of the selected environment
   const gatewayResources = useMemo(() => {
     if (!instanceData.environment_uuid || !clusters) return []
     const environmentClusters = clusters.filter(
       (cluster) => cluster.environment?.uuid === instanceData.environment_uuid
     )
-    // Pegar recursos de todos os clusters que têm Gateway API habilitado
+    // Get resources from all clusters that have Gateway API enabled
     const allResources = new Set<string>()
     environmentClusters.forEach((cluster) => {
       if (cluster.gateway?.api?.enabled && cluster.gateway.api.resources) {
@@ -67,7 +67,7 @@ function CreateInstance() {
     return Array.from(allResources)
   }, [instanceData.environment_uuid, clusters])
 
-  // Obter referência do Gateway (namespace e name) dos clusters do environment selecionado
+  // Get Gateway reference (namespace and name) from clusters of the selected environment
   const gatewayReference = useMemo(() => {
     if (!instanceData.environment_uuid || !clusters) return { namespace: '', name: '' }
     const environmentClusters = clusters.filter(

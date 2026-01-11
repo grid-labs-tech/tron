@@ -35,7 +35,7 @@ export const PodConsoleModal = ({
     }
   }, [isOpen])
 
-  // Scroll automático quando novos comandos são executados
+  // Auto-scroll when new commands are executed
   useEffect(() => {
     if (terminalOutputRef.current) {
       terminalOutputRef.current.scrollTop = terminalOutputRef.current.scrollHeight

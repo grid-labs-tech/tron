@@ -10,7 +10,7 @@ export const createApiClient = (): AxiosInstance => {
     },
   })
 
-  // Interceptor para adicionar token em todas as requisições
+  // Interceptor to add token to all requests
   api.interceptors.request.use(
     (config) => {
       const token = localStorage.getItem('access_token')
@@ -24,14 +24,14 @@ export const createApiClient = (): AxiosInstance => {
     }
   )
 
-  // Interceptor para refresh automático de token
+  // Interceptor for automatic token refresh
   api.interceptors.response.use(
     (response) => response,
     async (error) => {
       const originalRequest = error.config
 
-      // Não tentar refresh em endpoints de autenticação (login, register, refresh)
-      // Um 401 nesses endpoints significa credenciais inválidas, não token expirado
+      // Do not attempt refresh on authentication endpoints (login, register, refresh)
+      // A 401 on these endpoints means invalid credentials, not expired token
       const isAuthEndpoint = originalRequest?.url?.includes('/auth/login') ||
                             originalRequest?.url?.includes('/auth/register') ||
                             originalRequest?.url?.includes('/auth/refresh')

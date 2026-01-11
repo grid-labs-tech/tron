@@ -37,7 +37,7 @@ export function ComponentForm({
     updateField('settings', settings)
   }
 
-  // Se gateway_api não estiver disponível e visibility for public/private, forçar para cluster
+  // If gateway_api is not available and visibility is public/private, force to cluster
   useEffect(() => {
     if (component.type === 'webapp' && !hasGatewayApi) {
       const settings = component.settings as WebappSettings | null

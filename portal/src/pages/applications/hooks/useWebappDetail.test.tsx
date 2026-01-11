@@ -4,7 +4,7 @@ import { renderHook, waitFor } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { useWebappDetail } from './useWebappDetail'
 
-// Mock das dependências
+// Mock dependencies
 const mockUseWebappPods = vi.fn()
 const mockUseDeleteWebappPod = vi.fn()
 const mockUseWebappPodLogs = vi.fn()

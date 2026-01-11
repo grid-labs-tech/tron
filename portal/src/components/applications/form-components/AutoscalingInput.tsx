@@ -9,7 +9,7 @@ interface AutoscalingInputProps {
 }
 
 export function AutoscalingInput({ autoscaling, onChange }: AutoscalingInputProps) {
-  // Valores padrão caso autoscaling não esteja definido
+  // Default values if autoscaling is not defined
   const safeAutoscaling: Autoscaling = autoscaling || { min: 2, max: 10 }
 
   return (
@@ -28,7 +28,7 @@ export function AutoscalingInput({ autoscaling, onChange }: AutoscalingInputProp
             value={safeAutoscaling.min}
             onChange={(e) => {
               const min = parseInt(e.target.value) || 1
-              // Garantir que min não seja maior que max
+              // Ensure min is not greater than max
               const newMax = Math.max(min, safeAutoscaling.max)
               onChange({ min, max: newMax })
             }}
@@ -51,7 +51,7 @@ export function AutoscalingInput({ autoscaling, onChange }: AutoscalingInputProp
             value={safeAutoscaling.max}
             onChange={(e) => {
               const max = parseInt(e.target.value) || 10
-              // Garantir que max não seja menor que min
+              // Ensure max is not less than min
               const newMin = Math.min(max, safeAutoscaling.min)
               onChange({ min: newMin, max })
             }}

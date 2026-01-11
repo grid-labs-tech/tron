@@ -5,15 +5,15 @@ import { fileURLToPath } from 'url'
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
-// Tentar importar sharp
+// Try to import sharp
 let sharp
 try {
   const sharpModule = await import('sharp')
   sharp = sharpModule.default
 } catch (error) {
-  console.error('❌ Erro: sharp não está instalado.')
-  console.error('   Execute: npm install sharp --save-dev')
-  console.error('   Ou use o arquivo generate-logo-pngs.html no navegador')
+  console.error('❌ Error: sharp is not installed.')
+  console.error('   Run: npm install sharp --save-dev')
+  console.error('   Or use the generate-logo-pngs.html file in the browser')
   process.exit(1)
 }
 
@@ -79,9 +79,9 @@ if (!fs.existsSync(outputDir)) {
   fs.mkdirSync(outputDir, { recursive: true })
 }
 
-// Gerar PNGs
+// Generate PNGs
 async function generateLogos() {
-  console.log('Gerando logos PNG...\n')
+  console.log('Generating PNG logos...\n')
 
   for (const { name, size } of sizes) {
     try {
@@ -95,13 +95,13 @@ async function generateLogos() {
         .png()
         .toFile(outputPath)
 
-      console.log(`✓ Gerado: ${name}.png (${size}x${size})`)
+      console.log(`✓ Generated: ${name}.png (${size}x${size})`)
     } catch (error) {
-      console.error(`✗ Erro ao gerar ${name}.png:`, error.message)
+      console.error(`✗ Error generating ${name}.png:`, error.message)
     }
   }
 
-  console.log(`\n✅ Todos os logos foram gerados em: ${outputDir}`)
+  console.log(`\n✅ All logos have been generated in: ${outputDir}`)
 }
 
 generateLogos().catch(console.error)

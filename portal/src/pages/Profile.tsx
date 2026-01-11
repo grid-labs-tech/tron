@@ -15,7 +15,7 @@ export default function Profile() {
   const [email, setEmail] = useState(user?.email || '')
   const [fullName, setFullName] = useState(user?.full_name || '')
 
-  // Atualizar campos quando o usuário mudar
+  // Update fields when user changes
   useEffect(() => {
     if (user) {
       setEmail(user.email || '')
@@ -41,7 +41,7 @@ export default function Profile() {
       setNewPassword('')
       setConfirmPassword('')
 
-      // Se mudou a senha ou email, fazer logout para forçar novo login
+      // If password or email changed, logout to force new login
       if (newPassword || (email && email !== user?.email)) {
         setTimeout(() => {
           logout()
@@ -67,7 +67,7 @@ export default function Profile() {
     setSuccess(null)
     setErrors({})
 
-    // Preparar dados para atualização
+    // Prepare data for update
     const updateData: { email?: string | null; full_name?: string | null; password?: string | null; current_password?: string | null } = {}
 
     if (email && email !== user?.email) {
@@ -83,7 +83,7 @@ export default function Profile() {
       updateData.current_password = currentPassword
     }
 
-    // Só atualizar se houver mudanças
+    // Only update if there are changes
     if (Object.keys(updateData).length === 0) {
       setError('No changes were made')
       return
@@ -140,7 +140,7 @@ export default function Profile() {
             </div>
           )}
 
-          {/* Informações do Usuário */}
+          {/* User Information */}
           <div className="space-y-4">
             <h2 className="text-xl font-semibold text-neutral-800 flex items-center gap-2">
               <User className="w-5 h-5" />
@@ -177,7 +177,7 @@ export default function Profile() {
             </div>
           </div>
 
-          {/* Alteração de Senha */}
+          {/* Password Change */}
           <div className="space-y-4 pt-6 border-t border-neutral-200">
             <h2 className="text-xl font-semibold text-neutral-800 flex items-center gap-2">
               <Save className="w-5 h-5" />
@@ -259,7 +259,7 @@ export default function Profile() {
             </div>
           </div>
 
-          {/* Botões */}
+          {/* Buttons */}
           <div className="flex items-center justify-end gap-4 pt-6 border-t border-neutral-200">
             <button
               type="button"

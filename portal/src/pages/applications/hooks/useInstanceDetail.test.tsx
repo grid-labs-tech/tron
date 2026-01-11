@@ -5,7 +5,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { BrowserRouter } from 'react-router-dom'
 import { useInstanceDetail } from './useInstanceDetail'
 
-// Mock das dependências
+// Mock dependencies
 vi.mock('../../../features/instances', () => ({
   useInstance: vi.fn(),
   useUpdateInstance: vi.fn(() => ({

@@ -150,12 +150,12 @@ function Applications() {
         loadingColor="blue"
         getRowKey={(application) => application.uuid}
         actions={(application) => {
-          // Filtrar instâncias desta aplicação
+          // Filter instances of this application
           const applicationInstances = instances.filter(
             (instance: Instance) => instance.application.uuid === application.uuid
           )
 
-          // Construir array de ações
+          // Build actions array
           const actions = [
             {
               label: 'New Instance',
@@ -165,7 +165,7 @@ function Applications() {
             },
           ]
 
-          // Adicionar instâncias existentes
+          // Add existing instances
           if (applicationInstances.length > 0) {
             applicationInstances.forEach((instance: Instance) => {
               actions.push({
@@ -177,7 +177,7 @@ function Applications() {
             })
           }
 
-          // Adicionar ação de deletar no final
+          // Add delete action at the end
           actions.push({
             label: 'Delete',
             icon: <Trash2 size={14} />,
