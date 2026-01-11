@@ -1,7 +1,8 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Plus, ChevronDown, ChevronUp } from 'lucide-react'
 import { useCreateApplication } from '../../features/applications'
+import { useClusters } from '../../features/clusters'
 import { useCreateInstance } from '../../features/instances'
 import { useCreateWebappComponent, useCreateCronComponent, useCreateWorkerComponent } from '../../features/components'
 import { applicationCreateSchema } from '../../features/applications/schemas'
@@ -29,6 +30,7 @@ function CreateApplication() {
   const [isCreating, setIsCreating] = useState(false)
 
   const createApplicationMutation = useCreateApplication()
+  const { data: clusters } = useClusters()
   const createInstanceMutation = useCreateInstance()
   const createWebappComponentMutation = useCreateWebappComponent()
   const createCronComponentMutation = useCreateCronComponent()
@@ -48,6 +50,50 @@ function CreateApplication() {
     version: '',
     enabled: true,
   })
+
+  // Verificar se algum cluster do environment selecionado tem gateway_api disponível
+  const hasGatewayApi = useMemo(() => {
+    if (!instanceData.environment_uuid || !clusters) return false
+    const environmentClusters = clusters.filter(
+      (cluster) => cluster.environment?.uuid === instanceData.environment_uuid
+    )
+    return environmentClusters.some((cluster) => cluster.gateway?.api?.enabled === true)
+  }, [instanceData.environment_uuid, clusters])
+
+  // Obter recursos do Gateway API disponíveis nos clusters do environment selecionado
+  const gatewayResources = useMemo(() => {
+    if (!instanceData.environment_uuid || !clusters) return []
+    const environmentClusters = clusters.filter(
+      (cluster) => cluster.environment?.uuid === instanceData.environment_uuid
+    )
+    // Pegar recursos de todos os clusters que têm Gateway API habilitado
+    const allResources = new Set<string>()
+    environmentClusters.forEach((cluster) => {
+      if (cluster.gateway?.api?.enabled && cluster.gateway.api.resources) {
+        cluster.gateway.api.resources.forEach((resource) => allResources.add(resource))
+      }
+    })
+    return Array.from(allResources)
+  }, [instanceData.environment_uuid, clusters])
+
+  // Obter referência do Gateway (namespace e name) dos clusters do environment selecionado
+  const gatewayReference = useMemo(() => {
+    if (!instanceData.environment_uuid || !clusters) return { namespace: '', name: '' }
+    const environmentClusters = clusters.filter(
+      (cluster) => cluster.environment?.uuid === instanceData.environment_uuid
+    )
+    // Pegar o primeiro gateway reference encontrado que tenha namespace e name preenchidos
+    for (const cluster of environmentClusters) {
+      if (cluster.gateway?.reference) {
+        const namespace = cluster.gateway.reference.namespace || ''
+        const name = cluster.gateway.reference.name || ''
+        if (namespace && name) {
+          return { namespace, name }
+        }
+      }
+    }
+    return { namespace: '', name: '' }
+  }, [instanceData.environment_uuid, clusters])
 
   // Components
   const [components, setComponents] = useState<ComponentFormData[]>([])
@@ -333,6 +379,9 @@ function CreateApplication() {
                     component={component}
                     onChange={(updatedComponent) => updateComponent(index, updatedComponent)}
                     onRemove={() => removeComponent(index)}
+                    hasGatewayApi={hasGatewayApi}
+                    gatewayResources={gatewayResources}
+                    gatewayReference={gatewayReference}
                     title={`Component ${index + 1}`}
                   />
                 ))}
