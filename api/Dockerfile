@@ -4,24 +4,30 @@ ARG _WORKDIR=/app
 
 WORKDIR ${_WORKDIR}
 
-RUN apk add --virtual .build-dependencies \
-            --no-cache \
-            python3-dev \
-            build-base \
-            linux-headers \
-            pcre-dev \
-            gcc \
-            musl-dev \
-            postgresql-libs \
-            postgresql-dev
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
-RUN apk add --no-cache pcre
+ENV UV_COMPILE_BYTECODE=1
+ENV UV_LINK_MODE=copy
+ENV UV_PROJECT_ENVIRONMENT="/venv"
 
-COPY requirements.txt /tmp/
+RUN --mount=type=cache,target=/root/.cache/uv \
+    apk add --no-cache --virtual .build-deps \
+        build-base \
+        python3-dev \
+        linux-headers \
+        pcre-dev \
+        postgresql-dev \
+        musl-dev \
+        gcc \
+    && apk add --no-cache \
+        pcre \
+        libpq 
 
-RUN pip install --upgrade pip \
-    && pip install -r /tmp/requirements.txt
+COPY pyproject.toml uv.lock ./
 
-COPY . ${_WORKDIR}
+RUN uv sync --frozen --no-install-project \
+    && apk del .build-deps
+
+ENV PATH="/venv/bin:$PATH"
 
 CMD uvicorn app.main:app --host 0.0.0.0 --reload
