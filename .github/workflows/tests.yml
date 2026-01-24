@@ -84,8 +84,8 @@ jobs:
       - name: Run linter (ruff)
         working-directory: ./api
         run: |
-          uv run ruff check app/ --output-format=github
-          uv run ruff format app/ --check
+          uv tool run ruff check app/ --output-format=github
+          uv tool run ruff format app/ --check
 
       - name: Run unit tests with coverage
         working-directory: ./api
