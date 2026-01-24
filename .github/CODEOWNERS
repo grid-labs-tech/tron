@@ -1,0 +1,25 @@
+# CODEOWNERS - Define code ownership for automatic review requests
+# https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# Default owners for everything in the repo
+* @grid-labs-tech/maintainers
+
+# API (Backend)
+/api/ @grid-labs-tech/backend
+
+# Portal (Frontend)
+/portal/ @grid-labs-tech/frontend
+
+# Infrastructure and CI/CD
+/.github/ @grid-labs-tech/platform
+/docker/ @grid-labs-tech/platform
+/scripts/ @grid-labs-tech/platform
+Makefile @grid-labs-tech/platform
+
+# Documentation
+*.md @grid-labs-tech/maintainers
+/adrs/ @grid-labs-tech/maintainers
+
+# Security-sensitive files
+/.github/workflows/ @grid-labs-tech/maintainers
+/api/app/shared/core/security.py @grid-labs-tech/maintainers

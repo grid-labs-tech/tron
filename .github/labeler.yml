@@ -1,0 +1,79 @@
+# Configuration for PR Labeler
+# https://github.com/actions/labeler
+
+# API (Backend)
+api:
+  - changed-files:
+      - any-glob-to-any-file: 'api/**'
+
+# Portal (Frontend)
+portal:
+  - changed-files:
+      - any-glob-to-any-file: 'portal/**'
+
+# Documentation
+documentation:
+  - changed-files:
+      - any-glob-to-any-file:
+          - '**/*.md'
+          - 'adrs/**'
+          - 'docs/**'
+
+# CI/CD
+ci:
+  - changed-files:
+      - any-glob-to-any-file:
+          - '.github/**'
+          - 'Makefile'
+
+# Infrastructure
+infrastructure:
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'docker/**'
+          - 'scripts/**'
+          - '**/Dockerfile*'
+          - 'docker-compose*.yml'
+
+# Tests
+tests:
+  - changed-files:
+      - any-glob-to-any-file:
+          - '**/*test*.py'
+          - '**/*test*.ts'
+          - '**/*test*.tsx'
+          - '**/tests/**'
+          - '**/__tests__/**'
+
+# Database
+database:
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'api/alembic/**'
+          - 'api/app/models/**'
+
+# Security
+security:
+  - changed-files:
+      - any-glob-to-any-file:
+          - '**/security*'
+          - '**/auth*'
+          - 'SECURITY.md'
+
+# Dependencies
+dependencies:
+  - changed-files:
+      - any-glob-to-any-file:
+          - '**/requirements*.txt'
+          - '**/package*.json'
+          - '**/Pipfile*'
+          - '**/poetry.lock'
+          - '**/pyproject.toml'
+
+# Kubernetes related
+kubernetes:
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'api/app/templates/**'
+          - '**/*.j2'
+          - '**/manifests/**'

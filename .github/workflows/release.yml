@@ -1,27 +1,61 @@
-name: Release
+name: Release (Combined)
+
+# This workflow releases both API and Portal together with the same version
+# Use this for major releases where both components need to be released together
+# For independent releases, use api/v* or portal/v* tags instead
 
 on:
   push:
     tags:
-      - 'v*.*.*'
-      - 'v0.1.0'
+      - 'v[0-9]+.[0-9]+.[0-9]+*'
 
 env:
   REGISTRY: ghcr.io
   IMAGE_PREFIX: ${{ github.repository_owner }}/tron
 
 jobs:
+  # Run all tests before release
+  test:
+    name: Run Tests
+    uses: ./.github/workflows/tests.yml
+    with:
+      component: all
+    secrets: inherit
+
+  # Build and release only if tests pass
   release:
     runs-on: ubuntu-latest
+    needs: test
     permissions:
       contents: write
-      packages: read
+      packages: write
+      security-events: write
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+
+      - name: Extract version from tag
+        id: version
+        run: |
+          VERSION=${GITHUB_REF#refs/tags/v}
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Version: $VERSION"
+          
+          # Extract major.minor for additional tags
+          MAJOR=$(echo $VERSION | cut -d. -f1)
+          MINOR=$(echo $VERSION | cut -d. -f2)
+          echo "major=$MAJOR" >> $GITHUB_OUTPUT
+          echo "minor=$MAJOR.$MINOR" >> $GITHUB_OUTPUT
+          
+          # Check if it's a prerelease
+          if [[ "$VERSION" == *"-"* ]]; then
+            echo "prerelease=true" >> $GITHUB_OUTPUT
+          else
+            echo "prerelease=false" >> $GITHUB_OUTPUT
+          fi
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -33,63 +67,131 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Extract version from tag
-        id: version
-        run: |
-          VERSION=${GITHUB_REF#refs/tags/v}
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
-          echo "Version: $VERSION"
+      - name: Extract API Docker metadata
+        id: meta-api
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-api
+          tags: |
+            type=raw,value=${{ steps.version.outputs.version }}
+            type=raw,value=${{ steps.version.outputs.minor }},enable=${{ steps.version.outputs.prerelease == 'false' }}
+            type=raw,value=latest,enable=${{ steps.version.outputs.prerelease == 'false' }}
 
       - name: Build and push API image
+        id: build-api
         uses: docker/build-push-action@v5
         with:
           context: ./api
           file: ./api/Dockerfile.prod
           push: true
-          tags: |
-            ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-api:${{ steps.version.outputs.version }}
-            ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-api:latest
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          tags: ${{ steps.meta-api.outputs.tags }}
+          labels: ${{ steps.meta-api.outputs.labels }}
+          cache-from: type=gha,scope=api
+          cache-to: type=gha,mode=max,scope=api
           platforms: linux/amd64,linux/arm64
+          provenance: true
+          sbom: true
+
+      - name: Extract Portal Docker metadata
+        id: meta-portal
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-portal
+          tags: |
+            type=raw,value=${{ steps.version.outputs.version }}
+            type=raw,value=${{ steps.version.outputs.minor }},enable=${{ steps.version.outputs.prerelease == 'false' }}
+            type=raw,value=latest,enable=${{ steps.version.outputs.prerelease == 'false' }}
 
       - name: Build and push Portal image
+        id: build-portal
         uses: docker/build-push-action@v5
         with:
           context: ./portal
           file: ./portal/Dockerfile.prod
           push: true
-          tags: |
-            ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-portal:${{ steps.version.outputs.version }}
-            ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-portal:latest
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          tags: ${{ steps.meta-portal.outputs.tags }}
+          labels: ${{ steps.meta-portal.outputs.labels }}
+          cache-from: type=gha,scope=portal
+          cache-to: type=gha,mode=max,scope=portal
           platforms: linux/amd64,linux/arm64
+          provenance: true
+          sbom: true
+
+      - name: Run Trivy vulnerability scanner (API)
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-api:${{ steps.version.outputs.version }}
+          format: 'sarif'
+          output: 'trivy-api-results.sarif'
+          severity: 'CRITICAL,HIGH'
+
+      - name: Run Trivy vulnerability scanner (Portal)
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-portal:${{ steps.version.outputs.version }}
+          format: 'sarif'
+          output: 'trivy-portal-results.sarif'
+          severity: 'CRITICAL,HIGH'
+
+      - name: Upload Trivy scan results
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: '.'
+          category: 'container-scanning'
+
+      - name: Generate changelog
+        id: changelog
+        run: |
+          # Get the previous combined tag
+          PREV_TAG=$(git tag -l 'v[0-9]*' --sort=-v:refname | grep -v 'api/' | grep -v 'portal/' | head -2 | tail -1)
+          
+          if [ -z "$PREV_TAG" ] || [ "$PREV_TAG" == "v${{ steps.version.outputs.version }}" ]; then
+            echo "changelog=Initial release" >> $GITHUB_OUTPUT
+          else
+            CHANGELOG=$(git log --pretty=format:"- %s (%h)" $PREV_TAG..HEAD | head -50)
+            if [ -z "$CHANGELOG" ]; then
+              CHANGELOG="No significant changes"
+            fi
+            echo "changelog<<EOF" >> $GITHUB_OUTPUT
+            echo "$CHANGELOG" >> $GITHUB_OUTPUT
+            echo "EOF" >> $GITHUB_OUTPUT
+          fi
 
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
-          name: Release ${{ steps.version.outputs.version }}
+          name: Release v${{ steps.version.outputs.version }}
           body: |
-            ## Release ${{ steps.version.outputs.version }}
+            ## Release v${{ steps.version.outputs.version }}
 
-            ### Images
-            - API: `${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-api:${{ steps.version.outputs.version }}`
-            - Portal: `${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-portal:${{ steps.version.outputs.version }}`
+            This is a combined release of both API and Portal components.
+
+            ### Docker Images
+
+            **API:**
+            ```bash
+            docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-api:${{ steps.version.outputs.version }}
+            ```
+            Digest: `${{ steps.build-api.outputs.digest }}`
+
+            **Portal:**
+            ```bash
+            docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-portal:${{ steps.version.outputs.version }}
+            ```
+            Digest: `${{ steps.build-portal.outputs.digest }}`
+
+            ### Changes
+            ${{ steps.changelog.outputs.changelog }}
 
             ### Installation
             ```bash
             helm repo add grid-labs-tech https://grid-labs-tech.github.io/charts
             helm repo update
-            helm install tron grid-labs-tech/tron --version ${{ steps.version.outputs.version }}
+            helm upgrade --install tron grid-labs-tech/tron --version ${{ steps.version.outputs.version }}
             ```
-          draft: false
-          prerelease: ${{ contains(steps.version.outputs.version, '-') }}
 
-      - name: Update Helm Chart
-        run: |
-          echo "Helm chart update would go here"
-          echo "This step can be configured to update the charts repository"
-          echo "Version: ${{ steps.version.outputs.version }}"
-          echo "API Image: ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-api:${{ steps.version.outputs.version }}"
-          echo "Portal Image: ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-portal:${{ steps.version.outputs.version }}"
+            ### Verification
+            All tests passed before this release was published.
+          draft: false
+          prerelease: ${{ steps.version.outputs.prerelease == 'true' }}
