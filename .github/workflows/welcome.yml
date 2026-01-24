@@ -1,0 +1,46 @@
+name: Welcome New Contributors
+
+on:
+  pull_request_target:
+    types: [opened]
+  issues:
+    types: [opened]
+
+permissions:
+  issues: write
+  pull-requests: write
+
+jobs:
+  welcome:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Welcome first-time contributor
+        uses: actions/first-interaction@v1
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          issue-message: |
+            👋 Welcome to Tron! Thanks for opening your first issue.
+            
+            A maintainer will review it soon. In the meantime:
+            
+            - Make sure you've provided all the requested information
+            - Check the [CONTRIBUTING.md](https://github.com/grid-labs-tech/tron/blob/main/CONTRIBUTING.md) for guidelines
+            - Feel free to join our [Discussions](https://github.com/grid-labs-tech/tron/discussions) for questions
+            
+            Thank you for helping improve Tron! 🚀
+          pr-message: |
+            👋 Welcome to Tron! Thanks for your first pull request.
+            
+            A maintainer will review it soon. Here's what to expect:
+            
+            1. ✅ Automated tests will run on your changes
+            2. 👀 A maintainer will review your code
+            3. 💬 You may receive feedback or requests for changes
+            4. 🎉 Once approved, your PR will be merged!
+            
+            **While you wait:**
+            - Make sure all tests pass
+            - Check that your PR follows the [contribution guidelines](https://github.com/grid-labs-tech/tron/blob/main/CONTRIBUTING.md)
+            - Feel free to ask questions if you need help
+            
+            Thank you for contributing to Tron! 🚀
