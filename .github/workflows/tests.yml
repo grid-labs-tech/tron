@@ -265,7 +265,7 @@ jobs:
   # Aggregator job - all tests must pass
   test:
     runs-on: ubuntu-latest
-    name: All Tests
+    name: test
     needs: [unit-tests, integration-tests, frontend-tests, security-scan]
     if: always()
     steps:
