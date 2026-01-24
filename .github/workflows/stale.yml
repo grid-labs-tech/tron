@@ -1,0 +1,76 @@
+name: Stale Issues and PRs
+
+on:
+  schedule:
+    # Run daily at midnight UTC
+    - cron: '0 0 * * *'
+  workflow_dispatch:
+
+permissions:
+  issues: write
+  pull-requests: write
+
+jobs:
+  stale:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Mark stale issues and PRs
+        uses: actions/stale@v9
+        with:
+          # Issue configuration
+          stale-issue-message: |
+            This issue has been automatically marked as stale because it has not had recent activity.
+            It will be closed in 14 days if no further activity occurs.
+            
+            If this issue is still relevant:
+            - Add a comment with any updates
+            - Remove the `stale` label
+            
+            Thank you for your contributions! 🙏
+          stale-issue-label: 'stale'
+          days-before-issue-stale: 60
+          days-before-issue-close: 14
+          close-issue-message: |
+            This issue has been automatically closed due to inactivity.
+            
+            If you believe this issue is still relevant, please:
+            1. Open a new issue with updated information
+            2. Reference this issue for context
+            
+            Thank you for your understanding! 🙏
+          
+          # PR configuration
+          stale-pr-message: |
+            This pull request has been automatically marked as stale because it has not had recent activity.
+            It will be closed in 14 days if no further activity occurs.
+            
+            If this PR is still relevant:
+            - Rebase on the latest main branch
+            - Address any review comments
+            - Remove the `stale` label
+            
+            Thank you for your contributions! 🙏
+          stale-pr-label: 'stale'
+          days-before-pr-stale: 30
+          days-before-pr-close: 14
+          close-pr-message: |
+            This pull request has been automatically closed due to inactivity.
+            
+            If you would like to continue this work:
+            1. Open a new PR with the latest changes
+            2. Reference this PR for context
+            
+            Thank you for your understanding! 🙏
+
+          # Labels that exempt from stale
+          exempt-issue-labels: 'pinned,security,epic,roadmap,good first issue,help wanted'
+          exempt-pr-labels: 'pinned,security,work-in-progress,do-not-close'
+          
+          # Don't mark issues/PRs with recent activity
+          exempt-all-milestones: true
+          
+          # Limit operations per run
+          operations-per-run: 100
+
+          # Remove stale label when there's new activity
+          remove-stale-when-updated: true
