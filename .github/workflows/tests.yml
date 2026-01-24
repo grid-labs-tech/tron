@@ -2,31 +2,32 @@ name: Tests
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [main, develop]
   pull_request:
-    branches: [ main ]
+    branches: [main]
 
 jobs:
   unit-tests:
     runs-on: ubuntu-latest
     name: Backend Unit Tests
-    # This job must succeed for PRs to be mergeable when branch protection is enabled
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
         with:
-          python-version: '3.11'
-          cache: 'pip'
+          enable-cache: true
+          cache-dependency-glob: "api/uv.lock"
+
+      - name: Set up Python
+        working-directory: ./api
+        run: uv python install 3.13
 
       - name: Install dependencies
         working-directory: ./api
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
+        run: uv sync --frozen
 
       - name: Run unit tests with coverage
         working-directory: ./api
@@ -36,8 +37,7 @@ jobs:
           ACCESS_TOKEN_EXPIRE_MINUTES: 30
           REFRESH_TOKEN_EXPIRE_DAYS: 7
         run: |
-          pytest --cov=app --cov-report=term-missing --cov-report=html tests/unit -v
-        continue-on-error: false
+          uv run pytest --cov=app --cov-report=term-missing --cov-report=html tests/unit -v
 
       - name: Upload unit tests coverage reports
         uses: actions/upload-artifact@v4
@@ -49,7 +49,6 @@ jobs:
   integration-tests:
     runs-on: ubuntu-latest
     name: Backend Integration Tests
-    # This job must succeed for PRs to be mergeable when branch protection is enabled
 
     services:
       postgres:
@@ -70,17 +69,19 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
         with:
-          python-version: '3.11'
-          cache: 'pip'
+          enable-cache: true
+          cache-dependency-glob: "api/uv.lock"
+
+      - name: Set up Python
+        working-directory: ./api
+        run: uv python install 3.13
 
       - name: Install dependencies
         working-directory: ./api
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
+        run: uv sync --frozen
 
       - name: Run integration tests with coverage
         working-directory: ./api
@@ -95,8 +96,7 @@ jobs:
           ACCESS_TOKEN_EXPIRE_MINUTES: 30
           REFRESH_TOKEN_EXPIRE_DAYS: 7
         run: |
-          pytest --cov=app --cov-report=term-missing --cov-report=html tests/integration -v
-        continue-on-error: false
+          uv run pytest --cov=app --cov-report=term-missing --cov-report=html tests/integration -v
 
       - name: Upload integration tests coverage reports
         uses: actions/upload-artifact@v4
@@ -107,14 +107,14 @@ jobs:
 
   frontend-tests:
     runs-on: ubuntu-latest
-    # This job must succeed for PRs to be mergeable when branch protection is enabled
+    name: Frontend Tests
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
       - name: Set up Node.js
-        uses: actions/setup-node@v5
+        uses: actions/setup-node@v4
         with:
           node-version: '20'
           cache: 'npm'
@@ -127,12 +127,10 @@ jobs:
       - name: Run linter
         working-directory: ./portal
         run: npm run lint
-        continue-on-error: false
 
       - name: Run tests with coverage
         working-directory: ./portal
         run: npm run test:coverage
-        continue-on-error: false
 
       - name: Upload coverage reports
         uses: actions/upload-artifact@v4
@@ -143,9 +141,16 @@ jobs:
 
   test:
     runs-on: ubuntu-latest
+    name: test
     needs: [unit-tests, integration-tests, frontend-tests]
-    # This job ensures all tests (unit, integration, and frontend) pass
-    # It must succeed for PRs to be mergeable when branch protection is enabled
+    if: always()
     steps:
-      - name: All tests passed
-        run: echo "✅ All tests passed successfully"
+      - name: Check test results
+        run: |
+          if [ "${{ needs.unit-tests.result }}" == "failure" ] || \
+             [ "${{ needs.integration-tests.result }}" == "failure" ] || \
+             [ "${{ needs.frontend-tests.result }}" == "failure" ]; then
+            echo "❌ Some tests failed"
+            exit 1
+          fi
+          echo "✅ All tests passed successfully"
