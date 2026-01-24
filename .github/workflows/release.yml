@@ -67,6 +67,16 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Extract API Docker metadata
+        id: meta-api
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-api
+          tags: |
+            type=raw,value=${{ steps.version.outputs.version }}
+            type=raw,value=${{ steps.version.outputs.minor }},enable=${{ steps.version.outputs.prerelease == 'false' }}
+            type=raw,value=latest,enable=${{ steps.version.outputs.prerelease == 'false' }}
+
       - name: Build and push API image
         id: build-api
         uses: docker/build-push-action@v5
@@ -74,15 +84,23 @@ jobs:
           context: ./api
           file: ./api/Dockerfile.prod
           push: true
-          tags: |
-            ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-api:${{ steps.version.outputs.version }}
-            ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-api:${{ steps.version.outputs.minor }}
-            ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-api:latest
+          tags: ${{ steps.meta-api.outputs.tags }}
+          labels: ${{ steps.meta-api.outputs.labels }}
           cache-from: type=gha,scope=api
           cache-to: type=gha,mode=max,scope=api
           platforms: linux/amd64,linux/arm64
           provenance: true
           sbom: true
+
+      - name: Extract Portal Docker metadata
+        id: meta-portal
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-portal
+          tags: |
+            type=raw,value=${{ steps.version.outputs.version }}
+            type=raw,value=${{ steps.version.outputs.minor }},enable=${{ steps.version.outputs.prerelease == 'false' }}
+            type=raw,value=latest,enable=${{ steps.version.outputs.prerelease == 'false' }}
 
       - name: Build and push Portal image
         id: build-portal
@@ -91,10 +109,8 @@ jobs:
           context: ./portal
           file: ./portal/Dockerfile.prod
           push: true
-          tags: |
-            ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-portal:${{ steps.version.outputs.version }}
-            ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-portal:${{ steps.version.outputs.minor }}
-            ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-portal:latest
+          tags: ${{ steps.meta-portal.outputs.tags }}
+          labels: ${{ steps.meta-portal.outputs.labels }}
           cache-from: type=gha,scope=portal
           cache-to: type=gha,mode=max,scope=portal
           platforms: linux/amd64,linux/arm64
