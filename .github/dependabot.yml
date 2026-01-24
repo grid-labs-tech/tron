@@ -7,11 +7,10 @@ updates:
   - package-ecosystem: "pip"
     directory: "/api"
     schedule:
-      interval: "weekly"
-      day: "monday"
+      interval: "monthly"
       time: "09:00"
       timezone: "America/Sao_Paulo"
-    open-pull-requests-limit: 5
+    open-pull-requests-limit: 3
     labels:
       - "dependencies"
       - "python"
@@ -33,11 +32,10 @@ updates:
   - package-ecosystem: "npm"
     directory: "/portal"
     schedule:
-      interval: "weekly"
-      day: "monday"
+      interval: "monthly"
       time: "09:00"
       timezone: "America/Sao_Paulo"
-    open-pull-requests-limit: 5
+    open-pull-requests-limit: 3
     labels:
       - "dependencies"
       - "javascript"
@@ -92,11 +90,10 @@ updates:
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
-      interval: "weekly"
-      day: "monday"
+      interval: "monthly"
       time: "09:00"
       timezone: "America/Sao_Paulo"
-    open-pull-requests-limit: 5
+    open-pull-requests-limit: 3
     labels:
       - "dependencies"
       - "github-actions"
@@ -110,8 +107,7 @@ updates:
   - package-ecosystem: "docker"
     directory: "/api"
     schedule:
-      interval: "weekly"
-      day: "monday"
+      interval: "monthly"
       time: "09:00"
       timezone: "America/Sao_Paulo"
     labels:
@@ -124,8 +120,7 @@ updates:
   - package-ecosystem: "docker"
     directory: "/portal"
     schedule:
-      interval: "weekly"
-      day: "monday"
+      interval: "monthly"
       time: "09:00"
       timezone: "America/Sao_Paulo"
     labels:
