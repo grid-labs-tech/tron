@@ -170,8 +170,27 @@ docker compose -f docker-compose.prod.yaml --profile app up -d
 | `HTTPS_PORT` | No | `443` | Host port for HTTPS |
 | `CORS_ORIGINS` | No | `http://localhost` | Allowed CORS origins |
 | `API_URL` | No | `/api` | API URL for Portal |
-| `DOMAIN` | SSL only | - | Domain for SSL certificate |
-| `CERTBOT_EMAIL` | SSL only | - | Email for Let's Encrypt |
+
+#### Nginx Configuration
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `NGINX_SERVER_NAME` | `_` | Server name (use domain or _ for catch-all) |
+| `NGINX_CLIENT_MAX_BODY_SIZE` | `100M` | Max upload size |
+| `NGINX_PROXY_CONNECT_TIMEOUT` | `60s` | Proxy connect timeout |
+| `NGINX_PROXY_SEND_TIMEOUT` | `60s` | Proxy send timeout |
+| `NGINX_PROXY_READ_TIMEOUT` | `60s` | Proxy read timeout |
+| `NGINX_SSL_PROTOCOLS` | `TLSv1.2 TLSv1.3` | SSL/TLS protocols |
+
+#### SSL Configuration (required for --profile ssl)
+
+| Variable | Required | Default | Description |
+|----------|----------|---------|-------------|
+| `DOMAIN` | Yes | - | Domain for SSL certificate |
+| `CERTBOT_EMAIL` | Yes | - | Email for Let's Encrypt |
+| `CERTBOT_RENEWAL_INTERVAL` | No | `60d` | Certificate renewal interval |
+| `NGINX_SSL_CERT_PATH` | No | Let's Encrypt | Custom SSL cert path |
+| `NGINX_SSL_KEY_PATH` | No | Let's Encrypt | Custom SSL key path |
 
 ### Using Specific Versions
 
@@ -201,12 +220,34 @@ Images are published to GitHub Container Registry:
 
 ### SSL Certificate Renewal
 
-The `certbot-renew` service automatically renews certificates every 12 hours. To manually renew:
+The `certbot-renew` service automatically renews certificates every 60 days (configurable via `CERTBOT_RENEWAL_INTERVAL`). Let's Encrypt certificates are valid for 90 days, so renewing at 60 days provides a 30-day buffer.
+
+To manually renew:
 
 ```bash
 docker compose -f docker-compose.prod.yaml run --rm certbot renew
 docker compose -f docker-compose.prod.yaml restart nginx-ssl
 ```
+
+### Using Custom SSL Certificates
+
+If you have your own SSL certificates (e.g., from a commercial CA), you can use them instead of Let's Encrypt:
+
+1. Place your certificates in `docker/nginx/ssl/`:
+   - `your-cert.pem` (full chain)
+   - `your-key.pem` (private key)
+
+2. Set the environment variables in `.env`:
+   ```bash
+   NGINX_SSL_CERT_PATH=/etc/ssl/custom/your-cert.pem
+   NGINX_SSL_KEY_PATH=/etc/ssl/custom/your-key.pem
+   ```
+
+3. Start without certbot:
+   ```bash
+   docker compose -f docker-compose.prod.yaml --profile app up -d
+   docker compose -f docker-compose.prod.yaml up -d nginx-ssl
+   ```
 
 ## Kubernetes (K3s)
 
