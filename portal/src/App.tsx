@@ -1,8 +1,10 @@
 import { Routes, Route } from 'react-router-dom'
 import { AuthProvider } from './contexts/AuthContext'
 import { ProtectedRoute, AdminRoute, Layout } from './shared/components'
+import SetupGuard from './components/SetupGuard'
 import Home from './pages/home'
 import Login from './pages/Login'
+import Setup from './pages/setup/Setup'
 import Clusters from './pages/clusters/Clusters'
 import Environments from './pages/environments/Environments'
 import Applications from './pages/applications/Applications'
@@ -21,8 +23,9 @@ function App() {
   return (
     <AuthProvider>
       <Routes>
-        <Route path="/login" element={<Login />} />
-        <Route path="/" element={<Layout />}>
+        <Route path="/setup" element={<Setup />} />
+        <Route path="/login" element={<SetupGuard><Login /></SetupGuard>} />
+        <Route path="/" element={<SetupGuard><Layout /></SetupGuard>}>
           <Route index element={<ProtectedRoute><Home /></ProtectedRoute>} />
           <Route path="clusters" element={<ProtectedRoute><AdminRoute><Clusters /></AdminRoute></ProtectedRoute>} />
           <Route path="environments" element={<ProtectedRoute><AdminRoute><Environments /></AdminRoute></ProtectedRoute>} />
