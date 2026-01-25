@@ -1,6 +1,7 @@
 from uuid import UUID
 from app.applications.infra.application_repository import ApplicationRepository
 from app.applications.api.application_dto import ApplicationCreate, ApplicationUpdate
+from app.shared.config import is_namespace_protected
 
 
 class ApplicationNotFoundError(Exception):
@@ -11,6 +12,12 @@ class ApplicationNotFoundError(Exception):
 
 class ApplicationNameAlreadyExistsError(Exception):
     """Raised when application name already exists."""
+
+    pass
+
+
+class ApplicationNameProtectedError(Exception):
+    """Raised when application name matches a protected namespace."""
 
     pass
 
@@ -46,10 +53,26 @@ def validate_application_exists(repository: ApplicationRepository, uuid: UUID) -
         raise ApplicationNotFoundError(f"Application with UUID '{uuid}' not found")
 
 
+def validate_application_name_not_protected(name: str) -> None:
+    """
+    Validate that application name is not a protected namespace.
+    Application names become Kubernetes namespaces, so they cannot match
+    protected namespace names.
+
+    Raises ApplicationNameProtectedError if name matches a protected namespace.
+    """
+    if is_namespace_protected(name):
+        raise ApplicationNameProtectedError(
+            f"Cannot create application with name '{name}': "
+            f"it conflicts with a protected Kubernetes namespace"
+        )
+
+
 def validate_application_create_dto(dto: ApplicationCreate) -> None:
     """
     Validate application create DTO.
     Raises ValueError if validation fails.
+    Raises ApplicationNameProtectedError if name matches protected namespace.
     """
     if not dto.name or not dto.name.strip():
         raise ValueError("Application name is required and cannot be empty")
@@ -57,14 +80,20 @@ def validate_application_create_dto(dto: ApplicationCreate) -> None:
     if len(dto.name.strip()) < 1:
         raise ValueError("Application name must be at least 1 character long")
 
+    # Check if name conflicts with protected namespaces
+    validate_application_name_not_protected(dto.name.strip())
+
 
 def validate_application_update_dto(dto: ApplicationUpdate) -> None:
     """
     Validate application update DTO.
     Raises ValueError if validation fails.
+    Raises ApplicationNameProtectedError if name matches protected namespace.
     """
     if dto.name is not None:
         if not dto.name.strip():
             raise ValueError("Application name cannot be empty")
         if len(dto.name.strip()) < 1:
             raise ValueError("Application name must be at least 1 character long")
+        # Check if new name conflicts with protected namespaces
+        validate_application_name_not_protected(dto.name.strip())

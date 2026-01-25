@@ -209,15 +209,21 @@ class InstanceService:
             # If no cluster available, return empty list
             return []
 
-        # Get application name for namespace
-        application_name = (
-            instance.application.name if instance.application else "default"
-        )
+        # Get application namespace from database
+        # - Legacy apps: namespace = app name (no prefix)
+        # - New apps: namespace = tron-ns-{app name} (with prefix)
+        application = instance.application
+        if application:
+            application_namespace = (
+                application.namespace if application.namespace else application.name
+            )
+        else:
+            application_namespace = "default"
 
         # Get events from Kubernetes
         try:
             k8s_client = K8sClient(url=cluster.api_address, token=cluster.token)
-            events = k8s_client.list_events(namespace=application_name)
+            events = k8s_client.list_events(namespace=application_namespace)
 
             # Format events to match KubernetesEvent DTO
             formatted_events = []
@@ -225,7 +231,7 @@ class InstanceService:
                 formatted_events.append(
                     {
                         "name": event.get("name", ""),
-                        "namespace": event.get("namespace", application_name),
+                        "namespace": event.get("namespace", application_namespace),
                         "type": event.get("type", "Unknown"),
                         "reason": event.get("reason", "Unknown"),
                         "message": event.get("message", ""),

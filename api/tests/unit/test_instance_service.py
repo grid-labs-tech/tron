@@ -285,6 +285,8 @@ def test_get_instance_events_success(instance_service, mock_repository, mock_db)
     mock_cluster.api_address = "https://k8s.example.com"
     mock_cluster.token = "test-token"
 
+    # Events from Kubernetes use the namespace from the database
+    # For this test, no namespace is set in the mock, so it falls back to app name
     mock_events = [
         {
             "name": "event-1",
@@ -301,6 +303,9 @@ def test_get_instance_events_success(instance_service, mock_repository, mock_db)
         }
     ]
 
+    # Add namespace attribute to mock (simulating legacy app without namespace)
+    mock_instance.application.namespace = None
+
     with patch('app.instances.core.instance_service.ClusterSelectionService.get_cluster_with_least_load_or_raise') as mock_get_cluster, \
          patch('app.instances.core.instance_service.K8sClient') as mock_k8s_client_class:
         mock_get_cluster.return_value = mock_cluster
@@ -312,8 +317,10 @@ def test_get_instance_events_success(instance_service, mock_repository, mock_db)
 
         assert len(result) == 1
         assert result[0]["name"] == "event-1"
+        # Namespace comes from database (falls back to app name when namespace is None)
         assert result[0]["namespace"] == "test-app"
         assert result[0]["type"] == "Normal"
+        # Verify the service calls K8s with the namespace from database
         mock_k8s_client.list_events.assert_called_once_with(namespace="test-app")
 
 

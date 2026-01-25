@@ -153,7 +153,22 @@ class K8sClient:
         return available_memory
 
     def ensure_namespace_exists(self, namespace_name):
-        """Create the namespace if it does not exist."""
+        """
+        Create the namespace if it does not exist.
+
+        SECURITY:
+        - Protected namespaces (kube-system, etc.) cannot be created
+        - This method allows creation of any namespace because:
+          1. New apps use tron-ns-* prefix (secure by design)
+          2. Legacy apps have their namespace stored in the database
+             and are already validated at the application layer
+        """
+        from app.shared.config import is_namespace_protected, ProtectedNamespaceError
+
+        # Check if namespace is protected - we shouldn't try to create it
+        if is_namespace_protected(namespace_name):
+            raise ProtectedNamespaceError(namespace_name, "create")
+
         v1 = client.CoreV1Api(self.api_client)
         try:
             v1.read_namespace(name=namespace_name)
@@ -165,11 +180,38 @@ class K8sClient:
             else:
                 raise e
 
-    def delete_namespace(self, namespace_name):
+    def delete_namespace(self, namespace_name, is_legacy_namespace: bool = False):
         """
         Delete a namespace from Kubernetes.
         When a namespace is deleted, all resources within it are automatically deleted.
+
+        SECURITY: This method has TWO layers of protection:
+        1. Protected namespaces (kube-system, etc.) cannot be deleted
+        2. Only namespaces with 'tron-ns-' prefix OR legacy namespaces can be deleted
+
+        Args:
+            namespace_name: The namespace to delete
+            is_legacy_namespace: If True, allows deletion of legacy namespaces
+                                 (pre-v0.6 apps that don't have tron-ns- prefix).
+                                 This should ONLY be set by the application deletion
+                                 service when the namespace is registered in the database.
         """
+        from app.shared.config import (
+            is_namespace_protected,
+            is_tron_managed_namespace,
+            ProtectedNamespaceError,
+            NotTronManagedNamespaceError,
+        )
+
+        # SECURITY CHECK 1: Protected namespaces NEVER can be deleted
+        if is_namespace_protected(namespace_name):
+            raise ProtectedNamespaceError(namespace_name, "delete")
+
+        # SECURITY CHECK 2: Only Tron-managed namespaces (tron-ns-*) can be deleted
+        # Exception: Legacy namespaces (pre-v0.6) can be deleted if explicitly flagged
+        if not is_tron_managed_namespace(namespace_name) and not is_legacy_namespace:
+            raise NotTronManagedNamespaceError(namespace_name)
+
         v1 = client.CoreV1Api(self.api_client)
         try:
             v1.delete_namespace(name=namespace_name, body=client.V1DeleteOptions())
