@@ -27,6 +27,9 @@ from app.webapps.api.webapp_handlers import router as webapps_router
 from app.workers.api.worker_handlers import router as workers_router
 from app.cron.api.cron_handlers import router as crons_router
 
+# Version is injected at build time via APP_VERSION environment variable
+APP_VERSION = os.getenv("APP_VERSION", "dev")
+
 # Ensure both Bases are the same instance
 assert Base is OldBase, (
     "Base instances must be the same for SQLAlchemy relationships to work"
@@ -51,7 +54,7 @@ Base.metadata.create_all(bind=engine)
 app = FastAPI(
     title="Tron",
     summary="Platform as a Service built on top of kubernetes",
-    version="1.0.0",
+    version=APP_VERSION,
     openapi_url="/openapi.json",
     docs_url="/docs",
     redoc_url=None,  # Disable default ReDoc to use custom one with fixed CDN URL

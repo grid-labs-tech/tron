@@ -1,5 +1,7 @@
 FROM node:20-alpine AS builder
 
+ARG VITE_APP_VERSION=dev
+
 WORKDIR /app
 
 # Copy package files
@@ -10,6 +12,9 @@ RUN npm ci
 
 # Copy source code
 COPY . .
+
+# Set version as build-time environment variable
+ENV VITE_APP_VERSION=${VITE_APP_VERSION}
 
 # Build the application
 RUN npm run build

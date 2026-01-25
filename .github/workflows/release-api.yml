@@ -88,6 +88,8 @@ jobs:
           platforms: linux/amd64,linux/arm64
           provenance: true
           sbom: true
+          build-args: |
+            APP_VERSION=${{ steps.version.outputs.version }}
 
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@master

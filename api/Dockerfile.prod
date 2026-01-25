@@ -31,8 +31,12 @@ RUN uv sync --frozen --no-install-project --no-dev
 FROM python:3.13-alpine
 
 ARG _WORKDIR=/app
+ARG APP_VERSION=dev
 
 WORKDIR ${_WORKDIR}
+
+# Set version as environment variable
+ENV APP_VERSION=${APP_VERSION}
 
 # Install runtime dependencies only
 RUN apk add --no-cache \
