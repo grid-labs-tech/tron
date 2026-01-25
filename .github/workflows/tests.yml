@@ -243,9 +243,6 @@ jobs:
     name: Security Scan
     needs: changes
     if: needs.changes.outputs.api == 'true' || needs.changes.outputs.portal == 'true'
-    permissions:
-      contents: read
-      security-events: write
 
     steps:
       - name: Checkout code
