@@ -1,68 +1,118 @@
-# Tron - Platform as a Service
+# Tron - Internal Developer Platform
 
 [![Tests](https://github.com/grid-labs-tech/tron/actions/workflows/tests.yml/badge.svg)](https://github.com/grid-labs-tech/tron/actions/workflows/tests.yml)
+[![Artifact Hub](https://img.shields.io/endpoint?url=https://artifacthub.io/badge/repository/grid-labs-tech)](https://artifacthub.io/packages/helm/grid-labs-tech/tron)
 
 An Internal Developer Platform that simplifies application delivery on Kubernetes by providing a clean abstraction for workloads, networking, scaling, and exposure.
 
-## 📸 Platform Overview
+## Screenshots
 
-### Dashboard
-The dashboard provides a comprehensive overview of your platform, including statistics, component breakdown, and resource distribution across environments and clusters.
+| Dashboard | Applications |
+|-----------|--------------|
+| ![Dashboard](images/dashboard.jpg) | ![Applications](images/applications.jpg) |
 
-![Dashboard](images/dashboard.jpg)
+| Templates | Instance Details |
+|-----------|------------------|
+| ![Templates](images/templates.jpg) | ![Instance](images/instance.jpg) |
 
-### Templates
-Manage reusable Kubernetes templates with Jinja2 templating. Create and configure templates for different component types (webapp, worker, cron) with customizable variables.
+## Features
 
-![Templates](images/templates.jpg)
+- **Cluster Management**: Add and manage multiple Kubernetes clusters
+- **Environments**: Organize resources by environments (dev, staging, production)
+- **Applications**: Deploy and manage applications with multiple instances
+- **Templates**: Reusable Kubernetes templates with Jinja2 templating
+- **Gateway API**: Native support for Gateway API routing
+- **User Management**: Role-based access control (Admin, User, Viewer)
+- **API Tokens**: Programmatic access via REST API
 
-### Applications
-Organize and manage your applications. Each application can have multiple instances deployed across different environments with independent configurations.
+## Quick Start
 
-![Applications](images/applications.jpg)
+### Option 1: Docker Compose (Recommended)
 
-### Instance Details
-View and manage components within an instance. Configure webapps, workers, and cron jobs with their specific settings, monitor their status, and access detailed information.
-
-![Instance](images/instance.jpg)
-
-## 🚀 Installation
-
-### Installing via Helm Chart
-
-The simplest way to install Tron on a Kubernetes cluster is through the Helm Chart:
+The fastest way to deploy Tron in production:
 
 ```bash
-# Add the Helm repository
+cd docker
+
+# Create environment file
+cp .env.example .env
+
+# Edit .env with your settings:
+# - DB_PASSWORD: Strong database password
+# - SECRET_KEY: API secret key (min 32 chars)
+# - DOMAIN: Your domain (for SSL)
+# - CERTBOT_EMAIL: Email for Let's Encrypt
+
+# Start all services
+docker compose -f docker-compose.prod.yaml --profile full up -d
+```
+
+**Access the platform:**
+- Portal: `http://localhost` (or `https://your-domain.com` with SSL)
+- API Docs: `http://localhost/api/docs`
+
+For HTTPS with Let's Encrypt:
+```bash
+docker compose -f docker-compose.prod.yaml --profile full --profile ssl up -d
+```
+
+See [docker/README.md](docker/README.md) for detailed configuration options.
+
+### Option 2: Helm Chart
+
+For Kubernetes deployments, use our Helm chart:
+
+```bash
 helm repo add grid-labs-tech https://grid-labs-tech.github.io/charts
 helm repo update
-
-# Install Tron
 helm install tron grid-labs-tech/tron
 ```
 
-For more details on configuration and available values, see the [Helm Chart repository](https://github.com/grid-labs-tech/charts/tree/main/tron).
+See the [Helm Chart documentation](https://github.com/grid-labs-tech/charts/tree/main/tron) for configuration options.
 
-## 📚 API Documentation
+## Architecture
 
-After installation, interactive API documentation will be available through the web portal or directly at the API endpoint:
-- **Swagger UI**: `/docs`
-- **ReDoc**: `/redoc`
+```
+┌─────────────────────────────────────────────────────────┐
+│                        Portal                           │
+│                    (React Frontend)                     │
+└─────────────────────────┬───────────────────────────────┘
+                          │
+┌─────────────────────────▼───────────────────────────────┐
+│                         API                             │
+│                  (FastAPI Backend)                      │
+└─────────────────────────┬───────────────────────────────┘
+                          │
+┌─────────────────────────▼───────────────────────────────┐
+│                     PostgreSQL                          │
+└─────────────────────────────────────────────────────────┘
+```
 
-## 🏗️ Architecture
+### Core Concepts
 
-The project is organized as a monorepo containing:
+**Application** → **Instance** → **Component**
 
-- **API** (`/api`): FastAPI backend with cluster, environment, application, and template management
-- **Portal** (`/portal`): React frontend for user interface
-- **Scripts** (`/scripts`): Automation and setup scripts
+- **Application**: A software project (e.g., `my-api`)
+- **Instance**: Deployment in a specific environment (e.g., `my-api` in `production`)
+- **Component**: Functional part of an instance (`webapp`, `worker`, or `cron`)
 
-## 🔐 Authentication
+```
+Application: my-api
+├── Instance: dev
+│   ├── api-server (webapp)
+│   └── email-worker (worker)
+└── Instance: production
+    ├── api-server (webapp)
+    ├── email-worker (worker)
+    └── daily-report (cron)
+```
 
-The platform supports two authentication methods:
+## Authentication
 
-1. **JWT (JSON Web Tokens)**: For web portal users
-2. **API Tokens**: For programmatic access via `x-tron-token` header
+| Method | Use Case | Header |
+|--------|----------|--------|
+| JWT | Web Portal | `Authorization: Bearer <token>` |
+| API Token | Programmatic access | `x-tron-token: <token>` |
 
 ### User Roles
 
@@ -70,195 +120,29 @@ The platform supports two authentication methods:
 - **User**: Limited access (read-only on administrative resources)
 - **Viewer**: Read-only access
 
-## 📖 Main Features
+## API Documentation
 
-- **Cluster Management**: Add and manage Kubernetes clusters
-- **Environments**: Organize resources by environments (dev, staging, production)
-- **Applications**: Application deployment and management
-- **Templates**: Reusable templates for components
-- **Users**: User and permission management
-- **API Tokens**: Tokens for programmatic access
+Interactive API documentation is available at:
+- **Swagger UI**: `/api/docs`
+- **ReDoc**: `/api/redoc`
 
-## 🏛️ Core Concepts
+## Development
 
-### Applications, Instances, and Components
+For local development setup, see [DEVELOPMENT.md](DEVELOPMENT.md).
 
-The platform organizes deployments using a hierarchical structure:
+## Contributing
 
-#### **Application**
-An application represents a software project or service. It's the top-level entity that groups related deployments.
-
-**Example**: `my-api`, `frontend-app`, `data-processor`
-
-#### **Instance**
-An instance is a deployment of an application in a specific environment. Each instance defines:
-- **Image**: Docker image to deploy (e.g., `my-app:1.0.0`)
-- **Version**: Version tag of the image
-- **Environment**: Where it's deployed (dev, staging, production)
-
-**Key points**:
-- One application can have multiple instances (one per environment)
-- Each instance is unique per application + environment combination
-- Instances contain one or more components
-
-**Example**:
-- Application: `my-api`
-  - Instance 1: `my-api` in `dev` environment (image: `my-api:1.0.0`)
-  - Instance 2: `my-api` in `production` environment (image: `my-api:2.1.0`)
-
-#### **Component**
-A component is a functional part of an instance that gets deployed to Kubernetes. Each component has:
-- **Type**: `webapp`, `worker`, or `cron`
-- **Name**: Unique identifier within the instance
-- **Settings**: Component-specific configuration (JSON)
-- **Public URL**: Optional public endpoint (for webapps)
-
-**Component Types**:
-- **webapp**: Web application with HTTP/HTTPS access
-- **worker**: Background worker process
-- **cron**: Scheduled job (cron job)
-
-**Example**:
-- Instance: `my-api` in `production`
-  - Component 1: `api-server` (type: `webapp`, public URL: `https://api.example.com`)
-  - Component 2: `email-worker` (type: `worker`)
-  - Component 3: `daily-report` (type: `cron`, schedule: `0 0 * * *`)
-
-### Gateway API Requirements
-
-For webapp components, the platform supports three visibility modes:
-
-- **Cluster**: Accessible only within the Kubernetes cluster via Service (default, always available)
-- **Private**: Internal access with Gateway API routing (requires Gateway API)
-- **Public**: External access with public endpoint (requires Gateway API)
-
-**Important**: To use **Public** or **Private** visibility modes, you must have a Gateway API component installed and configured in your Kubernetes cluster. The Gateway API provides the necessary resources (`HTTPRoute`, `TCPRoute`, `UDPRoute`) to route traffic to your webapp components.
-
-**Requirements for Public/Private visibility**:
-1. Gateway API CRDs must be installed in the cluster
-2. A Gateway resource must be created and configured in the cluster
-3. The Gateway must be properly referenced (namespace and name) in the cluster configuration
-
-If no Gateway is configured in the cluster, only the **Cluster** visibility mode will be available for webapp components.
-
-### Hierarchy Summary
-
-```
-Application
-  └── Instance (per environment)
-      ├── Component (webapp)
-      ├── Component (worker)
-      └── Component (cron)
-```
-
-This structure allows you to:
-- Deploy the same application to multiple environments with different configurations
-- Manage different component types (web, workers, cron jobs) within the same instance
-- Scale and configure each component independently
-
-## 👥 Contributing
-
-Want to contribute to Tron development? See our [contributing documentation](CONTRIBUTING.md) for more details.
-
-### Local Development
-
-To develop and test locally, you can use Docker Compose:
-
-#### Prerequisites
-
-- Docker
-- Docker Compose
-
-#### Starting the Environment
-
-Run a single command to start the entire environment:
-
-```bash
-make start
-```
-
-This command will:
-- ✅ Start the FastAPI API (http://localhost:8000)
-- ✅ Start the React Portal (http://localhost:3000)
-- ✅ Start the PostgreSQL database
-- ✅ Start the Kubernetes cluster (K3s)
-- ✅ Run database migrations
-- ✅ Load initial templates
-- ✅ Create default administrator user
-- ✅ Configure API token
-- ✅ Create "local" environment
-- ✅ Configure local cluster
-
-#### Access the Portal
-
-After running `make start`, access:
-
-**URL**: [http://localhost:3000](http://localhost:3000)
-
-**Default credentials**:
-- **Email**: `admin@example.com`
-- **Password**: `admin`
-
-#### Useful Commands
-
-```bash
-# Start environment
-make start
-
-# Stop environment
-make stop
-
-# View logs
-make logs
-
-# Check service status
-make status
-
-# Rebuild images
-make build
-
-# Create new migration
-make api-migration
-
-# Apply migrations
-make api-migrate
-```
-
-#### Using kubectl with K3s
-
-To interact with the local K3s cluster:
-
-```bash
-export KUBECONFIG=./volumes/kubeconfig/kubeconfig.yaml
-kubectl get nodes
-```
-
-### Project Structure
-
-```
-tron/
-├── api/              # FastAPI backend
-├── portal/           # React frontend
-├── scripts/          # Automation scripts
-├── docker/           # Docker Compose configurations
-└── volumes/          # Persistent volumes (kubeconfig, tokens)
-```
-
-### Environment Variables
-
-Main environment variables can be configured in the `docker/docker-compose.yaml` file or through `.env` files.
+We welcome contributions! See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
 ### Contributors
-
-We thank everyone who contributes to the Tron project! 🎉
-
-#### Our Contributors
 
 <a href="https://github.com/grid-labs-tech/tron/graphs/contributors">
   <img src="https://contrib.rocks/image?repo=grid-labs-tech/tron" alt="Contributors" />
 </a>
 
-Made with [contrib.rocks](https://contrib.rocks).
+## License
+
+This project is licensed under the [Apache License 2.0](LICENSE).
 
 ---
 
