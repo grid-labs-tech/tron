@@ -540,93 +540,124 @@ class K8sClient:
                         )
                     elif operation == "update":
                         # PUT to update - need to get resourceVersion first
-                        try:
-                            # Read existing resource to get resourceVersion
-                            existing_response = self.api_client.call_api(
-                                f"{api_path_base}/{name}",
-                                "GET",
-                                auth_settings=["BearerToken"],
-                                response_type="object",
-                                _preload_content=True,
-                            )
-                            existing_resource = (
-                                existing_response[0]
-                                if isinstance(existing_response, tuple)
-                                else existing_response
-                            )
+                        # Retry up to 3 times for 409 Conflict errors
+                        max_retries = 3
+                        for retry in range(max_retries):
+                            try:
+                                # Read existing resource to get resourceVersion
+                                existing_response = self.api_client.call_api(
+                                    f"{api_path_base}/{name}",
+                                    "GET",
+                                    auth_settings=["BearerToken"],
+                                    response_type="object",
+                                    _preload_content=True,
+                                )
+                                existing_resource = (
+                                    existing_response[0]
+                                    if isinstance(existing_response, tuple)
+                                    else existing_response
+                                )
 
-                            # Include resourceVersion in document if it exists
-                            if existing_resource and "metadata" in existing_resource:
-                                existing_metadata = existing_resource["metadata"]
-                                if "resourceVersion" in existing_metadata:
-                                    if "metadata" not in document:
-                                        document["metadata"] = {}
-                                    document["metadata"]["resourceVersion"] = (
-                                        existing_metadata["resourceVersion"]
-                                    )
-                        except ApiException as read_e:
-                            if read_e.status != 404:
-                                # If can't read and it's not 404, re-raise the error
-                                raise read_e
+                                # Include resourceVersion in document if it exists
+                                if (
+                                    existing_resource
+                                    and "metadata" in existing_resource
+                                ):
+                                    existing_metadata = existing_resource["metadata"]
+                                    if "resourceVersion" in existing_metadata:
+                                        if "metadata" not in document:
+                                            document["metadata"] = {}
+                                        document["metadata"]["resourceVersion"] = (
+                                            existing_metadata["resourceVersion"]
+                                        )
 
-                        # PUT to update
-                        self.api_client.call_api(
-                            f"{api_path_base}/{name}",
-                            "PUT",
-                            body=document,
-                            auth_settings=["BearerToken"],
-                            response_type="object",
-                            _preload_content=True,
-                        )
-                    elif operation == "upsert":
-                        # Try to update first, if it doesn't exist, create
-                        try:
-                            # Read existing resource to get resourceVersion
-                            existing_response = self.api_client.call_api(
-                                f"{api_path_base}/{name}",
-                                "GET",
-                                auth_settings=["BearerToken"],
-                                response_type="object",
-                                _preload_content=True,
-                            )
-                            existing_resource = (
-                                existing_response[0]
-                                if isinstance(existing_response, tuple)
-                                else existing_response
-                            )
-
-                            # Include resourceVersion in document if it exists
-                            if existing_resource and "metadata" in existing_resource:
-                                existing_metadata = existing_resource["metadata"]
-                                if "resourceVersion" in existing_metadata:
-                                    if "metadata" not in document:
-                                        document["metadata"] = {}
-                                    document["metadata"]["resourceVersion"] = (
-                                        existing_metadata["resourceVersion"]
-                                    )
-
-                            # PUT to update
-                            self.api_client.call_api(
-                                f"{api_path_base}/{name}",
-                                "PUT",
-                                body=document,
-                                auth_settings=["BearerToken"],
-                                response_type="object",
-                                _preload_content=True,
-                            )
-                        except ApiException as e:
-                            if e.status == 404:
-                                # Resource does not exist, create
+                                # PUT to update
                                 self.api_client.call_api(
-                                    api_path_base,
-                                    "POST",
+                                    f"{api_path_base}/{name}",
+                                    "PUT",
                                     body=document,
                                     auth_settings=["BearerToken"],
                                     response_type="object",
                                     _preload_content=True,
                                 )
-                            else:
-                                raise e
+                                break  # Success, exit retry loop
+                            except ApiException as e:
+                                if e.status == 409 and retry < max_retries - 1:
+                                    # Conflict error - resourceVersion changed
+                                    # Retry with fresh resourceVersion
+                                    import time
+
+                                    time.sleep(0.1 * (retry + 1))  # Backoff
+                                    continue
+                                elif e.status == 404:
+                                    # Resource doesn't exist, can't update
+                                    raise e
+                                else:
+                                    raise e
+                    elif operation == "upsert":
+                        # Try to update first, if it doesn't exist, create
+                        # Retry up to 3 times for 409 Conflict errors (resourceVersion mismatch)
+                        max_retries = 3
+                        for retry in range(max_retries):
+                            try:
+                                # Read existing resource to get resourceVersion
+                                existing_response = self.api_client.call_api(
+                                    f"{api_path_base}/{name}",
+                                    "GET",
+                                    auth_settings=["BearerToken"],
+                                    response_type="object",
+                                    _preload_content=True,
+                                )
+                                existing_resource = (
+                                    existing_response[0]
+                                    if isinstance(existing_response, tuple)
+                                    else existing_response
+                                )
+
+                                # Include resourceVersion in document if it exists
+                                if (
+                                    existing_resource
+                                    and "metadata" in existing_resource
+                                ):
+                                    existing_metadata = existing_resource["metadata"]
+                                    if "resourceVersion" in existing_metadata:
+                                        if "metadata" not in document:
+                                            document["metadata"] = {}
+                                        document["metadata"]["resourceVersion"] = (
+                                            existing_metadata["resourceVersion"]
+                                        )
+
+                                # PUT to update
+                                self.api_client.call_api(
+                                    f"{api_path_base}/{name}",
+                                    "PUT",
+                                    body=document,
+                                    auth_settings=["BearerToken"],
+                                    response_type="object",
+                                    _preload_content=True,
+                                )
+                                break  # Success, exit retry loop
+                            except ApiException as e:
+                                if e.status == 404:
+                                    # Resource does not exist, create
+                                    self.api_client.call_api(
+                                        api_path_base,
+                                        "POST",
+                                        body=document,
+                                        auth_settings=["BearerToken"],
+                                        response_type="object",
+                                        _preload_content=True,
+                                    )
+                                    break  # Success, exit retry loop
+                                elif e.status == 409 and retry < max_retries - 1:
+                                    # Conflict error - resourceVersion changed
+                                    # Retry with fresh resourceVersion
+                                    import time
+
+                                    time.sleep(0.1 * (retry + 1))  # Backoff
+                                    continue
+                                else:
+                                    raise e
                     elif operation == "delete":
                         # DELETE to remove
                         try:

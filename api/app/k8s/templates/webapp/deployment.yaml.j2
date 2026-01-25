@@ -56,9 +56,18 @@ spec:
         {% endif %}
         env:
         {% for env in application.settings.envs -%}
-        - name: {{env.key}}
-          value: {{env.value}}
+        - name: {{ env.key }}
+          value: "{{ env.value }}"
         {% endfor %}
+        {% if application.settings.secrets -%}
+        {% for secret in application.settings.secrets -%}
+        - name: {{ secret.key }}
+          valueFrom:
+            secretKeyRef:
+              name: "{{ application.component_name }}-secrets"
+              key: {{ secret.key }}
+        {% endfor %}
+        {% endif %}
         image:  "{{ application.image }}:{{ application.version }}"
         imagePullPolicy: Always
         livenessProbe:

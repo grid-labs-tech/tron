@@ -36,6 +36,11 @@ from app.shared.core.application_component_helpers import (
     update_component_enabled_field,
     build_application_component_entity,
 )
+from app.shared.crypto import (
+    encrypt_secrets_in_settings,
+    strip_secrets_from_settings,
+    merge_secrets_for_update,
+)
 
 
 class CronService:
@@ -54,6 +59,9 @@ class CronService:
         cluster = get_cluster_for_instance(self.db, instance)
 
         settings_dict = ensure_private_exposure_settings(dto.settings.model_dump())
+        # Encrypt secrets before saving to database
+        settings_dict = encrypt_secrets_in_settings(settings_dict)
+
         cron = self._build_cron_entity(dto, instance.id, settings_dict)
         cron = self.repository.create(cron)
 
@@ -106,6 +114,13 @@ class CronService:
         validate_cron_type(cron)
         return self._serialize_cron(cron)
 
+    def get_cron_raw(self, uuid: UUID):
+        """Get raw cron model by UUID (for admin operations like decrypting secrets)."""
+        validate_cron_exists(self.repository, uuid)
+        cron = self.repository.find_by_uuid(uuid)
+        validate_cron_type(cron)
+        return cron
+
     def get_crons(self, skip: int = 0, limit: int = 100) -> List[Cron]:
         """Get all crons."""
         crons = self.repository.find_all(skip=skip, limit=limit)
@@ -148,7 +163,19 @@ class CronService:
         )
 
         if dto.settings is not None:
-            cron.settings = dto.settings.model_dump()
+            settings_dict = dto.settings.model_dump()
+
+            # Handle secrets: merge with existing (preserve unchanged secrets)
+            existing_settings = cron.settings or {}
+            if "secrets" in settings_dict and settings_dict["secrets"]:
+                existing_secrets = existing_settings.get("secrets", [])
+                settings_dict["secrets"] = merge_secrets_for_update(
+                    settings_dict["secrets"], existing_secrets
+                )
+            elif "secrets" in settings_dict:
+                settings_dict = encrypt_secrets_in_settings(settings_dict)
+
+            cron.settings = settings_dict
             self.repository.update(cron)
 
         return enabled_changed
@@ -181,5 +208,8 @@ class CronService:
         )
 
     def _serialize_cron(self, cron: ApplicationComponentModel) -> Cron:
-        """Serialize cron to DTO."""
+        """Serialize cron to DTO with secrets stripped."""
+        # Strip secret values before returning to API
+        if cron.settings:
+            cron.settings = strip_secrets_from_settings(cron.settings)
         return Cron.model_validate(cron)

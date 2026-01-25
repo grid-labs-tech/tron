@@ -10,6 +10,13 @@ class WorkerEnvs(BaseModel):
     value: str
 
 
+class WorkerSecrets(BaseModel):
+    """Secret environment variable (value is encrypted in database)."""
+
+    key: str
+    value: str  # Plaintext on input, encrypted in storage, never returned in responses
+
+
 class WorkerCustomMetrics(BaseModel):
     enabled: bool = False
     path: str = "/metrics"
@@ -24,6 +31,9 @@ class WorkerAutoscaling(BaseModel):
 class WorkerSettings(BaseModel):
     custom_metrics: WorkerCustomMetrics
     envs: List[WorkerEnvs] = []
+    secrets: List[
+        WorkerSecrets
+    ] = []  # Encrypted in database, used to create K8s Secrets
     command: Union[str, List[str], None] = None
     cpu: float
     memory: int

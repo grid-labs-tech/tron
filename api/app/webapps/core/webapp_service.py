@@ -37,6 +37,11 @@ from app.shared.core.application_component_helpers import (
     delete_from_kubernetes_safe,
     delete_component,
 )
+from app.shared.crypto import (
+    encrypt_secrets_in_settings,
+    strip_secrets_from_settings,
+    merge_secrets_for_update,
+)
 
 
 class WebappService:
@@ -113,6 +118,13 @@ class WebappService:
         validate_webapp_type(webapp)
         return self._serialize_webapp(webapp)
 
+    def get_webapp_raw(self, uuid: UUID):
+        """Get raw webapp model by UUID (for admin operations like decrypting secrets)."""
+        validate_webapp_exists(self.repository, uuid)
+        webapp = self.repository.find_by_uuid(uuid)
+        validate_webapp_type(webapp)
+        return webapp
+
     def get_webapps(self, skip: int = 0, limit: int = 100) -> List[Webapp]:
         """Get all webapps."""
         webapps = self.repository.find_all(skip=skip, limit=limit)
@@ -150,6 +162,10 @@ class WebappService:
     ) -> ApplicationComponentModel:
         """Build webapp entity from DTO."""
         settings_dict = dto.settings.model_dump()
+
+        # Encrypt secrets before saving to database
+        settings_dict = encrypt_secrets_in_settings(settings_dict)
+
         exposure_type = settings_dict.get("exposure", {}).get("type", "http")
         exposure_visibility = settings_dict.get("exposure", {}).get(
             "visibility", "cluster"
@@ -183,6 +199,18 @@ class WebappService:
 
         if dto.settings is not None:
             settings_dict = dto.settings.model_dump()
+
+            # Handle secrets: merge with existing (preserve unchanged secrets)
+            existing_settings = webapp.settings or {}
+            if "secrets" in settings_dict and settings_dict["secrets"]:
+                existing_secrets = existing_settings.get("secrets", [])
+                settings_dict["secrets"] = merge_secrets_for_update(
+                    settings_dict["secrets"], existing_secrets
+                )
+            elif "secrets" in settings_dict:
+                # Empty secrets list - encrypt anyway (will be empty)
+                settings_dict = encrypt_secrets_in_settings(settings_dict)
+
             webapp.settings = settings_dict
 
             exposure_type = settings_dict.get("exposure", {}).get("type", "http")
@@ -246,5 +274,8 @@ class WebappService:
         )
 
     def _serialize_webapp(self, webapp: ApplicationComponentModel) -> Webapp:
-        """Serialize webapp to DTO."""
+        """Serialize webapp to DTO with secrets stripped."""
+        # Strip secret values before returning to API
+        if webapp.settings:
+            webapp.settings = strip_secrets_from_settings(webapp.settings)
         return Webapp.model_validate(webapp)

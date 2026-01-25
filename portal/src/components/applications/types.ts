@@ -1,3 +1,8 @@
+export interface SecretVar {
+  key: string
+  value: string
+}
+
 export interface WebappSettings {
   custom_metrics: {
     enabled: boolean
@@ -13,6 +18,7 @@ export interface WebappSettings {
     key: string
     value: string
   }>
+  secrets?: SecretVar[]
   command: string | null
   cpu_scaling_threshold: number
   memory_scaling_threshold: number
@@ -38,6 +44,7 @@ export interface CronSettings {
     key: string
     value: string
   }>
+  secrets?: SecretVar[]
   command: string | null
   cpu: number
   memory: number
@@ -54,6 +61,7 @@ export interface WorkerSettings {
     key: string
     value: string
   }>
+  secrets?: SecretVar[]
   command: string | null
   cpu: number
   memory: number
@@ -88,6 +96,7 @@ export const getDefaultWebappSettings = (): WebappSettings => ({
     visibility: 'cluster',
   },
   envs: [],
+  secrets: [],
   command: null,
   cpu_scaling_threshold: 80,
   memory_scaling_threshold: 80,
@@ -110,6 +119,7 @@ export const getDefaultWebappSettings = (): WebappSettings => ({
 
 export const getDefaultCronSettings = (): CronSettings => ({
   envs: [],
+  secrets: [],
   command: null,
   cpu: 0.5,
   memory: 512,
@@ -123,6 +133,7 @@ export const getDefaultWorkerSettings = (): WorkerSettings => ({
     port: 8080,
   },
   envs: [],
+  secrets: [],
   command: null,
   cpu: 0.5,
   memory: 512,

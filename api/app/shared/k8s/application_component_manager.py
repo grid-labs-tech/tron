@@ -1,3 +1,4 @@
+import os
 import yaml
 from typing import Optional
 from jinja2 import Environment, BaseLoader
@@ -9,6 +10,17 @@ from app.templates.infra.component_template_config_repository import (
 from app.templates.infra.template_repository import TemplateRepository
 from app.templates.core.component_template_config_service import (
     ComponentTemplateConfigService,
+)
+
+# Path to the shared secrets template
+SECRETS_TEMPLATE_PATH = os.path.join(
+    os.path.dirname(__file__),
+    "..",
+    "..",
+    "k8s",
+    "templates",
+    "shared",
+    "secret.yaml.j2",
 )
 
 
@@ -75,6 +87,18 @@ class KubernetesApplicationComponentManager:
 
         combined_payloads = []
 
+        # Check if component has secrets and render Secret template first
+        component_settings = application_component.get("settings", {})
+        secrets = component_settings.get("secrets", [])
+        if secrets and len(secrets) > 0:
+            secret_payload = (
+                KubernetesApplicationComponentManager._render_secrets_template(
+                    variables
+                )
+            )
+            if secret_payload:
+                combined_payloads.append(secret_payload)
+
         # Render each template in configured order
         for template in templates:
             try:
@@ -90,6 +114,41 @@ class KubernetesApplicationComponentManager:
                 raise ValueError(f"Error rendering template '{template.name}': {e}")
 
         return combined_payloads
+
+    @staticmethod
+    def _render_secrets_template(variables: dict):
+        """
+        Render the Kubernetes Secret template for components with secrets.
+
+        This is called automatically when a component has secrets configured.
+        The Secret is created/updated in the namespace before the main resources.
+
+        Args:
+            variables: Dictionary with variables for rendering
+
+        Returns:
+            Python dictionary representing the rendered Secret YAML, or None if no secrets
+        """
+        try:
+            with open(SECRETS_TEMPLATE_PATH, "r") as f:
+                template_content = f.read()
+
+            return KubernetesApplicationComponentManager.render_template_from_string(
+                template_content, variables
+            )
+        except FileNotFoundError:
+            # Template file not found, skip secrets
+            import logging
+
+            logger = logging.getLogger(__name__)
+            logger.warning(f"Secrets template not found at {SECRETS_TEMPLATE_PATH}")
+            return None
+        except Exception as e:
+            import logging
+
+            logger = logging.getLogger(__name__)
+            logger.error(f"Error rendering secrets template: {e}")
+            return None
 
     @staticmethod
     def render_template_from_string(template_content: str, variables: dict):

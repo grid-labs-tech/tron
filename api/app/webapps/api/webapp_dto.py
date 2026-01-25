@@ -39,6 +39,13 @@ class WebappEnvs(BaseModel):
     value: str
 
 
+class WebappSecrets(BaseModel):
+    """Secret environment variable (value is encrypted in database)."""
+
+    key: str
+    value: str  # Plaintext on input, encrypted in storage, never returned in responses
+
+
 class WebappCustomMetrics(BaseModel):
     enabled: bool = False
     path: str = "/metrics"
@@ -64,6 +71,9 @@ class WebappSettings(BaseModel):
     custom_metrics: WebappCustomMetrics
     exposure: WebappExposure
     envs: List[WebappEnvs] = []
+    secrets: List[
+        WebappSecrets
+    ] = []  # Encrypted in database, used to create K8s Secrets
     command: Union[str, List[str], None] = None
     cpu_scaling_threshold: int = 80
     memory_scaling_threshold: int = 80

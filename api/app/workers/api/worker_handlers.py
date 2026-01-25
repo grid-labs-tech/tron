@@ -92,3 +92,56 @@ def delete_worker(
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.get("/{uuid}/secrets")
+def get_worker_secrets(
+    uuid: UUID,
+    service: WorkerService = Depends(get_worker_service),
+    current_user: User = Depends(require_role([UserRole.ADMIN])),
+):
+    """
+    Get decrypted secrets for a worker.
+    Admin only endpoint - returns plaintext secret values.
+
+    Security: This endpoint is protected by admin role requirement.
+    All access is logged for audit purposes.
+    """
+    import logging
+    from app.shared.crypto import decrypt_secret
+
+    logger = logging.getLogger(__name__)
+
+    try:
+        worker = service.get_worker_raw(uuid)
+        if not worker:
+            raise HTTPException(status_code=404, detail="Worker not found")
+
+        # Audit log: Admin accessing secrets
+        logger.info(
+            f"SECURITY_AUDIT: Admin '{current_user.email}' accessed secrets "
+            f"for worker '{worker.name}' (uuid: {uuid})"
+        )
+
+        settings = worker.settings or {}
+        encrypted_secrets = settings.get("secrets", [])
+
+        decrypted_secrets = []
+        for secret in encrypted_secrets:
+            try:
+                decrypted_value = decrypt_secret(secret.get("value", ""))
+                decrypted_secrets.append(
+                    {"key": secret.get("key", ""), "value": decrypted_value}
+                )
+            except Exception as e:
+                logger.warning(
+                    f"SECURITY_AUDIT: Failed to decrypt secret '{secret.get('key')}' "
+                    f"for worker {uuid}: {type(e).__name__}"
+                )
+                decrypted_secrets.append(
+                    {"key": secret.get("key", ""), "value": "********"}
+                )
+
+        return {"secrets": decrypted_secrets}
+    except (WorkerNotFoundError, WorkerNotWorkerTypeError) as e:
+        raise HTTPException(status_code=404, detail=str(e))

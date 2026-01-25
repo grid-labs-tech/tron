@@ -4,14 +4,17 @@ import { ScalingThresholdsInput } from './form-components/ScalingThresholdsInput
 import { AutoscalingInput } from './form-components/AutoscalingInput'
 import { CustomMetricsInput } from './form-components/CustomMetricsInput'
 import { EnvVarsInput } from './form-components/EnvVarsInput'
+import { SecretsInput } from './form-components/SecretsInput'
 import { CommandInput } from './form-components/CommandInput'
 
 interface WorkerFormProps {
   settings: WorkerSettings
   onChange: (settings: WorkerSettings) => void
+  isAdmin?: boolean
+  componentUuid?: string
 }
 
-export function WorkerForm({ settings, onChange }: WorkerFormProps) {
+export function WorkerForm({ settings, onChange, isAdmin = false, componentUuid }: WorkerFormProps) {
   const updateField = <K extends keyof WorkerSettings>(field: K, value: WorkerSettings[K]) => {
     onChange({ ...settings, [field]: value })
   }
@@ -52,6 +55,14 @@ export function WorkerForm({ settings, onChange }: WorkerFormProps) {
       <EnvVarsInput
         envs={settings.envs}
         onChange={(envs) => updateField('envs', envs)}
+      />
+
+      <SecretsInput
+        secrets={settings.secrets || []}
+        onChange={(secrets) => updateField('secrets', secrets)}
+        isAdmin={isAdmin}
+        componentUuid={componentUuid}
+        componentType="worker"
       />
     </div>
   )

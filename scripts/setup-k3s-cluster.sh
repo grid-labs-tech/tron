@@ -9,7 +9,7 @@ TOKEN_FILE="${TOKEN_FILE:-./volumes/token/api-token.txt}"
 KUBECONFIG_FILE="${KUBECONFIG_FILE:-./volumes/kubeconfig/kubeconfig.yaml}"
 ENVIRONMENT_NAME="${ENVIRONMENT_NAME:-local}"
 CLUSTER_NAME="${CLUSTER_NAME:-local-cluster}"
-CLUSTER_API_ADDRESS="${CLUSTER_API_ADDRESS:-https://k3s-server:5443}"
+CLUSTER_API_ADDRESS="${CLUSTER_API_ADDRESS:-https://k3s-server:5443}"  # Port 5443 as configured in docker-compose
 SERVICE_ACCOUNT_NAME="${SERVICE_ACCOUNT_NAME:-tron}"
 SERVICE_ACCOUNT_NAMESPACE="${SERVICE_ACCOUNT_NAMESPACE:-kube-system}"
 ADMIN_EMAIL="${ADMIN_EMAIL:-admin@example.com}"
@@ -213,25 +213,31 @@ echo -e "${YELLOW}🔍 Verificando cluster '${CLUSTER_NAME}'...${NC}"
 CLUSTERS_RESPONSE=$(curl -s -X GET "${API_URL}/clusters/" \
     -H "x-tron-token: ${API_TOKEN}")
 
-CLUSTER_UUID=$(echo "$CLUSTERS_RESPONSE" | jq -r ".[] | select(.name == \"${CLUSTER_NAME}\") | .uuid" | head -1)
+CLUSTER_UUID=$(echo "$CLUSTERS_RESPONSE" | jq -r ".[] | select(.name == \"${CLUSTER_NAME}\") | .uuid" 2>/dev/null | head -1)
 
 if [ -n "$CLUSTER_UUID" ] && [ "$CLUSTER_UUID" != "null" ]; then
-    echo -e "${GREEN}✓ Cluster '${CLUSTER_NAME}' já existe${NC}"
-    UPDATE_CLUSTER_RESPONSE=$(curl -s -X PUT "${API_URL}/clusters/${CLUSTER_UUID}" \
-        -H "Content-Type: application/json" \
-        -H "x-tron-token: ${API_TOKEN}" \
-        -d "{
-            \"name\": \"${CLUSTER_NAME}\",
-            \"api_address\": \"${CLUSTER_API_ADDRESS}\",
-            \"token\": \"${CLUSTER_TOKEN}\",
-            \"environment_uuid\": \"${ENVIRONMENT_UUID}\"
-        }")
-        if [ -z "$UPDATE_CLUSTER_RESPONSE" ] || [ "$UPDATE_CLUSTER_RESPONSE" = "null" ]; then
-            echo -e "${RED}❌ Erro ao atualizar cluster${NC}"
-            echo "$UPDATE_CLUSTER_RESPONSE"
-            exit 1
+    echo -e "${GREEN}✓ Cluster '${CLUSTER_NAME}' já existe (UUID: ${CLUSTER_UUID})${NC}"
+    
+    if [ -n "$CLUSTER_TOKEN" ]; then
+        echo -e "${YELLOW}📝 Atualizando token do cluster...${NC}"
+        UPDATE_CLUSTER_RESPONSE=$(curl -s -X PUT "${API_URL}/clusters/${CLUSTER_UUID}" \
+            -H "Content-Type: application/json" \
+            -H "x-tron-token: ${API_TOKEN}" \
+            -d "{
+                \"name\": \"${CLUSTER_NAME}\",
+                \"api_address\": \"${CLUSTER_API_ADDRESS}\",
+                \"token\": \"${CLUSTER_TOKEN}\",
+                \"environment_uuid\": \"${ENVIRONMENT_UUID}\"
+            }")
+        
+        # Check if update was successful
+        UPDATED_UUID=$(echo "$UPDATE_CLUSTER_RESPONSE" | jq -r '.uuid // empty' 2>/dev/null)
+        if [ -n "$UPDATED_UUID" ] && [ "$UPDATED_UUID" != "null" ]; then
+            echo -e "${GREEN}✓ Cluster '${CLUSTER_NAME}' atualizado com sucesso${NC}"
+        else
+            echo -e "${YELLOW}⚠️  Não foi possível atualizar o cluster (já pode estar atualizado)${NC}"
         fi
-        echo -e "${GREEN}✓ Cluster '${CLUSTER_NAME}' atualizado com sucesso${NC}"
+    fi
 else
     if [ -z "$CLUSTER_TOKEN" ]; then
         echo -e "${YELLOW}⚠️  Token do cluster não disponível. Pulando criação do cluster${NC}"
@@ -247,7 +253,7 @@ else
                 \"environment_uuid\": \"${ENVIRONMENT_UUID}\"
             }")
 
-        CLUSTER_UUID=$(echo "$CREATE_CLUSTER_RESPONSE" | jq -r '.uuid // empty')
+        CLUSTER_UUID=$(echo "$CREATE_CLUSTER_RESPONSE" | jq -r '.uuid // empty' 2>/dev/null)
 
         if [ -z "$CLUSTER_UUID" ] || [ "$CLUSTER_UUID" = "null" ]; then
             echo -e "${RED}❌ Erro ao criar cluster${NC}"

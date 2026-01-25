@@ -6,6 +6,7 @@ import { HealthcheckInput } from './form-components/HealthcheckInput'
 import { ExposureInput } from './form-components/ExposureInput'
 import { CustomMetricsInput } from './form-components/CustomMetricsInput'
 import { EnvVarsInput } from './form-components/EnvVarsInput'
+import { SecretsInput } from './form-components/SecretsInput'
 import { CommandInput } from './form-components/CommandInput'
 
 interface WebappFormProps {
@@ -16,9 +17,11 @@ interface WebappFormProps {
   hasGatewayApi?: boolean
   gatewayResources?: string[]
   gatewayReference?: { namespace: string; name: string }
+  isAdmin?: boolean
+  componentUuid?: string
 }
 
-export function WebappForm({ settings, onChange, url, onUrlChange, hasGatewayApi = true, gatewayResources = [], gatewayReference = { namespace: '', name: '' } }: WebappFormProps) {
+export function WebappForm({ settings, onChange, url, onUrlChange, hasGatewayApi = true, gatewayResources = [], gatewayReference = { namespace: '', name: '' }, isAdmin = false, componentUuid }: WebappFormProps) {
   const updateField = <K extends keyof WebappSettings>(field: K, value: WebappSettings[K]) => {
     onChange({ ...settings, [field]: value })
   }
@@ -69,6 +72,14 @@ export function WebappForm({ settings, onChange, url, onUrlChange, hasGatewayApi
       <EnvVarsInput
         envs={settings.envs}
         onChange={(envs) => updateField('envs', envs)}
+      />
+
+      <SecretsInput
+        secrets={settings.secrets || []}
+        onChange={(secrets) => updateField('secrets', secrets)}
+        isAdmin={isAdmin}
+        componentUuid={componentUuid}
+        componentType="webapp"
       />
 
       <CommandInput

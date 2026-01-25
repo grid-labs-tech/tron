@@ -22,12 +22,15 @@ import {
   getDefaultWorkerSettings,
 } from '../../components/applications'
 import { Breadcrumbs, PageHeader } from '../../shared/components'
+import { useAuth } from '../../contexts/AuthContext'
 
 function CreateApplication() {
   const navigate = useNavigate()
   const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null)
   const [, setErrors] = useState<Record<string, string>>({})
   const [isCreating, setIsCreating] = useState(false)
+  const { user } = useAuth()
+  const isAdmin = user?.role === 'admin'
 
   const createApplicationMutation = useCreateApplication()
   const { data: clusters } = useClusters()
@@ -382,6 +385,7 @@ function CreateApplication() {
                     hasGatewayApi={hasGatewayApi}
                     gatewayResources={gatewayResources}
                     gatewayReference={gatewayReference}
+                    isAdmin={isAdmin}
                     title={`Component ${index + 1}`}
                   />
                 ))}

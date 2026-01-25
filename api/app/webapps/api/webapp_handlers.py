@@ -120,6 +120,60 @@ def delete_webapp(
         raise HTTPException(status_code=400, detail=str(e))
 
 
+@router.get("/{uuid}/secrets")
+def get_webapp_secrets(
+    uuid: UUID,
+    service: WebappService = Depends(get_webapp_service),
+    current_user: User = Depends(require_role([UserRole.ADMIN])),
+):
+    """
+    Get decrypted secrets for a webapp.
+    Admin only endpoint - returns plaintext secret values.
+
+    Security: This endpoint is protected by admin role requirement.
+    All access is logged for audit purposes.
+    """
+    import logging
+    from app.shared.crypto import decrypt_secret
+
+    logger = logging.getLogger(__name__)
+
+    try:
+        webapp = service.get_webapp_raw(uuid)
+        if not webapp:
+            raise HTTPException(status_code=404, detail="Webapp not found")
+
+        # Audit log: Admin accessing secrets
+        logger.info(
+            f"SECURITY_AUDIT: Admin '{current_user.email}' accessed secrets "
+            f"for webapp '{webapp.name}' (uuid: {uuid})"
+        )
+
+        settings = webapp.settings or {}
+        encrypted_secrets = settings.get("secrets", [])
+
+        decrypted_secrets = []
+        for secret in encrypted_secrets:
+            try:
+                decrypted_value = decrypt_secret(secret.get("value", ""))
+                decrypted_secrets.append(
+                    {"key": secret.get("key", ""), "value": decrypted_value}
+                )
+            except Exception as e:
+                # Log decryption failure (could indicate key rotation issue)
+                logger.warning(
+                    f"SECURITY_AUDIT: Failed to decrypt secret '{secret.get('key')}' "
+                    f"for webapp {uuid}: {type(e).__name__}"
+                )
+                decrypted_secrets.append(
+                    {"key": secret.get("key", ""), "value": "********"}
+                )
+
+        return {"secrets": decrypted_secrets}
+    except (WebappNotFoundError, WebappNotWebappTypeError) as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
+
 @router.get("/{uuid}/pods", response_model=list[Pod])
 def get_webapp_pods(
     uuid: UUID,
