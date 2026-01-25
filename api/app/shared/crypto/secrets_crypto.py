@@ -12,8 +12,7 @@ Security notes:
 
 import os
 import base64
-from typing import Optional
-from cryptography.fernet import Fernet, InvalidToken
+from cryptography.fernet import Fernet
 
 
 class SecretsKeyNotConfiguredError(Exception):
