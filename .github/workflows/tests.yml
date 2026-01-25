@@ -84,9 +84,8 @@ jobs:
       - name: Run linter (ruff)
         working-directory: ./api
         run: |
-          uv tool run ruff check app/ --output-format=github --ignore F401,E402,E712,F841,E731,F541
-          # TODO: Fix formatting and re-enable
-          # uv tool run ruff format app/ --check
+          uv tool run ruff check app/ --output-format=github
+          uv tool run ruff format app/ --check
 
       - name: Run unit tests with coverage
         working-directory: ./api
@@ -213,10 +212,9 @@ jobs:
         working-directory: ./portal
         run: npm run lint
 
-      # TODO: Fix TypeScript errors and re-enable type check
-      # - name: Type check
-      #   working-directory: ./portal
-      #   run: npx tsc --noEmit
+      - name: Type check
+        working-directory: ./portal
+        run: npx tsc --noEmit
 
       - name: Run tests with coverage
         working-directory: ./portal
