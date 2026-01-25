@@ -1,6 +1,8 @@
 """DTOs for setup endpoints."""
 
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, Field, field_validator
+
+from app.shared.utils.validators import validate_email_permissive
 
 
 class SetupStatus(BaseModel):
@@ -13,13 +15,18 @@ class SetupStatus(BaseModel):
 class SetupInitialize(BaseModel):
     """Request to initialize the system."""
 
-    admin_email: EmailStr = Field(..., description="Admin user email")
+    admin_email: str = Field(..., description="Admin user email")
     admin_password: str = Field(..., min_length=6, description="Admin user password")
     admin_name: str = Field(default="Administrator", description="Admin user full name")
     # Kept for backward compatibility with older frontend versions
     organization_name: str = Field(
         default="", description="Organization name (not used)"
     )
+
+    @field_validator("admin_email")
+    @classmethod
+    def validate_email(cls, v: str) -> str:
+        return validate_email_permissive(v)
 
 
 class SetupInitializeResponse(BaseModel):
