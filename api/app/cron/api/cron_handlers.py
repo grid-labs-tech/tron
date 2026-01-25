@@ -3,7 +3,6 @@ from sqlalchemy.orm import Session
 from uuid import UUID
 
 from app.shared.database.database import get_db
-from app.shared.config import get_namespace_for_application
 from app.cron.infra.cron_repository import CronRepository
 from app.cron.core.cron_service import CronService
 from app.cron.api.cron_dto import CronCreate, CronUpdate, Cron, CronJob, CronJobLogs
@@ -123,11 +122,13 @@ def get_cron_jobs(
         )
 
     cluster = cluster_instance.cluster
-    application_name = get_namespace_for_application(cron.instance.application.name)
+    # Use namespace from database (supports both legacy and new apps)
+    application = cron.instance.application
+    namespace = application.namespace if application.namespace else application.name
     component_name = cron.name
 
     try:
-        jobs = get_cron_jobs_from_cluster(cluster, application_name, component_name)
+        jobs = get_cron_jobs_from_cluster(cluster, namespace, component_name)
         return jobs
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to get jobs: {str(e)}")
@@ -159,11 +160,13 @@ def get_cron_job_logs(
         )
 
     cluster = cluster_instance.cluster
-    application_name = get_namespace_for_application(cron.instance.application.name)
+    # Use namespace from database (supports both legacy and new apps)
+    application = cron.instance.application
+    namespace = application.namespace if application.namespace else application.name
 
     try:
         result = get_cron_job_logs_from_cluster(
-            cluster, application_name, job_name, container_name, tail_lines
+            cluster, namespace, job_name, container_name, tail_lines
         )
         return result
     except Exception as e:
@@ -196,10 +199,12 @@ def delete_cron_job(
         )
 
     cluster = cluster_instance.cluster
-    application_name = get_namespace_for_application(cron.instance.application.name)
+    # Use namespace from database (supports both legacy and new apps)
+    application = cron.instance.application
+    namespace = application.namespace if application.namespace else application.name
 
     try:
-        delete_cron_job_from_cluster(cluster, application_name, job_name)
+        delete_cron_job_from_cluster(cluster, namespace, job_name)
         return {"detail": f"Job '{job_name}' deleted successfully"}
     except Exception as e:
         raise HTTPException(

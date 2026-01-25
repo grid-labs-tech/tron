@@ -3,7 +3,6 @@ from sqlalchemy.orm import Session
 from uuid import UUID
 
 from app.shared.database.database import get_db
-from app.shared.config import get_namespace_for_application
 from app.webapps.infra.webapp_repository import WebappRepository
 from app.webapps.core.webapp_service import WebappService
 from app.webapps.api.webapp_dto import (
@@ -144,11 +143,13 @@ def get_webapp_pods(
         )
 
     cluster = cluster_instance.cluster
-    application_name = get_namespace_for_application(webapp.instance.application.name)
+    # Use namespace from database (supports both legacy and new apps)
+    application = webapp.instance.application
+    namespace = application.namespace if application.namespace else application.name
     component_name = webapp.name
 
     try:
-        pods = get_webapp_pods_from_cluster(cluster, application_name, component_name)
+        pods = get_webapp_pods_from_cluster(cluster, namespace, component_name)
         return pods
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to get pods: {str(e)}")
@@ -178,10 +179,12 @@ def delete_webapp_pod(
         )
 
     cluster = cluster_instance.cluster
-    application_name = get_namespace_for_application(webapp.instance.application.name)
+    # Use namespace from database (supports both legacy and new apps)
+    application = webapp.instance.application
+    namespace = application.namespace if application.namespace else application.name
 
     try:
-        delete_webapp_pod_from_cluster(cluster, application_name, pod_name)
+        delete_webapp_pod_from_cluster(cluster, namespace, pod_name)
         return {"detail": f"Pod {pod_name} deleted successfully"}
     except Exception as e:
         raise HTTPException(
@@ -215,11 +218,13 @@ def get_webapp_pod_logs(
         )
 
     cluster = cluster_instance.cluster
-    application_name = get_namespace_for_application(webapp.instance.application.name)
+    # Use namespace from database (supports both legacy and new apps)
+    application = webapp.instance.application
+    namespace = application.namespace if application.namespace else application.name
 
     try:
         logs = get_webapp_pod_logs_from_cluster(
-            cluster, application_name, pod_name, container_name, tail_lines
+            cluster, namespace, pod_name, container_name, tail_lines
         )
         return {"logs": logs, "pod_name": pod_name, "container_name": container_name}
     except Exception as e:
@@ -253,11 +258,13 @@ def exec_webapp_pod_command(
         )
 
     cluster = cluster_instance.cluster
-    application_name = get_namespace_for_application(webapp.instance.application.name)
+    # Use namespace from database (supports both legacy and new apps)
+    application = webapp.instance.application
+    namespace = application.namespace if application.namespace else application.name
 
     try:
         result = exec_webapp_pod_command_from_cluster(
-            cluster, application_name, pod_name, request.command, request.container_name
+            cluster, namespace, pod_name, request.command, request.container_name
         )
         return result
     except Exception as e:

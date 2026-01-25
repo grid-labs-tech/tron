@@ -17,6 +17,7 @@ from app.applications.core.application_validators import (
 )
 from app.instances.core.instance_service import InstanceService
 from app.instances.infra.instance_repository import InstanceRepository
+from app.shared.config import get_namespace_for_application
 
 
 class ApplicationService:
@@ -111,10 +112,18 @@ class ApplicationService:
         return {"detail": "Application deleted successfully"}
 
     def _build_application_entity(self, dto: ApplicationCreate) -> ApplicationModel:
-        """Build Application entity from DTO."""
+        """Build Application entity from DTO.
+
+        New applications automatically get the 'tron-ns-' namespace prefix.
+        This ensures Kubernetes namespace isolation and security.
+        """
+        # Generate namespace with tron-ns- prefix for new applications
+        namespace = get_namespace_for_application(dto.name)
+
         return ApplicationModel(
             uuid=uuid4(),
             name=dto.name,
+            namespace=namespace,
             repository=dto.repository,
             enabled=dto.enabled,
         )

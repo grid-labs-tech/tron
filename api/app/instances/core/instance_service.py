@@ -2,7 +2,6 @@ from uuid import uuid4, UUID
 from typing import List
 from sqlalchemy.orm import Session
 
-from app.shared.config import get_namespace_for_application
 from app.instances.infra.instance_repository import InstanceRepository
 from app.instances.infra.instance_model import Instance as InstanceModel
 from app.instances.api.instance_dto import InstanceCreate, InstanceUpdate, Instance
@@ -210,9 +209,14 @@ class InstanceService:
             # If no cluster available, return empty list
             return []
 
-        # Get application namespace with Tron prefix
-        app_name = instance.application.name if instance.application else "default"
-        application_namespace = get_namespace_for_application(app_name)
+        # Get application namespace from database
+        # - Legacy apps: namespace = app name (no prefix)
+        # - New apps: namespace = tron-ns-{app name} (with prefix)
+        application = instance.application
+        if application:
+            application_namespace = application.namespace if application.namespace else application.name
+        else:
+            application_namespace = "default"
 
         # Get events from Kubernetes
         try:

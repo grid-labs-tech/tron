@@ -15,6 +15,12 @@ class Application(Base):
     repository = Column(String, nullable=True)
     enabled = Column(Boolean, nullable=False, default=True)
 
+    # Kubernetes namespace for this application
+    # - Legacy apps (pre-v0.6): namespace = name (no prefix)
+    # - New apps (v0.6+): namespace = tron-ns-{name} (with prefix)
+    # This field is internal and NOT exposed to users
+    namespace = Column(String, unique=True, nullable=True)
+
     created_at = Column(DateTime, server_default=func.now(), nullable=False)
     updated_at = Column(
         DateTime, server_default=func.now(), server_onupdate=func.now(), nullable=False

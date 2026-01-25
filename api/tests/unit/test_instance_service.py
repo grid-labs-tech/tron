@@ -285,15 +285,16 @@ def test_get_instance_events_success(instance_service, mock_repository, mock_db)
     mock_cluster.api_address = "https://k8s.example.com"
     mock_cluster.token = "test-token"
 
-    # Events from Kubernetes use the prefixed namespace
+    # Events from Kubernetes use the namespace from the database
+    # For this test, no namespace is set in the mock, so it falls back to app name
     mock_events = [
         {
             "name": "event-1",
-            "namespace": "tron-ns-test-app",
+            "namespace": "test-app",
             "type": "Normal",
             "reason": "Started",
             "message": "Container started",
-            "involved_object": {"kind": "Pod", "name": "pod-1", "namespace": "tron-ns-test-app"},
+            "involved_object": {"kind": "Pod", "name": "pod-1", "namespace": "test-app"},
             "source": {"component": "kubelet", "host": "node-1"},
             "first_timestamp": "2024-01-01T00:00:00Z",
             "last_timestamp": "2024-01-01T00:00:00Z",
@@ -301,6 +302,9 @@ def test_get_instance_events_success(instance_service, mock_repository, mock_db)
             "age_seconds": 3600,
         }
     ]
+
+    # Add namespace attribute to mock (simulating legacy app without namespace)
+    mock_instance.application.namespace = None
 
     with patch('app.instances.core.instance_service.ClusterSelectionService.get_cluster_with_least_load_or_raise') as mock_get_cluster, \
          patch('app.instances.core.instance_service.K8sClient') as mock_k8s_client_class:
@@ -313,11 +317,11 @@ def test_get_instance_events_success(instance_service, mock_repository, mock_db)
 
         assert len(result) == 1
         assert result[0]["name"] == "event-1"
-        # Namespace now uses tron-ns- prefix
-        assert result[0]["namespace"] == "tron-ns-test-app"
+        # Namespace comes from database (falls back to app name when namespace is None)
+        assert result[0]["namespace"] == "test-app"
         assert result[0]["type"] == "Normal"
-        # Verify the service calls K8s with the prefixed namespace
-        mock_k8s_client.list_events.assert_called_once_with(namespace="tron-ns-test-app")
+        # Verify the service calls K8s with the namespace from database
+        mock_k8s_client.list_events.assert_called_once_with(namespace="test-app")
 
 
 def test_get_instance_events_no_cluster(instance_service, mock_repository, mock_db):

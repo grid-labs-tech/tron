@@ -3,13 +3,14 @@ def serialize_application_component(application_component):
     Serialize an ApplicationComponent for use in Kubernetes templates.
     Includes information from component, instance, application and environment.
 
-    Note: application_name is prefixed with the Tron namespace prefix (default: tron-ns-)
-    to create isolated namespaces that don't conflict with existing cluster resources.
+    The application_name field contains the Kubernetes namespace:
+    - Legacy apps (pre-v0.6): namespace stored in DB (equals app name, no prefix)
+    - New apps (v0.6+): namespace stored in DB (tron-ns-{name} with prefix)
+
+    This is transparent to users - they only see the application name.
     """
     # Make a copy of settings to avoid modifying the original
     import copy
-
-    from app.shared.config import get_namespace_for_application
 
     settings = (
         copy.deepcopy(application_component.settings)
@@ -71,9 +72,11 @@ def serialize_application_component(application_component):
             elif not isinstance(visibility_value, str):
                 exposure["visibility"] = str(visibility_value)
 
-    # Generate namespace name with Tron prefix
-    app_name = application_component.instance.application.name
-    namespace_name = get_namespace_for_application(app_name)
+    # Get namespace from database
+    # - Legacy apps: namespace = app name (no prefix)
+    # - New apps: namespace = tron-ns-{app name} (with prefix)
+    application = application_component.instance.application
+    namespace_name = application.namespace if application.namespace else application.name
 
     return {
         "component_name": application_component.name,
@@ -82,7 +85,7 @@ def serialize_application_component(application_component):
         if hasattr(application_component.type, "value")
         else str(application_component.type),
         "application_name": namespace_name,
-        "application_uuid": str(application_component.instance.application.uuid),
+        "application_uuid": str(application.uuid),
         "environment": application_component.instance.environment.name,
         "environment_uuid": str(application_component.instance.environment.uuid),
         "image": application_component.instance.image,

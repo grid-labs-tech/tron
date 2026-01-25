@@ -27,6 +27,8 @@ def test_serialize_webapp_deploy():
     mock_application = MagicMock()
     mock_application.name = "test-app"
     mock_application.uuid = "223e4567-e89b-12d3-a456-426614174001"
+    # Simulate legacy app without namespace (falls back to app name)
+    mock_application.namespace = None
     mock_instance.application = mock_application
 
     # Environment attributes
@@ -68,8 +70,9 @@ def test_serialize_webapp_deploy():
     assert result["component_name"] == "test-webapp"
     assert result["component_uuid"] == "123e4567-e89b-12d3-a456-426614174000"
     assert result["component_type"] == "webapp"
-    # application_name is now prefixed with tron-ns- for namespace isolation
-    assert result["application_name"] == "tron-ns-test-app"
+    # application_name now comes from the namespace field in the database
+    # For this test, no namespace is set, so it falls back to the app name
+    assert result["application_name"] == "test-app"
     assert result["application_uuid"] == "223e4567-e89b-12d3-a456-426614174001"
     assert result["environment"] == "staging"
     assert result["environment_uuid"] == "323e4567-e89b-12d3-a456-426614174002"
