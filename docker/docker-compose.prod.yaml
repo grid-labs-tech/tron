@@ -1,0 +1,126 @@
+# Docker Compose for Production Environment
+# Uses pre-built images from GitHub Container Registry
+#
+# Usage:
+#   docker compose -f docker-compose.prod.yaml up -d
+#   docker compose -f docker-compose.prod.yaml --profile monitoring up -d
+#
+# Environment variables (create a .env file or export):
+#   - API_IMAGE_TAG: API image tag (default: latest)
+#   - PORTAL_IMAGE_TAG: Portal image tag (default: latest)
+#   - DB_PASSWORD: Database password (required for production)
+#   - SECRET_KEY: API secret key (required for production)
+
+x-common-env: &common-env
+  DB_HOST: database
+  DB_PORT: 5432
+  DB_USER: ${DB_USER:-tron}
+  DB_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is required}
+
+services:
+  # =============================================================================
+  # Database Services
+  # =============================================================================
+  database:
+    image: postgres:14.1-alpine
+    profiles:
+      - db
+      - full
+    environment:
+      POSTGRES_USER: ${DB_USER:-tron}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is required}
+      POSTGRES_DB: api
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-tron} -d api -h localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+    networks:
+      - tron-network
+
+  # =============================================================================
+  # Application Services
+  # =============================================================================
+  api-migrate:
+    image: ghcr.io/grid-labs-tech/tron-api:${API_IMAGE_TAG:-latest}
+    profiles:
+      - app
+      - full
+    environment:
+      <<: *common-env
+      DB_NAME: api
+      SECRET_KEY: ${SECRET_KEY:?SECRET_KEY is required}
+    command: alembic upgrade head
+    depends_on:
+      database:
+        condition: service_healthy
+    networks:
+      - tron-network
+    restart: "no"
+
+  api:
+    image: ghcr.io/grid-labs-tech/tron-api:${API_IMAGE_TAG:-latest}
+    profiles:
+      - app
+      - full
+    environment:
+      <<: *common-env
+      DB_NAME: api
+      DEBUG: "False"
+      SECRET_KEY: ${SECRET_KEY:?SECRET_KEY is required}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost}
+      CORS_ALLOW_CREDENTIALS: "true"
+      CORS_ALLOW_METHODS: "GET,POST,PUT,DELETE,OPTIONS"
+      CORS_ALLOW_HEADERS: "Content-Type,Authorization,Accept,Origin,X-Requested-With"
+    ports:
+      - "${API_PORT:-8000}:8000"
+    depends_on:
+      api-migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    restart: unless-stopped
+    networks:
+      - tron-network
+
+  portal:
+    image: ghcr.io/grid-labs-tech/tron-portal:${PORTAL_IMAGE_TAG:-latest}
+    profiles:
+      - app
+      - full
+    environment:
+      VITE_API_BASE_URL: ${API_URL:-http://localhost:8000}
+    ports:
+      - "${PORTAL_PORT:-80}:80"
+    depends_on:
+      - api
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:80"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+    networks:
+      - tron-network
+
+# =============================================================================
+# Networks
+# =============================================================================
+networks:
+  tron-network:
+    driver: bridge
+
+# =============================================================================
+# Volumes
+# =============================================================================
+volumes:
+  postgres_data:
+    driver: local
