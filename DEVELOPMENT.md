@@ -111,6 +111,99 @@ kubectl get nodes
 kubectl get pods -A
 ```
 
+## Testing Gateway API
+
+The development environment includes a fully configured Gateway API setup with Traefik, supporting both HTTP and HTTPS.
+
+### Exposed Ports
+
+| Port | Service | Description |
+|------|---------|-------------|
+| 3000 | Portal | React frontend |
+| 8000 | API | FastAPI backend |
+| 5432 | PostgreSQL | Database |
+| 5443 | K3s API | Kubernetes API |
+| 8080 | Gateway HTTP | Traefik HTTP (Gateway API) |
+| 8443 | Gateway HTTPS | Traefik HTTPS (Gateway API, self-signed cert) |
+
+### Gateway Configuration
+
+The Gateway is configured with two listeners:
+- **HTTP** (port 80, exposed as 8080): For unencrypted traffic
+- **HTTPS** (port 443, exposed as 8443): For encrypted traffic with a self-signed certificate
+
+The self-signed certificate is valid for `localhost` and `*.localhost`.
+
+### Testing with a Sample App
+
+1. **Start the environment**:
+   ```bash
+   make start
+   ```
+
+2. **Access the Portal** at http://localhost:3000 and login with `admin@example.com` / `admin`
+
+3. **Create a test application**:
+   - Go to Applications → Create Application
+   - Name: `test-app`
+   - Create an Instance in the `local` environment
+   - Add a webapp component with:
+     - Name: `web`
+     - Image: `nginx:alpine`
+     - Visibility: `Public`
+     - Public URL: `test.localhost`
+
+4. **Deploy the component** and wait for it to be running
+
+5. **Test Gateway API access**:
+   ```bash
+   # Test HTTP via curl with Host header
+   curl -H "Host: test.localhost" http://localhost:8080
+   
+   # Test HTTPS (use -k to accept self-signed certificate)
+   curl -k -H "Host: test.localhost" https://localhost:8443
+   
+   # Or add to /etc/hosts and access directly
+   echo "127.0.0.1 test.localhost" | sudo tee -a /etc/hosts
+   curl http://test.localhost:8080
+   curl -k https://test.localhost:8443
+   ```
+
+### Verify Gateway Resources
+
+```bash
+export KUBECONFIG=./volumes/kubeconfig/kubeconfig.yaml
+
+# Check Gateway
+kubectl get gateway -A
+
+# Check Gateway listeners
+kubectl get gateway -n kube-system gateway -o jsonpath='{.spec.listeners[*].name}'
+
+# Check HTTPRoutes created by Tron
+kubectl get httproute -A
+
+# Check TLS certificate secret
+kubectl get secret -n kube-system gateway-tls
+
+# Check Traefik logs
+kubectl logs -n kube-system -l app.kubernetes.io/name=traefik
+```
+
+### Healthcheck
+
+The Traefik deployment includes automatic healthchecks. To verify:
+
+```bash
+export KUBECONFIG=./volumes/kubeconfig/kubeconfig.yaml
+
+# Check Traefik pod health
+kubectl get pods -n kube-system -l app.kubernetes.io/name=traefik
+
+# Direct healthcheck (internal)
+kubectl exec -n kube-system deploy/traefik -- wget -qO- http://localhost:8082/ping
+```
+
 ## Project Structure
 
 ```

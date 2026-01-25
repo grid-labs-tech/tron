@@ -124,6 +124,8 @@ services:
     - ${PWD}/docker/manifests:/var/lib/rancher/k3s/server/manifests
     ports:
     - 5443:5443
+    - 8080:80    # Gateway API (Traefik HTTP)
+    - 8443:443   # Gateway API (Traefik HTTPS)
 
   k3s-agent:
     image: "rancher/k3s:${K3S_VERSION:-latest}"
