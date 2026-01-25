@@ -73,6 +73,7 @@ jobs:
       - name: Package chart
         working-directory: charts/tron
         run: |
+          helm dependency update
           helm package .
           helm repo index . --url https://grid-labs-tech.github.io/charts
 
