@@ -25,7 +25,8 @@ from app.k8s.client import K8sClient
 def get_gateway_reference_from_cluster(cluster: ClusterModel) -> dict:
     """
     Get gateway reference information from a cluster.
-    Dynamically searches for Gateway in Kubernetes cluster.
+    Uses manual configuration if available, otherwise dynamically searches
+    for Gateway in Kubernetes cluster.
 
     Args:
         cluster: Cluster database object
@@ -33,6 +34,14 @@ def get_gateway_reference_from_cluster(cluster: ClusterModel) -> dict:
     Returns:
         Dict with namespace and name of gateway, or empty values if not found
     """
+    # If manual configuration is set, use it
+    if cluster.gateway_namespace and cluster.gateway_name:
+        return {
+            "namespace": cluster.gateway_namespace,
+            "name": cluster.gateway_name,
+        }
+
+    # Otherwise, try auto-discovery
     try:
         k8s_client = K8sClient(url=cluster.api_address, token=cluster.token)
         gateway_ref = k8s_client.get_gateway_reference()
@@ -79,6 +88,8 @@ class ClusterService:
         cluster.name = dto.name
         cluster.api_address = dto.api_address
         cluster.token = dto.token
+        cluster.gateway_namespace = dto.gateway_namespace or None
+        cluster.gateway_name = dto.gateway_name or None
         cluster.environment_id = environment.id
 
         return self.repository.update(cluster)
@@ -136,6 +147,8 @@ class ClusterService:
             name=dto.name,
             api_address=dto.api_address,
             token=dto.token,
+            gateway_namespace=dto.gateway_namespace or None,
+            gateway_name=dto.gateway_name or None,
             environment_id=environment_id,
         )
 
