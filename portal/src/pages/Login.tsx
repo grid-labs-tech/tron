@@ -164,7 +164,7 @@ export default function Login() {
 
         {/* Footer */}
         <div className="mt-8 text-center text-sm text-neutral-500">
-          <p>© 2024 Tron Platform. All rights reserved.</p>
+          <p>© {new Date().getFullYear()} Tron Platform. All rights reserved.</p>
         </div>
       </div>
     </div>

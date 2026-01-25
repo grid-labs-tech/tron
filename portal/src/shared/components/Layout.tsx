@@ -268,7 +268,7 @@ function Layout() {
               <span>© {new Date().getFullYear()} Tron Platform. All rights reserved.</span>
             </div>
             <div className="flex items-center gap-4 text-sm text-neutral-500">
-              <span>Version 1.0.0</span>
+              <span>Version 0.4.0</span>
               <span className="hidden md:inline">•</span>
               <span>Platform as a Service</span>
             </div>
