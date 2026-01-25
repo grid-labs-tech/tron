@@ -26,6 +26,7 @@ from app.dashboard.api.dashboard_handlers import router as dashboard_router
 from app.webapps.api.webapp_handlers import router as webapps_router
 from app.workers.api.worker_handlers import router as workers_router
 from app.cron.api.cron_handlers import router as crons_router
+from app.setup.api.setup_handlers import router as setup_router
 
 # Version is injected at build time via APP_VERSION environment variable
 APP_VERSION = os.getenv("APP_VERSION", "dev")
@@ -101,6 +102,7 @@ app.include_router(dashboard_router)
 app.include_router(webapps_router)
 app.include_router(workers_router)
 app.include_router(crons_router)
+app.include_router(setup_router)
 
 # Legacy routers removed - all features migrated to new structure
 
