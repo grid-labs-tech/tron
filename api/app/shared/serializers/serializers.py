@@ -8,6 +8,9 @@ def serialize_application_component(application_component):
     - New apps (v0.6+): namespace stored in DB (tron-ns-{name} with prefix)
 
     This is transparent to users - they only see the application name.
+
+    IMPORTANT: Secrets are decrypted here for use in Kubernetes templates.
+    The decrypted values are ONLY used to create K8s Secrets, never exposed via API.
     """
     # Make a copy of settings to avoid modifying the original
     import copy
@@ -17,6 +20,31 @@ def serialize_application_component(application_component):
         if application_component.settings
         else {}
     )
+
+    # Decrypt secrets for Kubernetes deployment
+    # These decrypted values are ONLY used to create K8s Secrets
+    # SECURITY: Never log decrypted values
+    if settings and "secrets" in settings and settings["secrets"]:
+        from app.shared.crypto import decrypt_secret
+        import logging
+
+        logger = logging.getLogger(__name__)
+        decrypted_secrets = []
+        for secret in settings["secrets"]:
+            try:
+                decrypted_value = decrypt_secret(secret.get("value", ""))
+                decrypted_secrets.append(
+                    {"key": secret.get("key", ""), "value": decrypted_value}
+                )
+            except Exception as e:
+                # Log failure without exposing secret value
+                logger.warning(
+                    f"Failed to decrypt secret '{secret.get('key')}' for component "
+                    f"'{application_component.name}': {type(e).__name__}"
+                )
+                # Skip corrupted/invalid secrets
+                pass
+        settings["secrets"] = decrypted_secrets
 
     # Ensure command is always a list when not None
     # This is necessary because the schema can return string, list or None
