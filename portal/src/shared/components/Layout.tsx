@@ -268,10 +268,8 @@ function Layout() {
               <div className="w-4 h-4 bg-gradient-primary rounded"></div>
               <span>© {new Date().getFullYear()} Tron Platform. All rights reserved.</span>
             </div>
-            <div className="flex items-center gap-4 text-sm text-neutral-500">
+            <div className="text-sm text-neutral-500">
               <span>Version {APP_VERSION}</span>
-              <span className="hidden md:inline">•</span>
-              <span>Platform as a Service</span>
             </div>
           </div>
         </div>

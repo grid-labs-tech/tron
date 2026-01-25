@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { Settings, Mail, Lock, User, Check, Loader2, AlertCircle, Rocket } from 'lucide-react'
 import axios from 'axios'
 import { API_BASE_URL } from '../../config/api'
+import { useAuth } from '../../contexts/AuthContext'
 
 interface SetupStatus {
   initialized: boolean
@@ -11,6 +12,7 @@ interface SetupStatus {
 
 export default function Setup() {
   const navigate = useNavigate()
+  const { isAuthenticated, isLoading: authLoading } = useAuth()
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -29,19 +31,25 @@ export default function Setup() {
     try {
       const response = await axios.get<SetupStatus>(`${API_BASE_URL}/setup/status`)
       if (response.data.initialized) {
-        // Already initialized, redirect to login
-        navigate('/login')
+        // Already initialized, redirect based on auth status
+        // If authenticated, go to home; otherwise go to login
+        if (!authLoading) {
+          navigate(isAuthenticated ? '/' : '/login')
+        }
       }
     } catch (err) {
       console.error('Failed to check setup status:', err)
     } finally {
       setLoading(false)
     }
-  }, [navigate])
+  }, [navigate, isAuthenticated, authLoading])
 
   useEffect(() => {
-    checkSetupStatus()
-  }, [checkSetupStatus])
+    // Wait for auth loading to complete before checking setup status
+    if (!authLoading) {
+      checkSetupStatus()
+    }
+  }, [checkSetupStatus, authLoading])
 
   const validateForm = (): boolean => {
     const errors: Record<string, string> = {}
@@ -100,7 +108,7 @@ export default function Setup() {
     }
   }
 
-  if (loading) {
+  if (loading || authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-subtle">
         <div className="flex items-center gap-3 text-neutral-600">

@@ -67,7 +67,9 @@ services:
       <<: *common-env
       DB_NAME: api
       SECRET_KEY: ${SECRET_KEY:?SECRET_KEY is required}
-    command: alembic upgrade head
+    command: >
+      sh -c "alembic upgrade head &&
+             python scripts/load_initial_templates.py"
     depends_on:
       database:
         condition: service_healthy
@@ -145,7 +147,7 @@ services:
       - api
       - portal
     healthcheck:
-      test: ["CMD", "wget", "-q", "--spider", "http://localhost:80/health"]
+      test: ["CMD", "curl", "-sf", "http://127.0.0.1:80/nginx-health"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -173,7 +175,7 @@ services:
       - api
       - portal
     healthcheck:
-      test: ["CMD", "wget", "-q", "--spider", "http://localhost:80/.well-known/acme-challenge/"]
+      test: ["CMD", "curl", "-sf", "http://127.0.0.1:80/nginx-health"]
       interval: 30s
       timeout: 10s
       retries: 3

@@ -1,7 +1,7 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
-import { LogIn, Mail, Lock, AlertCircle } from 'lucide-react'
+import { LogIn, Mail, Lock, AlertCircle, Loader2 } from 'lucide-react'
 import { loginSchema } from '../features/auth/schemas'
 import { validateForm } from '../shared/utils/validation'
 
@@ -11,7 +11,26 @@ export default function Login() {
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [error, setError] = useState<string | null>(null)
   const navigate = useNavigate()
-  const { login } = useAuth()
+  const { login, isAuthenticated, isLoading } = useAuth()
+
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (!isLoading && isAuthenticated) {
+      navigate('/')
+    }
+  }, [isAuthenticated, isLoading, navigate])
+
+  // Show loading while checking auth status
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-subtle">
+        <div className="flex items-center gap-3 text-neutral-600">
+          <Loader2 className="w-6 h-6 animate-spin" />
+          <span>Loading...</span>
+        </div>
+      </div>
+    )
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
