@@ -16,6 +16,10 @@ class SetupInitialize(BaseModel):
     admin_email: EmailStr = Field(..., description="Admin user email")
     admin_password: str = Field(..., min_length=6, description="Admin user password")
     admin_name: str = Field(default="Administrator", description="Admin user full name")
+    # Kept for backward compatibility with older frontend versions
+    organization_name: str = Field(
+        default="", description="Organization name (not used)"
+    )
 
 
 class SetupInitializeResponse(BaseModel):
