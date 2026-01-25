@@ -7,7 +7,7 @@ from uuid import uuid4
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from app.shared.infra.cluster_instance_model import ClusterInstance
+    pass
 
 
 class Cluster(Base):
@@ -26,12 +26,12 @@ class Cluster(Base):
         "ClusterInstance",
         back_populates="cluster",
         foreign_keys="[ClusterInstance.cluster_id]",
-        lazy="select"
+        lazy="select",
     )
 
     created_at = Column(DateTime, server_default=func.now(), nullable=False)
-    updated_at = Column(DateTime, server_default=func.now(), server_onupdate=func.now(), nullable=False)
-
-    __table_args__ = (
-        UniqueConstraint('uuid', name='uix_cluster_uuid'),
+    updated_at = Column(
+        DateTime, server_default=func.now(), server_onupdate=func.now(), nullable=False
     )
+
+    __table_args__ = (UniqueConstraint("uuid", name="uix_cluster_uuid"),)

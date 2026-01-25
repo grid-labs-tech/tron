@@ -4,11 +4,13 @@ from app.environments.infra.environment_repository import EnvironmentRepository
 
 class EnvironmentNotFoundError(Exception):
     """Raised when environment is not found."""
+
     pass
 
 
 class EnvironmentHasComponentsError(Exception):
     """Raised when trying to delete environment with associated components."""
+
     pass
 
 
@@ -28,7 +30,9 @@ def validate_environment_exists(repository: EnvironmentRepository, uuid: UUID) -
         raise EnvironmentNotFoundError(f"Environment with UUID '{uuid}' not found")
 
 
-def validate_environment_can_be_deleted(repository: EnvironmentRepository, uuid: UUID) -> None:
+def validate_environment_can_be_deleted(
+    repository: EnvironmentRepository, uuid: UUID
+) -> None:
     """Validate that environment can be deleted (no associated components)."""
     environment = repository.find_by_uuid(uuid)
     if not environment:

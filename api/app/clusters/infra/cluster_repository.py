@@ -21,7 +21,11 @@ class ClusterRepository:
 
     def find_by_api_address(self, api_address: str) -> Optional[ClusterModel]:
         """Find cluster by API address."""
-        return self.db.query(ClusterModel).filter(ClusterModel.api_address == api_address).first()
+        return (
+            self.db.query(ClusterModel)
+            .filter(ClusterModel.api_address == api_address)
+            .first()
+        )
 
     def find_all(self, skip: int = 0, limit: int = 100) -> List[ClusterModel]:
         """Find all clusters."""
@@ -29,7 +33,11 @@ class ClusterRepository:
 
     def find_environment_by_uuid(self, uuid: UUID) -> Optional[EnvironmentModel]:
         """Find environment by UUID."""
-        return self.db.query(EnvironmentModel).filter(EnvironmentModel.uuid == uuid).first()
+        return (
+            self.db.query(EnvironmentModel)
+            .filter(EnvironmentModel.uuid == uuid)
+            .first()
+        )
 
     def create(self, cluster: ClusterModel) -> ClusterModel:
         """Create a new cluster."""

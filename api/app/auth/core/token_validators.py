@@ -1,11 +1,11 @@
 """Validation logic for tokens."""
-from uuid import UUID
+
 from app.auth.infra.token_repository import TokenRepository
-from app.auth.infra.token_model import Token as TokenModel
 
 
 class TokenNotFoundError(Exception):
     """Token not found."""
+
     pass
 
 

@@ -1,18 +1,21 @@
-from sqlalchemy.orm import Session
 from uuid import UUID
 from typing import Optional, List
-from app.templates.infra.component_template_config_repository import ComponentTemplateConfigRepository
+from app.templates.infra.component_template_config_repository import (
+    ComponentTemplateConfigRepository,
+)
 from app.templates.infra.template_repository import TemplateRepository
-from app.templates.infra.component_template_config_model import ComponentTemplateConfig as ComponentTemplateConfigModel
+from app.templates.infra.component_template_config_model import (
+    ComponentTemplateConfig as ComponentTemplateConfigModel,
+)
 from app.templates.infra.template_model import Template as TemplateModel
 from app.templates.core.component_template_config_validators import (
     ComponentTemplateConfigNotFoundError,
     ComponentTemplateConfigAlreadyExistsError,
-    TemplateNotFoundError
+    TemplateNotFoundError,
 )
 from app.templates.api.component_template_config_dto import (
     ComponentTemplateConfigCreate,
-    ComponentTemplateConfigUpdate
+    ComponentTemplateConfigUpdate,
 )
 from uuid import uuid4
 
@@ -23,7 +26,7 @@ class ComponentTemplateConfigService:
     def __init__(
         self,
         config_repository: ComponentTemplateConfigRepository,
-        template_repository: TemplateRepository
+        template_repository: TemplateRepository,
     ):
         self.config_repository = config_repository
         self.template_repository = template_repository
@@ -35,7 +38,9 @@ class ComponentTemplateConfigService:
         # Validate template exists
         template = self.template_repository.find_by_uuid(config_data.template_uuid)
         if not template:
-            raise TemplateNotFoundError(f"Template with UUID {config_data.template_uuid} not found")
+            raise TemplateNotFoundError(
+                f"Template with UUID {config_data.template_uuid} not found"
+            )
 
         # Check if config already exists
         existing_config = self.config_repository.find_by_component_type_and_template_id(
@@ -76,7 +81,9 @@ class ComponentTemplateConfigService:
 
         return self.config_repository.update(config)
 
-    def get_component_template_config(self, config_uuid: UUID) -> ComponentTemplateConfigModel:
+    def get_component_template_config(
+        self, config_uuid: UUID
+    ) -> ComponentTemplateConfigModel:
         """Get component template config by UUID."""
         config = self.config_repository.find_by_uuid(config_uuid)
         if not config:
@@ -89,9 +96,13 @@ class ComponentTemplateConfigService:
         self, component_type: Optional[str] = None, skip: int = 0, limit: int = 100
     ) -> List[ComponentTemplateConfigModel]:
         """Get all component template configs, optionally filtered by component type."""
-        return self.config_repository.find_all(component_type=component_type, skip=skip, limit=limit)
+        return self.config_repository.find_all(
+            component_type=component_type, skip=skip, limit=limit
+        )
 
-    def get_templates_for_component_type(self, component_type: str) -> List[TemplateModel]:
+    def get_templates_for_component_type(
+        self, component_type: str
+    ) -> List[TemplateModel]:
         """Get templates ordered by render_order for a component type."""
         return self.config_repository.find_templates_for_component_type(component_type)
 
@@ -104,4 +115,7 @@ class ComponentTemplateConfigService:
             )
 
         self.config_repository.delete(config)
-        return {"status": "success", "message": "Component template config deleted successfully"}
+        return {
+            "status": "success",
+            "message": "Component template config deleted successfully",
+        }

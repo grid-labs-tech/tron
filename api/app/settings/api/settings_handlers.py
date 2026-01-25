@@ -9,12 +9,12 @@ from app.settings.api.settings_dto import (
     SettingsCreate,
     SettingsUpdate,
     Settings,
-    SettingsWithEnvironment
+    SettingsWithEnvironment,
 )
 from app.settings.core.settings_validators import (
     SettingsNotFoundError,
     EnvironmentNotFoundError,
-    SettingsKeyAlreadyExistsError
+    SettingsKeyAlreadyExistsError,
 )
 from app.users.infra.user_model import UserRole, User
 from app.shared.dependencies.auth import require_role, get_current_user
@@ -23,7 +23,9 @@ from app.shared.dependencies.auth import require_role, get_current_user
 router = APIRouter()
 
 
-def get_settings_service(database_session: Session = Depends(get_db)) -> SettingsService:
+def get_settings_service(
+    database_session: Session = Depends(get_db),
+) -> SettingsService:
     """Dependency to get SettingsService instance."""
     settings_repository = SettingsRepository(database_session)
     return SettingsService(settings_repository)
@@ -33,7 +35,7 @@ def get_settings_service(database_session: Session = Depends(get_db)) -> Setting
 def create_settings(
     setting: SettingsCreate,
     service: SettingsService = Depends(get_settings_service),
-    current_user: User = Depends(require_role([UserRole.ADMIN]))
+    current_user: User = Depends(require_role([UserRole.ADMIN])),
 ):
     """Create a new settings."""
     try:
@@ -51,7 +53,7 @@ def update_settings(
     uuid: UUID,
     setting: SettingsUpdate,
     service: SettingsService = Depends(get_settings_service),
-    current_user: User = Depends(require_role([UserRole.ADMIN]))
+    current_user: User = Depends(require_role([UserRole.ADMIN])),
 ):
     """Update an existing settings."""
     try:
@@ -69,7 +71,7 @@ def list_settings(
     skip: int = 0,
     limit: int = 100,
     service: SettingsService = Depends(get_settings_service),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
 ):
     """List all settings."""
     return service.get_settings_list(skip=skip, limit=limit)
@@ -79,7 +81,7 @@ def list_settings(
 def get_settings(
     uuid: UUID,
     service: SettingsService = Depends(get_settings_service),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
 ):
     """Get settings by UUID."""
     try:
@@ -92,7 +94,7 @@ def get_settings(
 def delete_settings(
     uuid: UUID,
     service: SettingsService = Depends(get_settings_service),
-    current_user: User = Depends(require_role([UserRole.ADMIN]))
+    current_user: User = Depends(require_role([UserRole.ADMIN])),
 ):
     """Delete a settings."""
     try:

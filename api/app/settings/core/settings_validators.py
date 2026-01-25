@@ -4,16 +4,19 @@ from app.settings.infra.settings_repository import SettingsRepository
 
 class SettingsNotFoundError(Exception):
     """Raised when settings is not found."""
+
     pass
 
 
 class EnvironmentNotFoundError(Exception):
     """Raised when environment is not found."""
+
     pass
 
 
 class SettingsKeyAlreadyExistsError(Exception):
     """Raised when settings key already exists for environment."""
+
     pass
 
 
@@ -53,7 +56,7 @@ def validate_settings_key_uniqueness(
     repository: SettingsRepository,
     key: str,
     environment_id: int,
-    exclude_uuid: UUID = None
+    exclude_uuid: UUID = None,
 ) -> None:
     """Validate that settings key is unique for environment."""
     existing_settings = repository.find_by_key_and_environment_id(key, environment_id)

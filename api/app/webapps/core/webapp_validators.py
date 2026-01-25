@@ -1,5 +1,4 @@
 from uuid import UUID
-from typing import Dict, Any
 from app.webapps.infra.webapp_repository import WebappRepository
 from app.webapps.api.webapp_dto import WebappCreate, WebappUpdate
 from app.clusters.infra.cluster_model import Cluster as ClusterModel
@@ -7,31 +6,37 @@ from app.clusters.infra.cluster_model import Cluster as ClusterModel
 
 class WebappNotFoundError(Exception):
     """Raised when webapp is not found."""
+
     pass
 
 
 class WebappNotWebappTypeError(Exception):
     """Raised when component is not a webapp type."""
+
     pass
 
 
 class InstanceNotFoundError(Exception):
     """Raised when instance is not found."""
+
     pass
 
 
 class InvalidExposureTypeError(Exception):
     """Raised when exposure type is invalid for cluster."""
+
     pass
 
 
 class InvalidVisibilityError(Exception):
     """Raised when visibility requires Gateway API but cluster doesn't have it."""
+
     pass
 
 
 class InvalidURLError(Exception):
     """Raised when URL validation fails."""
+
     pass
 
 
@@ -40,7 +45,7 @@ def validate_webapp_create_dto(dto: WebappCreate) -> None:
     if not dto.name or not dto.name.strip():
         raise ValueError("Webapp name is required and cannot be empty")
 
-    if ' ' in dto.name:
+    if " " in dto.name:
         raise ValueError("Component name cannot contain spaces")
 
     if not dto.instance_uuid:
@@ -66,6 +71,7 @@ def validate_webapp_exists(repository: WebappRepository, uuid: UUID) -> None:
 def validate_webapp_type(webapp) -> None:
     """Validate that component is a webapp type."""
     from app.webapps.infra.application_component_model import WebappType
+
     if webapp.type != WebappType.webapp:
         raise WebappNotWebappTypeError("Component is not a webapp")
 
@@ -77,16 +83,13 @@ def validate_instance_exists(repository: WebappRepository, uuid: UUID) -> None:
         raise InstanceNotFoundError(f"Instance with UUID '{uuid}' not found")
 
 
-def validate_exposure_type_for_cluster(cluster: ClusterModel, exposure_type: str) -> None:
+def validate_exposure_type_for_cluster(
+    cluster: ClusterModel, exposure_type: str
+) -> None:
     """Validate that exposure type is available in cluster Gateway API resources."""
     from app.k8s.client import K8sClient
-    from fastapi import HTTPException
 
-    type_to_resource = {
-        'http': 'HTTPRoute',
-        'tcp': 'TCPRoute',
-        'udp': 'UDPRoute'
-    }
+    type_to_resource = {"http": "HTTPRoute", "tcp": "TCPRoute", "udp": "UDPRoute"}
 
     required_resource = type_to_resource.get(exposure_type)
     if not required_resource:
@@ -114,7 +117,7 @@ def validate_visibility_for_cluster(cluster: ClusterModel, visibility: str) -> N
     """Validate that visibility is supported by cluster."""
     from app.k8s.client import K8sClient
 
-    if visibility not in ['public', 'private']:
+    if visibility not in ["public", "private"]:
         return  # Cluster visibility doesn't need Gateway API
 
     k8s_client = K8sClient(url=cluster.api_address, token=cluster.token)
@@ -132,19 +135,19 @@ def validate_url_for_exposure(
     url: str | None,
     exposure_type: str,
     exposure_visibility: str,
-    is_update: bool = False
+    is_update: bool = False,
 ) -> None:
     """Validate URL based on exposure type and visibility."""
     # URL is required only if exposure.type is 'http' AND visibility is not 'cluster'
-    if exposure_type == 'http' and exposure_visibility != 'cluster' and not url:
+    if exposure_type == "http" and exposure_visibility != "cluster" and not url:
         if not is_update:
             raise InvalidURLError(
                 "URL is required for webapp components with HTTP exposure type and visibility 'public' or 'private'"
             )
 
     # URL is not allowed if exposure.type is not 'http' or visibility is 'cluster'
-    if (exposure_type != 'http' or exposure_visibility == 'cluster') and url:
-        if exposure_type != 'http':
+    if (exposure_type != "http" or exposure_visibility == "cluster") and url:
+        if exposure_type != "http":
             raise InvalidURLError(
                 f"URL is not allowed for webapp components with exposure type '{exposure_type}'. "
                 f"URL is only allowed for HTTP exposure type."

@@ -10,11 +10,11 @@ from app.users.api.user_dto import UserCreate, UserUpdate, UserResponse
 from app.users.core.user_validators import (
     UserNotFoundError,
     UserEmailAlreadyExistsError,
-    CannotDeleteSelfError
+    CannotDeleteSelfError,
 )
 from app.users.infra.user_model import UserRole
 from app.users.infra.user_model import User
-from app.shared.dependencies.auth import require_role, get_current_user
+from app.shared.dependencies.auth import require_role
 from app.auth.core.auth_service import AuthService
 
 
@@ -34,7 +34,7 @@ async def list_users(
     limit: int = Query(100, ge=1, le=100),
     search: Optional[str] = Query(None),
     service: UserService = Depends(get_user_service),
-    current_user: User = Depends(require_role([UserRole.ADMIN]))
+    current_user: User = Depends(require_role([UserRole.ADMIN])),
 ):
     """List all users (admin only)."""
     return service.get_users(skip=skip, limit=limit, search=search)
@@ -44,7 +44,7 @@ async def list_users(
 async def get_user(
     user_uuid: UUID,
     service: UserService = Depends(get_user_service),
-    current_user: User = Depends(require_role([UserRole.ADMIN]))
+    current_user: User = Depends(require_role([UserRole.ADMIN])),
 ):
     """Get user by UUID (admin only)."""
     try:
@@ -57,7 +57,7 @@ async def get_user(
 async def create_user(
     user_data: UserCreate,
     service: UserService = Depends(get_user_service),
-    current_user: User = Depends(require_role([UserRole.ADMIN]))
+    current_user: User = Depends(require_role([UserRole.ADMIN])),
 ):
     """Create a new user (admin only)."""
     try:
@@ -73,7 +73,7 @@ async def update_user(
     user_uuid: UUID,
     user_data: UserUpdate,
     service: UserService = Depends(get_user_service),
-    current_user: User = Depends(require_role([UserRole.ADMIN]))
+    current_user: User = Depends(require_role([UserRole.ADMIN])),
 ):
     """Update a user (admin only)."""
     try:
@@ -90,7 +90,7 @@ async def update_user(
 async def delete_user(
     user_uuid: UUID,
     service: UserService = Depends(get_user_service),
-    current_user: User = Depends(require_role([UserRole.ADMIN]))
+    current_user: User = Depends(require_role([UserRole.ADMIN])),
 ):
     """Delete a user (admin only)."""
     try:

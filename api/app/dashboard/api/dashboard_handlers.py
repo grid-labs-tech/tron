@@ -12,7 +12,9 @@ from app.shared.dependencies.auth import get_current_user
 router = APIRouter(prefix="/dashboard", tags=["dashboard"])
 
 
-def get_dashboard_service(database_session: Session = Depends(get_db)) -> DashboardService:
+def get_dashboard_service(
+    database_session: Session = Depends(get_db),
+) -> DashboardService:
     """Dependency to get DashboardService instance."""
     dashboard_repository = DashboardRepository(database_session)
     return DashboardService(dashboard_repository)
@@ -21,7 +23,7 @@ def get_dashboard_service(database_session: Session = Depends(get_db)) -> Dashbo
 @router.get("/", response_model=DashboardOverview)
 def get_dashboard_overview(
     service: DashboardService = Depends(get_dashboard_service),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
 ):
     """
     Get dashboard overview with statistics about applications, instances, components, clusters, and environments.

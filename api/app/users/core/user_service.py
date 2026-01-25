@@ -1,4 +1,4 @@
-from uuid import uuid4, UUID
+from uuid import UUID
 from typing import List, Optional
 from app.users.infra.user_repository import UserRepository
 from app.users.infra.user_model import User as UserModel, UserRole
@@ -9,9 +9,6 @@ from app.users.core.user_validators import (
     validate_user_exists,
     validate_user_email_uniqueness,
     validate_can_delete_user,
-    UserNotFoundError,
-    UserEmailAlreadyExistsError,
-    CannotDeleteSelfError
 )
 from app.auth.core.auth_service import AuthService
 
@@ -41,7 +38,9 @@ class UserService:
         user = self.repository.find_by_uuid(uuid)
 
         if dto.email is not None:
-            validate_user_email_uniqueness(self.repository, dto.email, exclude_uuid=uuid)
+            validate_user_email_uniqueness(
+                self.repository, dto.email, exclude_uuid=uuid
+            )
             user.email = dto.email
 
         if dto.full_name is not None:
@@ -64,10 +63,7 @@ class UserService:
         return self.repository.find_by_uuid(uuid)
 
     def get_users(
-        self,
-        skip: int = 0,
-        limit: int = 100,
-        search: Optional[str] = None
+        self, skip: int = 0, limit: int = 100, search: Optional[str] = None
     ) -> List[UserResponse]:
         """Get all users, optionally filtered by search term."""
         return self.repository.find_all(skip=skip, limit=limit, search=search)
@@ -86,5 +82,5 @@ class UserService:
             email=dto.email,
             hashed_password=hashed_password,
             full_name=dto.full_name,
-            role=UserRole.USER.value
+            role=UserRole.USER.value,
         )

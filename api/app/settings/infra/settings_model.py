@@ -1,5 +1,4 @@
-from sqlalchemy import Column, String, JSON, Integer, ForeignKey, DateTime, UniqueConstraint
-from sqlalchemy.sql import func
+from sqlalchemy import Column, String, JSON, Integer, ForeignKey, UniqueConstraint
 from sqlalchemy.orm import relationship
 from app.shared.database.database import Base
 from sqlalchemy.dialects.postgresql import UUID
@@ -15,7 +14,9 @@ class Settings(Base):
     value = Column(JSON, nullable=False)
     description = Column(String)
 
-    environment_id = Column(Integer, ForeignKey('environments.id'), nullable=False)
+    environment_id = Column(Integer, ForeignKey("environments.id"), nullable=False)
     environment = relationship("Environment", back_populates="settings")
 
-    __table_args__ = (UniqueConstraint('key', 'environment_id', name='uq_key_environment'),)
+    __table_args__ = (
+        UniqueConstraint("key", "environment_id", name="uq_key_environment"),
+    )

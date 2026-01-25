@@ -9,12 +9,12 @@ from app.clusters.api.cluster_dto import (
     ClusterCreate,
     ClusterResponse,
     ClusterResponseWithValidation,
-    ClusterCompletedResponse
+    ClusterCompletedResponse,
 )
 from app.clusters.core.cluster_validators import (
     ClusterNotFoundError,
     ClusterConnectionError,
-    EnvironmentNotFoundError
+    EnvironmentNotFoundError,
 )
 from app.users.infra.user_model import User, UserRole
 from app.shared.dependencies.auth import require_role, get_current_user
@@ -33,7 +33,7 @@ def get_cluster_service(database_session: Session = Depends(get_db)) -> ClusterS
 def create_cluster(
     cluster: ClusterCreate,
     service: ClusterService = Depends(get_cluster_service),
-    current_user: User = Depends(require_role([UserRole.ADMIN]))
+    current_user: User = Depends(require_role([UserRole.ADMIN])),
 ):
     """Create a new cluster."""
     try:
@@ -49,7 +49,7 @@ def update_cluster(
     uuid: UUID,
     cluster: ClusterCreate,
     service: ClusterService = Depends(get_cluster_service),
-    current_user: User = Depends(require_role([UserRole.ADMIN]))
+    current_user: User = Depends(require_role([UserRole.ADMIN])),
 ):
     """Update an existing cluster."""
     try:
@@ -67,7 +67,7 @@ def list_clusters(
     skip: int = 0,
     limit: int = 100,
     service: ClusterService = Depends(get_cluster_service),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
 ):
     """List all clusters."""
     return service.get_clusters(skip=skip, limit=limit)
@@ -77,7 +77,7 @@ def list_clusters(
 def get_cluster(
     uuid: UUID,
     service: ClusterService = Depends(get_cluster_service),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
 ):
     """Get cluster by UUID."""
     try:
@@ -90,7 +90,7 @@ def get_cluster(
 def delete_cluster(
     uuid: UUID,
     service: ClusterService = Depends(get_cluster_service),
-    current_user: User = Depends(require_role([UserRole.ADMIN]))
+    current_user: User = Depends(require_role([UserRole.ADMIN])),
 ):
     """Delete a cluster."""
     try:

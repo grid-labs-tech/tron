@@ -16,10 +16,10 @@ class Application(Base):
     enabled = Column(Boolean, nullable=False, default=True)
 
     created_at = Column(DateTime, server_default=func.now(), nullable=False)
-    updated_at = Column(DateTime, server_default=func.now(), server_onupdate=func.now(), nullable=False)
+    updated_at = Column(
+        DateTime, server_default=func.now(), server_onupdate=func.now(), nullable=False
+    )
 
     instances = relationship("Instance", back_populates="application")
 
-    __table_args__ = (
-        UniqueConstraint('name', name='uix_application_name'),
-    )
+    __table_args__ = (UniqueConstraint("name", name="uix_application_name"),)

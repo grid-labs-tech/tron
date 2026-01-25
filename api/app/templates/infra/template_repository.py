@@ -2,7 +2,9 @@ from sqlalchemy.orm import Session
 from uuid import UUID
 from typing import Optional, List
 from app.templates.infra.template_model import Template as TemplateModel
-from app.templates.infra.component_template_config_model import ComponentTemplateConfig as ComponentTemplateConfigModel
+from app.templates.infra.component_template_config_model import (
+    ComponentTemplateConfig as ComponentTemplateConfigModel,
+)
 
 
 class TemplateRepository:
@@ -15,14 +17,18 @@ class TemplateRepository:
         """Find template by UUID."""
         return self.db.query(TemplateModel).filter(TemplateModel.uuid == uuid).first()
 
-    def find_all(self, skip: int = 0, limit: int = 100, category: str = None) -> List[TemplateModel]:
+    def find_all(
+        self, skip: int = 0, limit: int = 100, category: str = None
+    ) -> List[TemplateModel]:
         """Find all templates, optionally filtered by category."""
         query = self.db.query(TemplateModel)
         if category:
             query = query.filter(TemplateModel.category == category)
         return query.offset(skip).limit(limit).all()
 
-    def find_component_configs_by_template_id(self, template_id: int) -> List[ComponentTemplateConfigModel]:
+    def find_component_configs_by_template_id(
+        self, template_id: int
+    ) -> List[ComponentTemplateConfigModel]:
         """Find all component template configs associated with a template."""
         return (
             self.db.query(ComponentTemplateConfigModel)
@@ -60,7 +66,9 @@ class TemplateRepository:
             self.db.rollback()
             raise Exception(f"Failed to delete template: {str(e)}")
 
-    def delete_component_configs(self, configs: List[ComponentTemplateConfigModel]) -> None:
+    def delete_component_configs(
+        self, configs: List[ComponentTemplateConfigModel]
+    ) -> None:
         """Delete component template configs."""
         for config in configs:
             self.db.delete(config)

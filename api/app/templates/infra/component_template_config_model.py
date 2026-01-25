@@ -7,7 +7,7 @@ from uuid import uuid4
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from app.templates.infra.template_model import Template
+    pass
 
 
 class ComponentTemplateConfig(Base):
@@ -21,11 +21,17 @@ class ComponentTemplateConfig(Base):
     template = relationship("Template", back_populates="component_configs")
 
     render_order = Column(Integer, nullable=False, default=0)  # Render order
-    enabled = Column(String, nullable=False, default="true")  # "true" ou "false" como string para compatibilidade
+    enabled = Column(
+        String, nullable=False, default="true"
+    )  # "true" ou "false" como string para compatibilidade
 
     created_at = Column(DateTime, server_default=func.now(), nullable=False)
-    updated_at = Column(DateTime, server_default=func.now(), server_onupdate=func.now(), nullable=False)
+    updated_at = Column(
+        DateTime, server_default=func.now(), server_onupdate=func.now(), nullable=False
+    )
 
     __table_args__ = (
-        UniqueConstraint('component_type', 'template_id', name='uix_component_type_template'),
+        UniqueConstraint(
+            "component_type", "template_id", name="uix_component_type_template"
+        ),
     )

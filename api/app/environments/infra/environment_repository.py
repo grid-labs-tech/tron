@@ -2,7 +2,9 @@ from sqlalchemy.orm import Session
 from uuid import UUID
 from typing import Optional, List
 from app.environments.infra.environment_model import Environment as EnvironmentModel
-from app.webapps.infra.application_component_model import ApplicationComponent as ApplicationComponentModel
+from app.webapps.infra.application_component_model import (
+    ApplicationComponent as ApplicationComponentModel,
+)
 from app.instances.infra.instance_model import Instance as InstanceModel
 
 
@@ -14,17 +16,27 @@ class EnvironmentRepository:
 
     def find_by_uuid(self, uuid: UUID) -> Optional[EnvironmentModel]:
         """Find environment by UUID."""
-        return self.db.query(EnvironmentModel).filter(EnvironmentModel.uuid == uuid).first()
+        return (
+            self.db.query(EnvironmentModel)
+            .filter(EnvironmentModel.uuid == uuid)
+            .first()
+        )
 
     def find_by_name(self, name: str) -> Optional[EnvironmentModel]:
         """Find environment by name."""
-        return self.db.query(EnvironmentModel).filter(EnvironmentModel.name == name).first()
+        return (
+            self.db.query(EnvironmentModel)
+            .filter(EnvironmentModel.name == name)
+            .first()
+        )
 
     def find_all(self, skip: int = 0, limit: int = 100) -> List[EnvironmentModel]:
         """Find all environments."""
         return self.db.query(EnvironmentModel).offset(skip).limit(limit).all()
 
-    def find_components_by_environment_id(self, environment_id: int) -> List[ApplicationComponentModel]:
+    def find_components_by_environment_id(
+        self, environment_id: int
+    ) -> List[ApplicationComponentModel]:
         """Find all components associated with an environment."""
         return (
             self.db.query(ApplicationComponentModel)

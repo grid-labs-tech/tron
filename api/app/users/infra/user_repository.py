@@ -23,10 +23,7 @@ class UserRepository:
         return self.db.query(UserModel).filter(UserModel.google_id == google_id).first()
 
     def find_all(
-        self,
-        skip: int = 0,
-        limit: int = 100,
-        search: Optional[str] = None
+        self, skip: int = 0, limit: int = 100, search: Optional[str] = None
     ) -> List[UserModel]:
         """Find all users, optionally filtered by search term."""
         query = self.db.query(UserModel)
@@ -34,11 +31,13 @@ class UserRepository:
         if search:
             search_term = f"%{search}%"
             query = query.filter(
-                (UserModel.email.ilike(search_term)) |
-                (UserModel.full_name.ilike(search_term))
+                (UserModel.email.ilike(search_term))
+                | (UserModel.full_name.ilike(search_term))
             )
 
-        return query.order_by(UserModel.created_at.desc()).offset(skip).limit(limit).all()
+        return (
+            query.order_by(UserModel.created_at.desc()).offset(skip).limit(limit).all()
+        )
 
     def create(self, user: UserModel) -> UserModel:
         """Create a new user."""

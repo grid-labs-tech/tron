@@ -5,16 +5,19 @@ from app.cron.api.cron_dto import CronCreate, CronUpdate
 
 class CronNotFoundError(Exception):
     """Raised when cron is not found."""
+
     pass
 
 
 class CronNotCronTypeError(Exception):
     """Raised when component is not a cron type."""
+
     pass
 
 
 class InstanceNotFoundError(Exception):
     """Raised when instance is not found."""
+
     pass
 
 
@@ -23,7 +26,7 @@ def validate_cron_create_dto(dto: CronCreate) -> None:
     if not dto.name or not dto.name.strip():
         raise ValueError("Cron name is required and cannot be empty")
 
-    if ' ' in dto.name:
+    if " " in dto.name:
         raise ValueError("Component name cannot contain spaces")
 
     if not dto.instance_uuid:
@@ -53,6 +56,7 @@ def validate_cron_exists(repository: CronRepository, uuid: UUID) -> None:
 def validate_cron_type(cron) -> None:
     """Validate that component is a cron type."""
     from app.cron.infra.application_component_model import WebappType
+
     if cron.type != WebappType.cron:
         raise CronNotCronTypeError("Component is not a cron")
 

@@ -1,6 +1,5 @@
 from pydantic import BaseModel, EmailStr
 from typing import Optional
-from app.users.api.user_dto import UserResponse
 
 
 class Token(BaseModel):

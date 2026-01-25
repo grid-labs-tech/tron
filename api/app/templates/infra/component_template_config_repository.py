@@ -1,7 +1,9 @@
 from sqlalchemy.orm import Session, joinedload
 from uuid import UUID
 from typing import Optional, List
-from app.templates.infra.component_template_config_model import ComponentTemplateConfig as ComponentTemplateConfigModel
+from app.templates.infra.component_template_config_model import (
+    ComponentTemplateConfig as ComponentTemplateConfigModel,
+)
 from app.templates.infra.template_model import Template as TemplateModel
 
 
@@ -43,10 +45,14 @@ class ComponentTemplateConfigRepository:
             .order_by(ComponentTemplateConfigModel.render_order)
         )
         if component_type:
-            query = query.filter(ComponentTemplateConfigModel.component_type == component_type)
+            query = query.filter(
+                ComponentTemplateConfigModel.component_type == component_type
+            )
         return query.offset(skip).limit(limit).all()
 
-    def find_templates_for_component_type(self, component_type: str) -> List[TemplateModel]:
+    def find_templates_for_component_type(
+        self, component_type: str
+    ) -> List[TemplateModel]:
         """Find templates ordered by render_order for a component type."""
         configs = (
             self.db.query(ComponentTemplateConfigModel)
@@ -60,7 +66,9 @@ class ComponentTemplateConfigRepository:
         )
         return [config.template for config in configs]
 
-    def create(self, config: ComponentTemplateConfigModel) -> ComponentTemplateConfigModel:
+    def create(
+        self, config: ComponentTemplateConfigModel
+    ) -> ComponentTemplateConfigModel:
         """Create a new component template config."""
         self.db.add(config)
         try:
@@ -73,7 +81,9 @@ class ComponentTemplateConfigRepository:
             raise Exception(f"Failed to create component template config: {str(e)}")
         return config
 
-    def update(self, config: ComponentTemplateConfigModel) -> ComponentTemplateConfigModel:
+    def update(
+        self, config: ComponentTemplateConfigModel
+    ) -> ComponentTemplateConfigModel:
         """Update an existing component template config."""
         try:
             self.db.commit()

@@ -9,7 +9,7 @@ from app.workers.api.worker_dto import WorkerCreate, WorkerUpdate, Worker
 from app.workers.core.worker_validators import (
     WorkerNotFoundError,
     WorkerNotWorkerTypeError,
-    InstanceNotFoundError
+    InstanceNotFoundError,
 )
 from app.users.infra.user_model import UserRole, User
 from app.shared.dependencies.auth import require_role, get_current_user
@@ -28,7 +28,7 @@ def get_worker_service(database_session: Session = Depends(get_db)) -> WorkerSer
 def create_worker(
     worker: WorkerCreate,
     service: WorkerService = Depends(get_worker_service),
-    current_user: User = Depends(require_role([UserRole.ADMIN]))
+    current_user: User = Depends(require_role([UserRole.ADMIN])),
 ):
     """Create a new worker."""
     try:
@@ -44,7 +44,7 @@ def list_workers(
     skip: int = 0,
     limit: int = 100,
     service: WorkerService = Depends(get_worker_service),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
 ):
     """List all workers."""
     return service.get_workers(skip=skip, limit=limit)
@@ -54,7 +54,7 @@ def list_workers(
 def get_worker(
     uuid: UUID,
     service: WorkerService = Depends(get_worker_service),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
 ):
     """Get worker by UUID."""
     try:
@@ -68,7 +68,7 @@ def update_worker(
     uuid: UUID,
     worker: WorkerUpdate,
     service: WorkerService = Depends(get_worker_service),
-    current_user: User = Depends(require_role([UserRole.ADMIN]))
+    current_user: User = Depends(require_role([UserRole.ADMIN])),
 ):
     """Update an existing worker."""
     try:
@@ -83,7 +83,7 @@ def update_worker(
 def delete_worker(
     uuid: UUID,
     service: WorkerService = Depends(get_worker_service),
-    current_user: User = Depends(require_role([UserRole.ADMIN]))
+    current_user: User = Depends(require_role([UserRole.ADMIN])),
 ):
     """Delete a worker."""
     try:

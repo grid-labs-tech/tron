@@ -77,10 +77,17 @@ class K8sClient:
             print(e.body)
             try:
                 error_body = json.loads(e.body) if e.body else {}
-                error_message = error_body.get("message", str(e.body)) if isinstance(error_body, dict) else str(e.body)
+                error_message = (
+                    error_body.get("message", str(e.body))
+                    if isinstance(error_body, dict)
+                    else str(e.body)
+                )
             except (json.JSONDecodeError, AttributeError):
                 error_message = str(e.body) if e.body else str(e)
-            message = {"status": "error", "message": {"code": str(e.status), "message": error_message}}
+            message = {
+                "status": "error",
+                "message": {"code": str(e.status), "message": error_message},
+            }
             return (False, message)
 
     def get_namespaces(self):
@@ -135,7 +142,6 @@ class K8sClient:
         total_allocated_memory = 0
 
         for node in nodes:
-
             node_memory = node.status.allocatable.get("memory")
             if node_memory:
                 total_memory += int(node_memory[:-2])
@@ -187,7 +193,9 @@ class K8sClient:
         """
         try:
             v1 = client.CoreV1Api(self.api_client)
-            v1.delete_namespaced_pod(name=pod_name, namespace=namespace, body=client.V1DeleteOptions())
+            v1.delete_namespaced_pod(
+                name=pod_name, namespace=namespace, body=client.V1DeleteOptions()
+            )
             return True
         except ApiException as e:
             if e.status == 404:
@@ -197,7 +205,14 @@ class K8sClient:
                 print(f"Error deleting pod {pod_name}: {e}")
                 raise e
 
-    def get_pod_logs(self, namespace: str, pod_name: str, container_name: str = None, tail_lines: int = 100, follow: bool = False):
+    def get_pod_logs(
+        self,
+        namespace: str,
+        pod_name: str,
+        container_name: str = None,
+        tail_lines: int = 100,
+        follow: bool = False,
+    ):
         """
         Get logs from a Kubernetes pod.
 
@@ -219,17 +234,25 @@ class K8sClient:
                 container=container_name,
                 tail_lines=tail_lines,
                 follow=follow,
-                _preload_content=False
+                _preload_content=False,
             )
-            return logs.read().decode('utf-8')
+            return logs.read().decode("utf-8")
         except ApiException as e:
             if e.status == 404:
                 raise HTTPException(status_code=404, detail=f"Pod {pod_name} not found")
             else:
                 print(f"Error getting pod logs {pod_name}: {e}")
-                raise HTTPException(status_code=e.status, detail=f"Failed to get logs: {str(e)}")
+                raise HTTPException(
+                    status_code=e.status, detail=f"Failed to get logs: {str(e)}"
+                )
 
-    def exec_pod_command(self, namespace: str, pod_name: str, command: list[str], container_name: str = None):
+    def exec_pod_command(
+        self,
+        namespace: str,
+        pod_name: str,
+        command: list[str],
+        container_name: str = None,
+    ):
         """
         Execute a command in a Kubernetes pod.
 
@@ -256,7 +279,7 @@ class K8sClient:
                 stdin=False,
                 stdout=True,
                 tty=False,
-                _preload_content=False
+                _preload_content=False,
             )
 
             stdout = ""
@@ -274,19 +297,25 @@ class K8sClient:
             return {
                 "stdout": stdout,
                 "stderr": stderr,
-                "return_code": 0 if not stderr else 1
+                "return_code": 0 if not stderr else 1,
             }
         except ApiException as e:
             if e.status == 404:
                 raise HTTPException(status_code=404, detail=f"Pod {pod_name} not found")
             else:
                 print(f"Error executing command in pod {pod_name}: {e}")
-                raise HTTPException(status_code=e.status, detail=f"Failed to execute command: {str(e)}")
+                raise HTTPException(
+                    status_code=e.status, detail=f"Failed to execute command: {str(e)}"
+                )
         except Exception as e:
             print(f"Error executing command in pod {pod_name}: {e}")
-            raise HTTPException(status_code=500, detail=f"Failed to execute command: {str(e)}")
+            raise HTTPException(
+                status_code=500, detail=f"Failed to execute command: {str(e)}"
+            )
 
-    def cleanup_orphaned_gateway_resources(self, namespace: str, component_name: str, expected_resources: list):
+    def cleanup_orphaned_gateway_resources(
+        self, namespace: str, component_name: str, expected_resources: list
+    ):
         """
         Remove Gateway API resources (HTTPRoute, TCPRoute, UDPRoute) that should no longer exist.
 
@@ -302,7 +331,10 @@ class K8sClient:
                 kind = resource.get("kind")
                 api_version = resource.get("apiVersion", "")
                 # Check if it is a Gateway API resource
-                if kind in ["HTTPRoute", "TCPRoute", "UDPRoute"] and "gateway.networking.k8s.io" in api_version:
+                if (
+                    kind in ["HTTPRoute", "TCPRoute", "UDPRoute"]
+                    and "gateway.networking.k8s.io" in api_version
+                ):
                     expected_gateway_kinds.add(kind)
 
         # List of Gateway API resources that may exist
@@ -318,27 +350,31 @@ class K8sClient:
             if kind not in expected_gateway_kinds:
                 try:
                     # Try to delete the resource if it exists
-                    api_parts = api_version.split('/')
+                    api_parts = api_version.split("/")
                     api_group = api_parts[0]
                     api_version_part = api_parts[1]
                     api_path = f"/apis/{api_group}/{api_version_part}/namespaces/{namespace}/{resource_name}/{component_name}"
 
                     self.api_client.call_api(
                         api_path,
-                        'DELETE',
+                        "DELETE",
                         body=client.V1DeleteOptions(),
-                        auth_settings=['BearerToken'],
-                        response_type='object',
-                        _preload_content=True
+                        auth_settings=["BearerToken"],
+                        response_type="object",
+                        _preload_content=True,
                     )
-                    print(f"Deleted orphaned {kind} '{component_name}' from namespace '{namespace}'")
+                    print(
+                        f"Deleted orphaned {kind} '{component_name}' from namespace '{namespace}'"
+                    )
                 except ApiException as e:
                     if e.status == 404:
                         # Resource does not exist, that's fine
                         pass
                     else:
                         # Log but don't fail - not critical
-                        print(f"Warning: Could not delete {kind} '{component_name}': {e}")
+                        print(
+                            f"Warning: Could not delete {kind} '{component_name}': {e}"
+                        )
 
     def apply_or_delete_yaml_to_k8s(self, yaml_documents, operation="create"):
         # For upsert operations, clean up orphaned Gateway API resources before applying
@@ -355,7 +391,10 @@ class K8sClient:
                     metadata = doc.get("metadata", {})
 
                     # If it's a Gateway API resource, use that name
-                    if kind in ["HTTPRoute", "TCPRoute", "UDPRoute"] and "gateway.networking.k8s.io" in api_version:
+                    if (
+                        kind in ["HTTPRoute", "TCPRoute", "UDPRoute"]
+                        and "gateway.networking.k8s.io" in api_version
+                    ):
                         component_name = metadata.get("name")
                         namespace = metadata.get("namespace")
                         if namespace and component_name:
@@ -374,7 +413,9 @@ class K8sClient:
             # If found namespace and component_name, clean up orphaned resources
             if namespace and component_name:
                 try:
-                    self.cleanup_orphaned_gateway_resources(namespace, component_name, yaml_documents)
+                    self.cleanup_orphaned_gateway_resources(
+                        namespace, component_name, yaml_documents
+                    )
                 except Exception as e:
                     # Log but don't fail - not critical
                     print(f"Warning: Could not cleanup orphaned Gateway resources: {e}")
@@ -414,7 +455,7 @@ class K8sClient:
                 # Extract API group and version from apiVersion
                 # Format: group/version (e.g., gateway.networking.k8s.io/v1)
                 # or just version for core APIs (e.g., v1)
-                api_parts = api_version.split('/')
+                api_parts = api_version.split("/")
                 if len(api_parts) == 2:
                     api_group, api_version_part = api_parts
                 else:
@@ -429,8 +470,8 @@ class K8sClient:
                     # Convert to lowercase
                     lower = kind_str.lower()
                     # Add 's' if it doesn't end with 's'
-                    if not lower.endswith('s'):
-                        return lower + 's'
+                    if not lower.endswith("s"):
+                        return lower + "s"
                     return lower
 
                 resource_name = kind_to_resource_name(kind)
@@ -449,11 +490,11 @@ class K8sClient:
                         # POST to create
                         self.api_client.call_api(
                             api_path_base,
-                            'POST',
+                            "POST",
                             body=document,
-                            auth_settings=['BearerToken'],
-                            response_type='object',
-                            _preload_content=True
+                            auth_settings=["BearerToken"],
+                            response_type="object",
+                            _preload_content=True,
                         )
                     elif operation == "update":
                         # PUT to update - need to get resourceVersion first
@@ -461,20 +502,26 @@ class K8sClient:
                             # Read existing resource to get resourceVersion
                             existing_response = self.api_client.call_api(
                                 f"{api_path_base}/{name}",
-                                'GET',
-                                auth_settings=['BearerToken'],
-                                response_type='object',
-                                _preload_content=True
+                                "GET",
+                                auth_settings=["BearerToken"],
+                                response_type="object",
+                                _preload_content=True,
                             )
-                            existing_resource = existing_response[0] if isinstance(existing_response, tuple) else existing_response
+                            existing_resource = (
+                                existing_response[0]
+                                if isinstance(existing_response, tuple)
+                                else existing_response
+                            )
 
                             # Include resourceVersion in document if it exists
-                            if existing_resource and 'metadata' in existing_resource:
-                                existing_metadata = existing_resource['metadata']
-                                if 'resourceVersion' in existing_metadata:
-                                    if 'metadata' not in document:
-                                        document['metadata'] = {}
-                                    document['metadata']['resourceVersion'] = existing_metadata['resourceVersion']
+                            if existing_resource and "metadata" in existing_resource:
+                                existing_metadata = existing_resource["metadata"]
+                                if "resourceVersion" in existing_metadata:
+                                    if "metadata" not in document:
+                                        document["metadata"] = {}
+                                    document["metadata"]["resourceVersion"] = (
+                                        existing_metadata["resourceVersion"]
+                                    )
                         except ApiException as read_e:
                             if read_e.status != 404:
                                 # If can't read and it's not 404, re-raise the error
@@ -483,11 +530,11 @@ class K8sClient:
                         # PUT to update
                         self.api_client.call_api(
                             f"{api_path_base}/{name}",
-                            'PUT',
+                            "PUT",
                             body=document,
-                            auth_settings=['BearerToken'],
-                            response_type='object',
-                            _preload_content=True
+                            auth_settings=["BearerToken"],
+                            response_type="object",
+                            _preload_content=True,
                         )
                     elif operation == "upsert":
                         # Try to update first, if it doesn't exist, create
@@ -495,40 +542,46 @@ class K8sClient:
                             # Read existing resource to get resourceVersion
                             existing_response = self.api_client.call_api(
                                 f"{api_path_base}/{name}",
-                                'GET',
-                                auth_settings=['BearerToken'],
-                                response_type='object',
-                                _preload_content=True
+                                "GET",
+                                auth_settings=["BearerToken"],
+                                response_type="object",
+                                _preload_content=True,
                             )
-                            existing_resource = existing_response[0] if isinstance(existing_response, tuple) else existing_response
+                            existing_resource = (
+                                existing_response[0]
+                                if isinstance(existing_response, tuple)
+                                else existing_response
+                            )
 
                             # Include resourceVersion in document if it exists
-                            if existing_resource and 'metadata' in existing_resource:
-                                existing_metadata = existing_resource['metadata']
-                                if 'resourceVersion' in existing_metadata:
-                                    if 'metadata' not in document:
-                                        document['metadata'] = {}
-                                    document['metadata']['resourceVersion'] = existing_metadata['resourceVersion']
+                            if existing_resource and "metadata" in existing_resource:
+                                existing_metadata = existing_resource["metadata"]
+                                if "resourceVersion" in existing_metadata:
+                                    if "metadata" not in document:
+                                        document["metadata"] = {}
+                                    document["metadata"]["resourceVersion"] = (
+                                        existing_metadata["resourceVersion"]
+                                    )
 
                             # PUT to update
                             self.api_client.call_api(
                                 f"{api_path_base}/{name}",
-                                'PUT',
+                                "PUT",
                                 body=document,
-                                auth_settings=['BearerToken'],
-                                response_type='object',
-                                _preload_content=True
+                                auth_settings=["BearerToken"],
+                                response_type="object",
+                                _preload_content=True,
                             )
                         except ApiException as e:
                             if e.status == 404:
                                 # Resource does not exist, create
                                 self.api_client.call_api(
                                     api_path_base,
-                                    'POST',
+                                    "POST",
                                     body=document,
-                                    auth_settings=['BearerToken'],
-                                    response_type='object',
-                                    _preload_content=True
+                                    auth_settings=["BearerToken"],
+                                    response_type="object",
+                                    _preload_content=True,
                                 )
                             else:
                                 raise e
@@ -537,11 +590,11 @@ class K8sClient:
                         try:
                             self.api_client.call_api(
                                 f"{api_path_base}/{name}",
-                                'DELETE',
+                                "DELETE",
                                 body=client.V1DeleteOptions(),
-                                auth_settings=['BearerToken'],
-                                response_type='object',
-                                _preload_content=True
+                                auth_settings=["BearerToken"],
+                                response_type="object",
+                                _preload_content=True,
                             )
                         except ApiException as e:
                             if e.status == 404:
@@ -552,7 +605,7 @@ class K8sClient:
                 except ApiException as e:
                     raise HTTPException(
                         status_code=e.status,
-                        detail=f"Failed to {operation} {kind} '{name}': {str(e)}"
+                        detail=f"Failed to {operation} {kind} '{name}': {str(e)}",
                     )
             else:
                 # Use default mapping for known resources
@@ -574,32 +627,62 @@ class K8sClient:
                         # For Deployments, preserve current replica count if not specified
                         if kind == "Deployment" and "spec" in document:
                             try:
-                                read_method = getattr(api_instance, "read_namespaced_deployment", None)
+                                read_method = getattr(
+                                    api_instance, "read_namespaced_deployment", None
+                                )
                                 if read_method:
-                                    existing_deployment = read_method(name=name, namespace=namespace)
+                                    existing_deployment = read_method(
+                                        name=name, namespace=namespace
+                                    )
 
                                     # If new document doesn't specify replicas, preserve current value
                                     # This prevents Kubernetes from resetting to default (1) or conflicting with HPA
                                     if "replicas" not in document.get("spec", {}):
-                                        if hasattr(existing_deployment.spec, "replicas") and existing_deployment.spec.replicas is not None:
-                                            document["spec"]["replicas"] = existing_deployment.spec.replicas
+                                        if (
+                                            hasattr(
+                                                existing_deployment.spec, "replicas"
+                                            )
+                                            and existing_deployment.spec.replicas
+                                            is not None
+                                        ):
+                                            document["spec"]["replicas"] = (
+                                                existing_deployment.spec.replicas
+                                            )
 
                                     # Also preserve resourceVersion and other necessary metadata to avoid conflicts
                                     # resourceVersion is necessary for replace to work correctly
-                                    if hasattr(existing_deployment.metadata, "resource_version") and existing_deployment.metadata.resource_version:
+                                    if (
+                                        hasattr(
+                                            existing_deployment.metadata,
+                                            "resource_version",
+                                        )
+                                        and existing_deployment.metadata.resource_version
+                                    ):
                                         if "metadata" not in document:
                                             document["metadata"] = {}
-                                        document["metadata"]["resourceVersion"] = existing_deployment.metadata.resource_version
+                                        document["metadata"]["resourceVersion"] = (
+                                            existing_deployment.metadata.resource_version
+                                        )
 
                                         # Also preserve generation if it exists
-                                        if hasattr(existing_deployment.metadata, "generation") and existing_deployment.metadata.generation:
-                                            document["metadata"]["generation"] = existing_deployment.metadata.generation
+                                        if (
+                                            hasattr(
+                                                existing_deployment.metadata,
+                                                "generation",
+                                            )
+                                            and existing_deployment.metadata.generation
+                                        ):
+                                            document["metadata"]["generation"] = (
+                                                existing_deployment.metadata.generation
+                                            )
                             except ApiException as read_e:
                                 # If can't read (404 or other error), continue normally
                                 # This means the deployment doesn't exist yet, so we'll create it
                                 if read_e.status != 404:
                                     # If it's another error, log but continue
-                                    print(f"Warning: Could not read existing deployment to preserve replicas: {read_e}")
+                                    print(
+                                        f"Warning: Could not read existing deployment to preserve replicas: {read_e}"
+                                    )
 
                         getattr(api_instance, replace_method)(
                             name=name, namespace=namespace, body=document
@@ -615,7 +698,9 @@ class K8sClient:
                 elif operation == "delete":
                     try:
                         getattr(api_instance, delete_method)(
-                            name=name, namespace=namespace, body=client.V1DeleteOptions()
+                            name=name,
+                            namespace=namespace,
+                            body=client.V1DeleteOptions(),
                         )
                     except ApiException as e:
                         if e.status == 404:
@@ -625,7 +710,7 @@ class K8sClient:
                         else:
                             raise e
 
-        return f"Documents applied successfully"
+        return "Documents applied successfully"
 
     def list_pods(self, namespace: str, label_selector: str = None):
         """
@@ -642,7 +727,9 @@ class K8sClient:
             v1 = client.CoreV1Api(self.api_client)
 
             if label_selector:
-                pods = v1.list_namespaced_pod(namespace=namespace, label_selector=label_selector).items
+                pods = v1.list_namespaced_pod(
+                    namespace=namespace, label_selector=label_selector
+                ).items
             else:
                 pods = v1.list_namespaced_pod(namespace=namespace).items
 
@@ -660,21 +747,21 @@ class K8sClient:
                         # Access requests (it's a dict in Kubernetes Python client)
                         if container.resources.requests:
                             requests = container.resources.requests
-                            if 'cpu' in requests:
-                                cpu_str = str(requests['cpu'])
+                            if "cpu" in requests:
+                                cpu_str = str(requests["cpu"])
                                 cpu_requests += self._parse_cpu(cpu_str)
-                            if 'memory' in requests:
-                                mem_str = str(requests['memory'])
+                            if "memory" in requests:
+                                mem_str = str(requests["memory"])
                                 memory_requests += self._parse_memory(mem_str)
 
                         # Access limits (it's a dict in Kubernetes Python client)
                         if container.resources.limits:
                             limits = container.resources.limits
-                            if 'cpu' in limits:
-                                cpu_str = str(limits['cpu'])
+                            if "cpu" in limits:
+                                cpu_str = str(limits["cpu"])
                                 cpu_limits += self._parse_cpu(cpu_str)
-                            if 'memory' in limits:
-                                mem_str = str(limits['memory'])
+                            if "memory" in limits:
+                                mem_str = str(limits["memory"])
                                 memory_limits += self._parse_memory(mem_str)
 
                 # Pod status
@@ -693,23 +780,28 @@ class K8sClient:
                 age_seconds = 0
                 if pod.metadata.creation_timestamp:
                     from datetime import datetime, timezone
+
                     now = datetime.now(timezone.utc)
-                    age_seconds = int((now - pod.metadata.creation_timestamp).total_seconds())
+                    age_seconds = int(
+                        (now - pod.metadata.creation_timestamp).total_seconds()
+                    )
 
                 # Host IP (IP of the node where the pod is running)
                 host_ip = pod.status.host_ip if pod.status.host_ip else None
 
-                formatted_pods.append({
-                    "name": pod.metadata.name,
-                    "status": status,
-                    "restarts": restarts,
-                    "cpu_requests": cpu_requests,
-                    "cpu_limits": cpu_limits,
-                    "memory_requests": memory_requests,
-                    "memory_limits": memory_limits,
-                    "age_seconds": age_seconds,
-                    "host_ip": host_ip,
-                })
+                formatted_pods.append(
+                    {
+                        "name": pod.metadata.name,
+                        "status": status,
+                        "restarts": restarts,
+                        "cpu_requests": cpu_requests,
+                        "cpu_limits": cpu_limits,
+                        "memory_requests": memory_requests,
+                        "memory_limits": memory_limits,
+                        "age_seconds": age_seconds,
+                        "host_ip": host_ip,
+                    }
+                )
 
             return formatted_pods
         except ApiException as e:
@@ -732,7 +824,9 @@ class K8sClient:
             batch_v1 = client.BatchV1Api(self.api_client)
 
             if label_selector:
-                jobs = batch_v1.list_namespaced_job(namespace=namespace, label_selector=label_selector).items
+                jobs = batch_v1.list_namespaced_job(
+                    namespace=namespace, label_selector=label_selector
+                ).items
             else:
                 jobs = batch_v1.list_namespaced_job(namespace=namespace).items
 
@@ -776,28 +870,36 @@ class K8sClient:
                 age_seconds = 0
                 if job.metadata.creation_timestamp:
                     from datetime import datetime, timezone
+
                     now = datetime.now(timezone.utc)
-                    age_seconds = int((now - job.metadata.creation_timestamp).total_seconds())
+                    age_seconds = int(
+                        (now - job.metadata.creation_timestamp).total_seconds()
+                    )
 
                 # Duration (if completed)
                 duration_seconds = None
                 if start_time and completion_time:
                     from datetime import datetime
-                    start = datetime.fromisoformat(start_time.replace('Z', '+00:00'))
-                    completion = datetime.fromisoformat(completion_time.replace('Z', '+00:00'))
+
+                    start = datetime.fromisoformat(start_time.replace("Z", "+00:00"))
+                    completion = datetime.fromisoformat(
+                        completion_time.replace("Z", "+00:00")
+                    )
                     duration_seconds = int((completion - start).total_seconds())
 
-                formatted_jobs.append({
-                    "name": job.metadata.name,
-                    "status": status,
-                    "succeeded": succeeded,
-                    "failed": failed,
-                    "active": active,
-                    "start_time": start_time,
-                    "completion_time": completion_time,
-                    "age_seconds": age_seconds,
-                    "duration_seconds": duration_seconds,
-                })
+                formatted_jobs.append(
+                    {
+                        "name": job.metadata.name,
+                        "status": status,
+                        "succeeded": succeeded,
+                        "failed": failed,
+                        "active": active,
+                        "start_time": start_time,
+                        "completion_time": completion_time,
+                        "age_seconds": age_seconds,
+                        "duration_seconds": duration_seconds,
+                    }
+                )
 
             # Sort by creation (most recent first)
             formatted_jobs.sort(key=lambda x: x["age_seconds"], reverse=False)
@@ -828,15 +930,16 @@ class K8sClient:
             batch_v1.delete_namespaced_job(
                 name=job_name,
                 namespace=namespace,
-                propagation_policy="Background"  # Also deletes associated pods
+                propagation_policy="Background",  # Also deletes associated pods
             )
             return True
         except ApiException as e:
             if e.status == 404:
-                raise HTTPException(status_code=404, detail=f"Job '{job_name}' not found")
+                raise HTTPException(
+                    status_code=404, detail=f"Job '{job_name}' not found"
+                )
             raise HTTPException(
-                status_code=500,
-                detail=f"Error deleting job '{job_name}': {str(e)}"
+                status_code=500, detail=f"Error deleting job '{job_name}': {str(e)}"
             )
 
     def _parse_cpu(self, cpu_str: str) -> float:
@@ -844,7 +947,7 @@ class K8sClient:
         if not cpu_str:
             return 0.0
         cpu_str = cpu_str.strip()
-        if cpu_str.endswith('m'):
+        if cpu_str.endswith("m"):
             return float(cpu_str[:-1]) / 1000
         return float(cpu_str)
 
@@ -864,8 +967,7 @@ class K8sClient:
 
             if field_selector:
                 events = v1.list_namespaced_event(
-                    namespace=namespace,
-                    field_selector=field_selector
+                    namespace=namespace, field_selector=field_selector
                 ).items
             else:
                 events = v1.list_namespaced_event(namespace=namespace).items
@@ -877,32 +979,47 @@ class K8sClient:
                 age_seconds = 0
                 if event.first_timestamp:
                     from datetime import datetime, timezone
+
                     now = datetime.now(timezone.utc)
                     age_seconds = int((now - event.first_timestamp).total_seconds())
 
                 # Count of occurrences
                 count = event.count if event.count else 1
 
-                formatted_events.append({
-                    "name": event.metadata.name,
-                    "namespace": event.metadata.namespace,
-                    "type": event.type,  # Normal, Warning
-                    "reason": event.reason or "Unknown",
-                    "message": event.message or "",
-                    "involved_object": {
-                        "kind": event.involved_object.kind if event.involved_object else None,
-                        "name": event.involved_object.name if event.involved_object else None,
-                        "namespace": event.involved_object.namespace if event.involved_object else None,
-                    },
-                    "source": {
-                        "component": event.source.component if event.source else None,
-                        "host": event.source.host if event.source else None,
-                    },
-                    "first_timestamp": event.first_timestamp.isoformat() if event.first_timestamp else None,
-                    "last_timestamp": event.last_timestamp.isoformat() if event.last_timestamp else None,
-                    "count": count,
-                    "age_seconds": age_seconds,
-                })
+                formatted_events.append(
+                    {
+                        "name": event.metadata.name,
+                        "namespace": event.metadata.namespace,
+                        "type": event.type,  # Normal, Warning
+                        "reason": event.reason or "Unknown",
+                        "message": event.message or "",
+                        "involved_object": {
+                            "kind": event.involved_object.kind
+                            if event.involved_object
+                            else None,
+                            "name": event.involved_object.name
+                            if event.involved_object
+                            else None,
+                            "namespace": event.involved_object.namespace
+                            if event.involved_object
+                            else None,
+                        },
+                        "source": {
+                            "component": event.source.component
+                            if event.source
+                            else None,
+                            "host": event.source.host if event.source else None,
+                        },
+                        "first_timestamp": event.first_timestamp.isoformat()
+                        if event.first_timestamp
+                        else None,
+                        "last_timestamp": event.last_timestamp.isoformat()
+                        if event.last_timestamp
+                        else None,
+                        "count": count,
+                        "age_seconds": age_seconds,
+                    }
+                )
 
             # Sort by timestamp (most recent first)
             formatted_events.sort(key=lambda x: x["age_seconds"], reverse=False)
@@ -930,10 +1047,10 @@ class K8sClient:
             try:
                 response = self.api_client.call_api(
                     path,
-                    'GET',
-                    auth_settings=['BearerToken'],
-                    response_type='object',
-                    _preload_content=False
+                    "GET",
+                    auth_settings=["BearerToken"],
+                    response_type="object",
+                    _preload_content=False,
                 )
 
                 # call_api returns a tuple: (data, status, headers)
@@ -962,6 +1079,7 @@ class K8sClient:
         except Exception as e:
             print(f"Unexpected error checking API group {api_group}: {e}")
             import traceback
+
             traceback.print_exc()
             return False
 
@@ -981,7 +1099,9 @@ class K8sClient:
             discovery_api = client.DiscoveryV1Api(self.api_client)
 
             # Get all API resources
-            api_resources = discovery_api.get_api_resources(group="gateway.networking.k8s.io")
+            api_resources = discovery_api.get_api_resources(
+                group="gateway.networking.k8s.io"
+            )
 
             # Filter only resources from gateway.networking.k8s.io group
             for resource in api_resources.resources:
@@ -1023,7 +1143,7 @@ class K8sClient:
         for resource_kind, api_version, resource_name in gateway_resources:
             try:
                 # Extract group and version
-                api_parts = api_version.split('/')
+                api_parts = api_version.split("/")
                 api_group = api_parts[0]
                 api_version_part = api_parts[1]
 
@@ -1032,10 +1152,10 @@ class K8sClient:
 
                 response = self.api_client.call_api(
                     path,
-                    'GET',
-                    auth_settings=['BearerToken'],
-                    response_type='object',
-                    _preload_content=False
+                    "GET",
+                    auth_settings=["BearerToken"],
+                    response_type="object",
+                    _preload_content=False,
                 )
 
                 data, status, headers = response
@@ -1050,7 +1170,9 @@ class K8sClient:
                     print(f"Warning: Error checking {resource_kind} availability: {e}")
             except Exception as e:
                 # Unexpected error, log but continue
-                print(f"Warning: Unexpected error checking {resource_kind} availability: {e}")
+                print(
+                    f"Warning: Unexpected error checking {resource_kind} availability: {e}"
+                )
 
         return available_resources
 
@@ -1075,7 +1197,7 @@ class K8sClient:
             for api_version in api_versions:
                 try:
                     # Extract group and version
-                    api_parts = api_version.split('/')
+                    api_parts = api_version.split("/")
                     api_group = api_parts[0]
                     api_version_part = api_parts[1]
 
@@ -1086,36 +1208,37 @@ class K8sClient:
 
                             response = self.api_client.call_api(
                                 path,
-                                'GET',
-                                auth_settings=['BearerToken'],
-                                response_type='object',
-                                _preload_content=True
+                                "GET",
+                                auth_settings=["BearerToken"],
+                                response_type="object",
+                                _preload_content=True,
                             )
 
                             data, status, headers = response
 
                             if status == 200 and isinstance(data, dict):
-                                items = data.get('items', [])
+                                items = data.get("items", [])
                                 if items and len(items) > 0:
                                     # Get the first Gateway found
                                     gateway = items[0]
-                                    metadata = gateway.get('metadata', {})
-                                    name = metadata.get('name', '')
+                                    metadata = gateway.get("metadata", {})
+                                    name = metadata.get("name", "")
 
                                     if name:
-                                        return {
-                                            "namespace": namespace,
-                                            "name": name
-                                        }
+                                        return {"namespace": namespace, "name": name}
                         except ApiException as e:
                             # If error 404, try next namespace
                             if e.status == 404:
                                 continue
                             # Other error, log but continue
-                            print(f"Warning: Error getting Gateway from namespace {namespace}: {e}")
+                            print(
+                                f"Warning: Error getting Gateway from namespace {namespace}: {e}"
+                            )
                         except Exception as e:
                             # Unexpected error, log but continue
-                            print(f"Warning: Unexpected error getting Gateway from namespace {namespace}: {e}")
+                            print(
+                                f"Warning: Unexpected error getting Gateway from namespace {namespace}: {e}"
+                            )
 
                     # If not found in common namespaces, try to list all Gateways
                     # (some API versions may support this)
@@ -1124,41 +1247,44 @@ class K8sClient:
 
                         response = self.api_client.call_api(
                             path,
-                            'GET',
-                            auth_settings=['BearerToken'],
-                            response_type='object',
-                            _preload_content=True
+                            "GET",
+                            auth_settings=["BearerToken"],
+                            response_type="object",
+                            _preload_content=True,
                         )
 
                         data, status, headers = response
 
                         if status == 200 and isinstance(data, dict):
-                            items = data.get('items', [])
+                            items = data.get("items", [])
                             if items and len(items) > 0:
                                 # Get the first Gateway found
                                 gateway = items[0]
-                                metadata = gateway.get('metadata', {})
-                                name = metadata.get('name', '')
-                                namespace = metadata.get('namespace', '')
+                                metadata = gateway.get("metadata", {})
+                                name = metadata.get("name", "")
+                                namespace = metadata.get("namespace", "")
 
                                 if name and namespace:
-                                    return {
-                                        "namespace": namespace,
-                                        "name": name
-                                    }
+                                    return {"namespace": namespace, "name": name}
                     except ApiException as e:
                         # If error 404 or 405 (method not allowed), try next version
                         if e.status in [404, 405]:
                             continue
                         # Other error, log but continue
-                        print(f"Warning: Error listing all Gateways via {api_version}: {e}")
+                        print(
+                            f"Warning: Error listing all Gateways via {api_version}: {e}"
+                        )
                     except Exception as e:
                         # Unexpected error, log but continue
-                        print(f"Warning: Unexpected error listing all Gateways via {api_version}: {e}")
+                        print(
+                            f"Warning: Unexpected error listing all Gateways via {api_version}: {e}"
+                        )
 
                 except Exception as e:
                     # Unexpected error, log but continue
-                    print(f"Warning: Unexpected error getting Gateway via {api_version}: {e}")
+                    print(
+                        f"Warning: Unexpected error getting Gateway via {api_version}: {e}"
+                    )
 
             # If not found in any version, return None
             return None
@@ -1174,21 +1300,21 @@ class K8sClient:
         memory_str = memory_str.strip()
 
         # Remove suffixes and convert
-        if memory_str.endswith('Ki'):
+        if memory_str.endswith("Ki"):
             return int(memory_str[:-2]) // 1024
-        elif memory_str.endswith('Mi'):
+        elif memory_str.endswith("Mi"):
             return int(memory_str[:-2])
-        elif memory_str.endswith('Gi'):
+        elif memory_str.endswith("Gi"):
             return int(memory_str[:-2]) * 1024
-        elif memory_str.endswith('Ti'):
+        elif memory_str.endswith("Ti"):
             return int(memory_str[:-2]) * 1024 * 1024
-        elif memory_str.endswith('K'):
+        elif memory_str.endswith("K"):
             return int(memory_str[:-1]) // 1000
-        elif memory_str.endswith('M'):
+        elif memory_str.endswith("M"):
             return int(memory_str[:-1])
-        elif memory_str.endswith('G'):
+        elif memory_str.endswith("G"):
             return int(memory_str[:-1]) * 1000
-        elif memory_str.endswith('T'):
+        elif memory_str.endswith("T"):
             return int(memory_str[:-1]) * 1000 * 1000
         else:
             # Assume bytes

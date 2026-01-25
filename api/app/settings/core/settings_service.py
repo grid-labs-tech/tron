@@ -6,7 +6,7 @@ from app.settings.api.settings_dto import (
     SettingsCreate,
     SettingsUpdate,
     Settings,
-    SettingsWithEnvironment
+    SettingsWithEnvironment,
 )
 from app.settings.core.settings_validators import (
     validate_settings_create_dto,
@@ -14,9 +14,6 @@ from app.settings.core.settings_validators import (
     validate_settings_exists,
     validate_environment_exists,
     validate_settings_key_uniqueness,
-    SettingsNotFoundError,
-    EnvironmentNotFoundError,
-    SettingsKeyAlreadyExistsError
 )
 
 
@@ -45,7 +42,9 @@ class SettingsService:
         settings = self.repository.find_by_uuid(uuid)
 
         if dto.key is not None:
-            validate_settings_key_uniqueness(self.repository, dto.key, settings.environment_id, exclude_uuid=uuid)
+            validate_settings_key_uniqueness(
+                self.repository, dto.key, settings.environment_id, exclude_uuid=uuid
+            )
             settings.key = dto.key
 
         if dto.value is not None:
@@ -63,7 +62,9 @@ class SettingsService:
         settings = self.repository.find_by_uuid(uuid)
         return self._serialize_settings_with_environment(settings)
 
-    def get_settings_list(self, skip: int = 0, limit: int = 100) -> List[SettingsWithEnvironment]:
+    def get_settings_list(
+        self, skip: int = 0, limit: int = 100
+    ) -> List[SettingsWithEnvironment]:
         """Get all settings with environment."""
         settings_list = self.repository.find_all(skip=skip, limit=limit)
         return [self._serialize_settings_with_environment(s) for s in settings_list]
@@ -77,17 +78,21 @@ class SettingsService:
 
         return {"detail": "Settings deleted successfully"}
 
-    def _build_settings_entity(self, dto: SettingsCreate, environment_id: int) -> SettingsModel:
+    def _build_settings_entity(
+        self, dto: SettingsCreate, environment_id: int
+    ) -> SettingsModel:
         """Build Settings entity from DTO."""
         return SettingsModel(
             uuid=uuid4(),
             key=dto.key,
             value=dto.value,
             description=dto.description,
-            environment_id=environment_id
+            environment_id=environment_id,
         )
 
-    def _serialize_settings_with_environment(self, settings: SettingsModel) -> SettingsWithEnvironment:
+    def _serialize_settings_with_environment(
+        self, settings: SettingsModel
+    ) -> SettingsWithEnvironment:
         """Serialize settings with environment."""
         return SettingsWithEnvironment(
             uuid=settings.uuid,
@@ -96,6 +101,6 @@ class SettingsService:
             description=settings.description,
             environment={
                 "name": settings.environment.name,
-                "uuid": settings.environment.uuid
-            }
+                "uuid": settings.environment.uuid,
+            },
         )

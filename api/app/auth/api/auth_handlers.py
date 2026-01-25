@@ -10,19 +10,18 @@ from app.auth.api.auth_dto import (
     Token,
     LoginRequest,
     RefreshTokenRequest,
-    UpdateProfileRequest
+    UpdateProfileRequest,
 )
 from app.users.api.user_dto import UserResponse, UserCreate
 from app.users.core.user_validators import UserEmailAlreadyExistsError
-from app.users.infra.user_model import User, UserRole
+from app.users.infra.user_model import User
 from app.shared.dependencies.auth import get_current_user
 from app.auth.core.auth_validators import (
     validate_login_request,
     validate_update_profile_request,
     validate_current_password,
-    InvalidCredentialsError,
     InvalidCurrentPasswordError,
-    EmailAlreadyExistsError
+    EmailAlreadyExistsError,
 )
 
 
@@ -38,8 +37,7 @@ def get_auth_service(database_session: Session = Depends(get_db)) -> AuthService
 
 @router.post("/login", response_model=Token)
 async def login(
-    login_data: LoginRequest,
-    service: AuthService = Depends(get_auth_service)
+    login_data: LoginRequest, service: AuthService = Depends(get_auth_service)
 ):
     """Login with email and password."""
     try:
@@ -50,8 +48,7 @@ async def login(
     user = service.authenticate_user(login_data.email, login_data.password)
     if not user:
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Email ou senha incorretos"
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Email ou senha incorretos"
         )
 
     access_token = service.create_access_token(data={"sub": str(user.uuid)})
@@ -60,21 +57,20 @@ async def login(
     return {
         "access_token": access_token,
         "refresh_token": refresh_token,
-        "token_type": "bearer"
+        "token_type": "bearer",
     }
 
 
 @router.post("/login/form", response_model=Token)
 async def login_form(
     form_data: OAuth2PasswordRequestForm = Depends(),
-    service: AuthService = Depends(get_auth_service)
+    service: AuthService = Depends(get_auth_service),
 ):
     """Alternative login endpoint for OAuth2PasswordRequestForm compatibility."""
     user = service.authenticate_user(form_data.username, form_data.password)
     if not user:
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Email ou senha incorretos"
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Email ou senha incorretos"
         )
 
     access_token = service.create_access_token(data={"sub": str(user.uuid)})
@@ -83,15 +79,17 @@ async def login_form(
     return {
         "access_token": access_token,
         "refresh_token": refresh_token,
-        "token_type": "bearer"
+        "token_type": "bearer",
     }
 
 
-@router.post("/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED
+)
 async def register(
     user_data: UserCreate,
     database_session: Session = Depends(get_db),
-    service: AuthService = Depends(get_auth_service)
+    service: AuthService = Depends(get_auth_service),
 ):
     """Register a new user."""
     from app.users.core.user_service import UserService
@@ -107,15 +105,13 @@ async def register(
 
 @router.post("/refresh", response_model=Token)
 async def refresh_token(
-    token_data: RefreshTokenRequest,
-    service: AuthService = Depends(get_auth_service)
+    token_data: RefreshTokenRequest, service: AuthService = Depends(get_auth_service)
 ):
     """Refresh access token."""
     payload = service.verify_token(token_data.refresh_token)
     if payload.get("type") != "refresh":
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Token inválido"
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Token inválido"
         )
 
     user_uuid = payload.get("sub")
@@ -123,7 +119,7 @@ async def refresh_token(
     if not user or not user.is_active:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Usuário não encontrado ou inativo"
+            detail="Usuário não encontrado ou inativo",
         )
 
     access_token = service.create_access_token(data={"sub": str(user.uuid)})
@@ -132,14 +128,12 @@ async def refresh_token(
     return {
         "access_token": access_token,
         "refresh_token": refresh_token,
-        "token_type": "bearer"
+        "token_type": "bearer",
     }
 
 
 @router.get("/me", response_model=UserResponse)
-async def get_current_user_info(
-    current_user: User = Depends(get_current_user)
-):
+async def get_current_user_info(current_user: User = Depends(get_current_user)):
     """Get current user information."""
     return current_user
 
@@ -149,13 +143,15 @@ async def update_profile(
     profile_data: UpdateProfileRequest,
     current_user: User = Depends(get_current_user),
     database_session: Session = Depends(get_db),
-    service: AuthService = Depends(get_auth_service)
+    service: AuthService = Depends(get_auth_service),
 ):
     """Update current user profile."""
     user_repository = UserRepository(database_session)
 
     try:
-        validate_update_profile_request(profile_data, user_repository, current_user.email)
+        validate_update_profile_request(
+            profile_data, user_repository, current_user.email
+        )
     except (EmailAlreadyExistsError, ValueError) as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
@@ -166,7 +162,9 @@ async def update_profile(
     # Update password if provided
     if profile_data.password:
         try:
-            validate_current_password(user_repository, str(current_user.uuid), profile_data.current_password)
+            validate_current_password(
+                user_repository, str(current_user.uuid), profile_data.current_password
+            )
         except InvalidCurrentPasswordError as e:
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=str(e))
 
@@ -185,5 +183,5 @@ async def google_login():
     """Endpoint to initiate Google login."""
     raise HTTPException(
         status_code=status.HTTP_501_NOT_IMPLEMENTED,
-        detail="Login com Google será implementado em breve"
+        detail="Login com Google será implementado em breve",
     )
