@@ -64,6 +64,31 @@ describe('ComponentForm', () => {
       exposure: {
         visibility: 'public',
         type: 'http',
+        port: 80,
+      },
+      custom_metrics: {
+        enabled: false,
+        path: '/metrics',
+        port: 8080,
+      },
+      envs: [],
+      command: null,
+      cpu_scaling_threshold: 80,
+      memory_scaling_threshold: 80,
+      healthcheck: {
+        path: '/healthcheck',
+        protocol: 'http',
+        port: 80,
+        timeout: 3,
+        interval: 15,
+        initial_interval: 15,
+        failure_threshold: 2,
+      },
+      cpu: 0.5,
+      memory: 512,
+      autoscaling: {
+        min: 2,
+        max: 10,
       },
     },
   }
@@ -73,8 +98,13 @@ describe('ComponentForm', () => {
     type: 'cron',
     enabled: true,
     visibility: 'cluster',
+    url: null,
     settings: {
       schedule: '0 0 * * *',
+      envs: [],
+      command: null,
+      cpu: 0.5,
+      memory: 512,
     },
   }
 
@@ -83,9 +113,22 @@ describe('ComponentForm', () => {
     type: 'worker',
     enabled: true,
     visibility: 'cluster',
+    url: null,
     settings: {
       custom_metrics: {
         enabled: false,
+        path: '/metrics',
+        port: 8080,
+      },
+      envs: [],
+      command: null,
+      cpu: 0.5,
+      memory: 512,
+      cpu_scaling_threshold: 80,
+      memory_scaling_threshold: 80,
+      autoscaling: {
+        min: 2,
+        max: 10,
       },
     },
   }
@@ -244,11 +287,13 @@ describe('ComponentForm', () => {
       ...webappComponent,
       visibility: 'public',
       settings: {
+        ...(webappComponent.settings as object),
         exposure: {
-          visibility: 'public',
-          type: 'http',
+          type: 'http' as const,
+          port: 80,
+          visibility: 'public' as const,
         },
-      },
+      } as ComponentFormData['settings'],
     }
 
     const { rerender } = render(

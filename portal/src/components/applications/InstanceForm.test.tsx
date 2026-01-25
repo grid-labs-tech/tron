@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { InstanceForm } from './InstanceForm'
@@ -26,8 +26,8 @@ const createWrapper = () => {
 
 describe('InstanceForm', () => {
   const mockEnvironments = [
-    { uuid: 'env-1', name: 'Development' },
-    { uuid: 'env-2', name: 'Production' },
+    { uuid: 'env-1', name: 'Development', created_at: '2024-01-01T00:00:00Z', updated_at: '2024-01-01T00:00:00Z' },
+    { uuid: 'env-2', name: 'Production', created_at: '2024-01-01T00:00:00Z', updated_at: '2024-01-01T00:00:00Z' },
   ]
 
   const defaultData = {

@@ -70,7 +70,7 @@ vi.mock('../../../features/components', () => ({
 }))
 
 // Mock do window.confirm
-global.confirm = vi.fn(() => true)
+;(globalThis as unknown as { confirm: typeof confirm }).confirm = vi.fn(() => true)
 
 const createWrapper = () => {
   const queryClient = new QueryClient({

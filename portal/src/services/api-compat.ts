@@ -39,7 +39,8 @@ export { dashboardApi } from '../features/dashboard'
 export type { DashboardOverview } from '../features/dashboard'
 
 // Components
-export { webappComponentsApi, cronComponentsApi, workerComponentsApi } from '../features/components'
+import { webappComponentsApi, cronComponentsApi, workerComponentsApi } from '../features/components'
+export { webappComponentsApi, cronComponentsApi, workerComponentsApi }
 export type { ApplicationComponent, ApplicationComponentCreate, Pod, PodLogs, PodCommandResponse, CronJob, CronJobLogs, VisibilityType } from '../features/components'
 
 // Legacy exports for backward compatibility

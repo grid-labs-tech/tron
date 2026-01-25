@@ -18,7 +18,7 @@ vi.mock('../../../features/components', () => ({
 }))
 
 // Mock do window.confirm
-global.confirm = vi.fn(() => true)
+;(globalThis as unknown as { confirm: typeof confirm }).confirm = vi.fn(() => true)
 
 const createWrapper = () => {
   const queryClient = new QueryClient({
@@ -68,7 +68,7 @@ describe('useWebappDetail', () => {
       { wrapper: createWrapper() }
     )
 
-    expect(result.current.selectedPod).toBe(null)
+    expect(result.current.selectedPod).toBeUndefined()
     expect(result.current.isLogsModalOpen).toBe(false)
     expect(result.current.isConsoleModalOpen).toBe(false)
     expect(result.current.isLiveTail).toBe(true)
@@ -193,7 +193,7 @@ describe('useWebappDetail', () => {
     result.current.handleCloseLogsModal()
     await waitFor(() => {
       expect(result.current.isLogsModalOpen).toBe(false)
-      expect(result.current.selectedPod).toBe(null)
+      expect(result.current.selectedPod).toBeUndefined()
       expect(result.current.isLiveTail).toBe(true)
     })
   })

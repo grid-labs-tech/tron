@@ -31,7 +31,7 @@ function CronDetail() {
     }
   }
 
-  const [selectedJob, setSelectedJob] = useState<string | null>(null)
+  const [selectedJob, setSelectedJob] = useState<string | undefined>(undefined)
   const [isLogsModalOpen, setIsLogsModalOpen] = useState(false)
   const [isLiveTail, setIsLiveTail] = useState(true)
   const logsContainerRef = useRef<HTMLPreElement>(null)
@@ -296,7 +296,7 @@ function CronDetail() {
                 <button
                   onClick={() => {
                     setIsLogsModalOpen(false)
-                    setSelectedJob(null)
+                    setSelectedJob(undefined)
                   }}
                   className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-white rounded-md transition-colors"
                 >
