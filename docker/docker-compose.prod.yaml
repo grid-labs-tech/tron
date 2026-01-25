@@ -131,6 +131,11 @@ services:
       - certbot_webroot:/var/www/certbot:ro
     environment:
       - DOMAIN=${DOMAIN:-localhost}
+      - NGINX_SERVER_NAME=${NGINX_SERVER_NAME:-_}
+      - NGINX_CLIENT_MAX_BODY_SIZE=${NGINX_CLIENT_MAX_BODY_SIZE:-100M}
+      - NGINX_PROXY_CONNECT_TIMEOUT=${NGINX_PROXY_CONNECT_TIMEOUT:-60s}
+      - NGINX_PROXY_SEND_TIMEOUT=${NGINX_PROXY_SEND_TIMEOUT:-60s}
+      - NGINX_PROXY_READ_TIMEOUT=${NGINX_PROXY_READ_TIMEOUT:-60s}
     depends_on:
       - api
       - portal
@@ -157,8 +162,17 @@ services:
       - ./nginx/nginx-ssl.conf:/etc/nginx/templates/default.conf.template:ro
       - certbot_webroot:/var/www/certbot:ro
       - certbot_certs:/etc/letsencrypt:ro
+      - ./nginx/ssl:/etc/ssl/custom:ro
     environment:
       - DOMAIN=${DOMAIN:?DOMAIN is required for SSL}
+      - NGINX_SERVER_NAME=${NGINX_SERVER_NAME:-_}
+      - NGINX_CLIENT_MAX_BODY_SIZE=${NGINX_CLIENT_MAX_BODY_SIZE:-100M}
+      - NGINX_PROXY_CONNECT_TIMEOUT=${NGINX_PROXY_CONNECT_TIMEOUT:-60s}
+      - NGINX_PROXY_SEND_TIMEOUT=${NGINX_PROXY_SEND_TIMEOUT:-60s}
+      - NGINX_PROXY_READ_TIMEOUT=${NGINX_PROXY_READ_TIMEOUT:-60s}
+      - NGINX_SSL_PROTOCOLS=${NGINX_SSL_PROTOCOLS:-TLSv1.2 TLSv1.3}
+      - NGINX_SSL_CERT_PATH=${NGINX_SSL_CERT_PATH:-/etc/letsencrypt/live/${DOMAIN}/fullchain.pem}
+      - NGINX_SSL_KEY_PATH=${NGINX_SSL_KEY_PATH:-/etc/letsencrypt/live/${DOMAIN}/privkey.pem}
     depends_on:
       - api
       - portal
@@ -201,7 +215,7 @@ services:
     networks:
       - tron-network
 
-  # Certbot auto-renewal (runs periodically)
+  # Certbot auto-renewal (runs every 60 days - certificates valid for 90 days)
   certbot-renew:
     image: certbot/certbot:latest
     profiles:
@@ -210,7 +224,7 @@ services:
       - certbot_webroot:/var/www/certbot
       - certbot_certs:/etc/letsencrypt
     entrypoint: /bin/sh
-    command: -c "trap exit TERM; while :; do certbot renew --quiet; sleep 12h & wait $${!}; done"
+    command: -c "trap exit TERM; while :; do certbot renew --quiet; sleep ${CERTBOT_RENEWAL_INTERVAL:-60d} & wait $${!}; done"
     restart: unless-stopped
     networks:
       - tron-network
