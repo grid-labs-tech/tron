@@ -2,6 +2,7 @@ from uuid import uuid4, UUID
 from typing import List
 from sqlalchemy.orm import Session
 
+from app.shared.config import get_namespace_for_application
 from app.instances.infra.instance_repository import InstanceRepository
 from app.instances.infra.instance_model import Instance as InstanceModel
 from app.instances.api.instance_dto import InstanceCreate, InstanceUpdate, Instance
@@ -209,15 +210,14 @@ class InstanceService:
             # If no cluster available, return empty list
             return []
 
-        # Get application name for namespace
-        application_name = (
-            instance.application.name if instance.application else "default"
-        )
+        # Get application namespace with Tron prefix
+        app_name = instance.application.name if instance.application else "default"
+        application_namespace = get_namespace_for_application(app_name)
 
         # Get events from Kubernetes
         try:
             k8s_client = K8sClient(url=cluster.api_address, token=cluster.token)
-            events = k8s_client.list_events(namespace=application_name)
+            events = k8s_client.list_events(namespace=application_namespace)
 
             # Format events to match KubernetesEvent DTO
             formatted_events = []
@@ -225,7 +225,7 @@ class InstanceService:
                 formatted_events.append(
                     {
                         "name": event.get("name", ""),
-                        "namespace": event.get("namespace", application_name),
+                        "namespace": event.get("namespace", application_namespace),
                         "type": event.get("type", "Unknown"),
                         "reason": event.get("reason", "Unknown"),
                         "message": event.get("message", ""),

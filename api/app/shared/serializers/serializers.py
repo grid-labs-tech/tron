@@ -2,9 +2,14 @@ def serialize_application_component(application_component):
     """
     Serialize an ApplicationComponent for use in Kubernetes templates.
     Includes information from component, instance, application and environment.
+
+    Note: application_name is prefixed with the Tron namespace prefix (default: tron-ns-)
+    to create isolated namespaces that don't conflict with existing cluster resources.
     """
     # Make a copy of settings to avoid modifying the original
     import copy
+
+    from app.shared.config import get_namespace_for_application
 
     settings = (
         copy.deepcopy(application_component.settings)
@@ -66,13 +71,17 @@ def serialize_application_component(application_component):
             elif not isinstance(visibility_value, str):
                 exposure["visibility"] = str(visibility_value)
 
+    # Generate namespace name with Tron prefix
+    app_name = application_component.instance.application.name
+    namespace_name = get_namespace_for_application(app_name)
+
     return {
         "component_name": application_component.name,
         "component_uuid": str(application_component.uuid),
         "component_type": application_component.type.value
         if hasattr(application_component.type, "value")
         else str(application_component.type),
-        "application_name": application_component.instance.application.name,
+        "application_name": namespace_name,
         "application_uuid": str(application_component.instance.application.uuid),
         "environment": application_component.instance.environment.name,
         "environment_uuid": str(application_component.instance.environment.uuid),

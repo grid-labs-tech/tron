@@ -1,4 +1,4 @@
-"""Tests for namespace protection functionality."""
+"""Tests for namespace protection and naming functionality."""
 
 import os
 import pytest
@@ -7,8 +7,12 @@ from unittest.mock import patch
 from app.shared.config.namespace_protection import (
     get_protected_namespaces,
     is_namespace_protected,
+    is_tron_managed_namespace,
+    get_namespace_for_application,
+    get_namespace_prefix,
     ProtectedNamespaceError,
     DEFAULT_PROTECTED_NAMESPACES,
+    DEFAULT_NAMESPACE_PREFIX,
 )
 from app.applications.core.application_validators import (
     validate_application_name_not_protected,
@@ -113,3 +117,62 @@ class TestValidateApplicationNameNotProtected:
         with patch.dict(os.environ, {"PROTECTED_NAMESPACES": "tron"}):
             with pytest.raises(ApplicationNameProtectedError):
                 validate_application_name_not_protected("tron")
+
+
+class TestGetNamespacePrefix:
+    """Tests for get_namespace_prefix function."""
+
+    def test_returns_default_prefix(self):
+        """Should return default prefix when not configured."""
+        with patch.dict(os.environ, {}, clear=True):
+            assert get_namespace_prefix() == DEFAULT_NAMESPACE_PREFIX
+
+    def test_returns_custom_prefix_from_env(self):
+        """Should return custom prefix from environment variable."""
+        with patch.dict(os.environ, {"TRON_NAMESPACE_PREFIX": "custom-"}):
+            assert get_namespace_prefix() == "custom-"
+
+
+class TestGetNamespaceForApplication:
+    """Tests for get_namespace_for_application function."""
+
+    def test_adds_default_prefix(self):
+        """Should add default prefix to application name."""
+        with patch.dict(os.environ, {}, clear=True):
+            result = get_namespace_for_application("my-app")
+            assert result == "tron-ns-my-app"
+
+    def test_adds_custom_prefix(self):
+        """Should add custom prefix when configured."""
+        with patch.dict(os.environ, {"TRON_NAMESPACE_PREFIX": "prod-"}):
+            result = get_namespace_for_application("api")
+            assert result == "prod-api"
+
+    def test_handles_empty_app_name(self):
+        """Should handle empty application name."""
+        with patch.dict(os.environ, {}, clear=True):
+            result = get_namespace_for_application("")
+            assert result == "tron-ns-"
+
+
+class TestIsTronManagedNamespace:
+    """Tests for is_tron_managed_namespace function."""
+
+    def test_detects_tron_managed_namespace(self):
+        """Should detect namespaces with Tron prefix."""
+        with patch.dict(os.environ, {}, clear=True):
+            assert is_tron_managed_namespace("tron-ns-my-app") is True
+            assert is_tron_managed_namespace("tron-ns-api") is True
+
+    def test_rejects_non_tron_namespace(self):
+        """Should reject namespaces without Tron prefix."""
+        with patch.dict(os.environ, {}, clear=True):
+            assert is_tron_managed_namespace("kube-system") is False
+            assert is_tron_managed_namespace("my-app") is False
+            assert is_tron_managed_namespace("default") is False
+
+    def test_uses_custom_prefix(self):
+        """Should use custom prefix when configured."""
+        with patch.dict(os.environ, {"TRON_NAMESPACE_PREFIX": "custom-"}):
+            assert is_tron_managed_namespace("custom-my-app") is True
+            assert is_tron_managed_namespace("tron-ns-my-app") is False

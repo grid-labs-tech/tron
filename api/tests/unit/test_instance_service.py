@@ -285,14 +285,15 @@ def test_get_instance_events_success(instance_service, mock_repository, mock_db)
     mock_cluster.api_address = "https://k8s.example.com"
     mock_cluster.token = "test-token"
 
+    # Events from Kubernetes use the prefixed namespace
     mock_events = [
         {
             "name": "event-1",
-            "namespace": "test-app",
+            "namespace": "tron-ns-test-app",
             "type": "Normal",
             "reason": "Started",
             "message": "Container started",
-            "involved_object": {"kind": "Pod", "name": "pod-1", "namespace": "test-app"},
+            "involved_object": {"kind": "Pod", "name": "pod-1", "namespace": "tron-ns-test-app"},
             "source": {"component": "kubelet", "host": "node-1"},
             "first_timestamp": "2024-01-01T00:00:00Z",
             "last_timestamp": "2024-01-01T00:00:00Z",
@@ -312,9 +313,11 @@ def test_get_instance_events_success(instance_service, mock_repository, mock_db)
 
         assert len(result) == 1
         assert result[0]["name"] == "event-1"
-        assert result[0]["namespace"] == "test-app"
+        # Namespace now uses tron-ns- prefix
+        assert result[0]["namespace"] == "tron-ns-test-app"
         assert result[0]["type"] == "Normal"
-        mock_k8s_client.list_events.assert_called_once_with(namespace="test-app")
+        # Verify the service calls K8s with the prefixed namespace
+        mock_k8s_client.list_events.assert_called_once_with(namespace="tron-ns-test-app")
 
 
 def test_get_instance_events_no_cluster(instance_service, mock_repository, mock_db):

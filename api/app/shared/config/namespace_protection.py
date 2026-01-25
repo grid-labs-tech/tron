@@ -1,12 +1,16 @@
 """
-Namespace protection configuration.
+Namespace protection and naming configuration.
 
-This module provides configuration for protected namespaces that cannot be
-used for applications or deleted by the platform.
+This module provides:
+1. Configuration for protected namespaces that cannot be used or deleted
+2. Namespace naming convention with configurable prefix (default: tron-ns-)
 """
 
 import os
 from typing import Set
+
+# Default namespace prefix for all Tron-managed namespaces
+DEFAULT_NAMESPACE_PREFIX = "tron-ns-"
 
 # Default Kubernetes system namespaces that should always be protected
 DEFAULT_PROTECTED_NAMESPACES = {
@@ -15,6 +19,36 @@ DEFAULT_PROTECTED_NAMESPACES = {
     "kube-node-lease",
     "default",
 }
+
+
+def get_namespace_prefix() -> str:
+    """
+    Get the namespace prefix for Tron-managed namespaces.
+
+    Configurable via TRON_NAMESPACE_PREFIX environment variable.
+    Default: "tron-ns-"
+
+    Returns:
+        The namespace prefix string
+    """
+    return os.getenv("TRON_NAMESPACE_PREFIX", DEFAULT_NAMESPACE_PREFIX)
+
+
+def get_namespace_for_application(application_name: str) -> str:
+    """
+    Generate the Kubernetes namespace name for an application.
+
+    All Tron-managed namespaces use a configurable prefix to avoid
+    conflicts with existing namespaces in the cluster.
+
+    Args:
+        application_name: The application name
+
+    Returns:
+        The full namespace name (e.g., "tron-ns-my-app")
+    """
+    prefix = get_namespace_prefix()
+    return f"{prefix}{application_name}"
 
 
 def get_protected_namespaces() -> Set[str]:
@@ -54,6 +88,20 @@ def is_namespace_protected(namespace: str) -> bool:
         True if the namespace is protected, False otherwise
     """
     return namespace in get_protected_namespaces()
+
+
+def is_tron_managed_namespace(namespace: str) -> bool:
+    """
+    Check if a namespace is managed by Tron (has the Tron prefix).
+
+    Args:
+        namespace: The namespace name to check
+
+    Returns:
+        True if the namespace is managed by Tron, False otherwise
+    """
+    prefix = get_namespace_prefix()
+    return namespace.startswith(prefix)
 
 
 class ProtectedNamespaceError(Exception):

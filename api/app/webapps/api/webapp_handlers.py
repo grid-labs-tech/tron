@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 from uuid import UUID
 
 from app.shared.database.database import get_db
+from app.shared.config import get_namespace_for_application
 from app.webapps.infra.webapp_repository import WebappRepository
 from app.webapps.core.webapp_service import WebappService
 from app.webapps.api.webapp_dto import (
@@ -143,7 +144,7 @@ def get_webapp_pods(
         )
 
     cluster = cluster_instance.cluster
-    application_name = webapp.instance.application.name
+    application_name = get_namespace_for_application(webapp.instance.application.name)
     component_name = webapp.name
 
     try:
@@ -177,7 +178,7 @@ def delete_webapp_pod(
         )
 
     cluster = cluster_instance.cluster
-    application_name = webapp.instance.application.name
+    application_name = get_namespace_for_application(webapp.instance.application.name)
 
     try:
         delete_webapp_pod_from_cluster(cluster, application_name, pod_name)
@@ -214,7 +215,7 @@ def get_webapp_pod_logs(
         )
 
     cluster = cluster_instance.cluster
-    application_name = webapp.instance.application.name
+    application_name = get_namespace_for_application(webapp.instance.application.name)
 
     try:
         logs = get_webapp_pod_logs_from_cluster(
@@ -252,7 +253,7 @@ def exec_webapp_pod_command(
         )
 
     cluster = cluster_instance.cluster
-    application_name = webapp.instance.application.name
+    application_name = get_namespace_for_application(webapp.instance.application.name)
 
     try:
         result = exec_webapp_pod_command_from_cluster(

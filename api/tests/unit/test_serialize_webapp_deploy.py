@@ -68,7 +68,8 @@ def test_serialize_webapp_deploy():
     assert result["component_name"] == "test-webapp"
     assert result["component_uuid"] == "123e4567-e89b-12d3-a456-426614174000"
     assert result["component_type"] == "webapp"
-    assert result["application_name"] == "test-app"
+    # application_name is now prefixed with tron-ns- for namespace isolation
+    assert result["application_name"] == "tron-ns-test-app"
     assert result["application_uuid"] == "223e4567-e89b-12d3-a456-426614174001"
     assert result["environment"] == "staging"
     assert result["environment_uuid"] == "323e4567-e89b-12d3-a456-426614174002"

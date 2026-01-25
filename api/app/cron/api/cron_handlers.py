@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 from uuid import UUID
 
 from app.shared.database.database import get_db
+from app.shared.config import get_namespace_for_application
 from app.cron.infra.cron_repository import CronRepository
 from app.cron.core.cron_service import CronService
 from app.cron.api.cron_dto import CronCreate, CronUpdate, Cron, CronJob, CronJobLogs
@@ -122,7 +123,7 @@ def get_cron_jobs(
         )
 
     cluster = cluster_instance.cluster
-    application_name = cron.instance.application.name
+    application_name = get_namespace_for_application(cron.instance.application.name)
     component_name = cron.name
 
     try:
@@ -158,7 +159,7 @@ def get_cron_job_logs(
         )
 
     cluster = cluster_instance.cluster
-    application_name = cron.instance.application.name
+    application_name = get_namespace_for_application(cron.instance.application.name)
 
     try:
         result = get_cron_job_logs_from_cluster(
@@ -195,7 +196,7 @@ def delete_cron_job(
         )
 
     cluster = cluster_instance.cluster
-    application_name = cron.instance.application.name
+    application_name = get_namespace_for_application(cron.instance.application.name)
 
     try:
         delete_cron_job_from_cluster(cluster, application_name, job_name)
