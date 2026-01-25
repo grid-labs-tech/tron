@@ -10,8 +10,16 @@ class CronEnvs(BaseModel):
     value: str
 
 
+class CronSecrets(BaseModel):
+    """Secret environment variable (value is encrypted in database)."""
+
+    key: str
+    value: str  # Plaintext on input, encrypted in storage, never returned in responses
+
+
 class CronSettings(BaseModel):
     envs: List[CronEnvs] = []
+    secrets: List[CronSecrets] = []  # Encrypted in database, used to create K8s Secrets
     command: Union[str, List[str], None] = None
     cpu: float
     memory: int

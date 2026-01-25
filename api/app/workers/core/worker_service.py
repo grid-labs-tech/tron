@@ -36,6 +36,11 @@ from app.shared.core.application_component_helpers import (
     update_component_enabled_field,
     build_application_component_entity,
 )
+from app.shared.crypto import (
+    encrypt_secrets_in_settings,
+    strip_secrets_from_settings,
+    merge_secrets_for_update,
+)
 
 
 class WorkerService:
@@ -54,6 +59,9 @@ class WorkerService:
         cluster = get_cluster_for_instance(self.db, instance)
 
         settings_dict = ensure_private_exposure_settings(dto.settings.model_dump())
+        # Encrypt secrets before saving to database
+        settings_dict = encrypt_secrets_in_settings(settings_dict)
+
         worker = self._build_worker_entity(dto, instance.id, settings_dict)
         worker = self.repository.create(worker)
 
@@ -106,6 +114,13 @@ class WorkerService:
         validate_worker_type(worker)
         return self._serialize_worker(worker)
 
+    def get_worker_raw(self, uuid: UUID):
+        """Get raw worker model by UUID (for admin operations like decrypting secrets)."""
+        validate_worker_exists(self.repository, uuid)
+        worker = self.repository.find_by_uuid(uuid)
+        validate_worker_type(worker)
+        return worker
+
     def get_workers(self, skip: int = 0, limit: int = 100) -> List[Worker]:
         """Get all workers."""
         workers = self.repository.find_all(skip=skip, limit=limit)
@@ -148,7 +163,19 @@ class WorkerService:
         )
 
         if dto.settings is not None:
-            worker.settings = dto.settings.model_dump()
+            settings_dict = dto.settings.model_dump()
+
+            # Handle secrets: merge with existing (preserve unchanged secrets)
+            existing_settings = worker.settings or {}
+            if "secrets" in settings_dict and settings_dict["secrets"]:
+                existing_secrets = existing_settings.get("secrets", [])
+                settings_dict["secrets"] = merge_secrets_for_update(
+                    settings_dict["secrets"], existing_secrets
+                )
+            elif "secrets" in settings_dict:
+                settings_dict = encrypt_secrets_in_settings(settings_dict)
+
+            worker.settings = settings_dict
             self.repository.update(worker)
 
         return enabled_changed
@@ -181,5 +208,8 @@ class WorkerService:
         )
 
     def _serialize_worker(self, worker: ApplicationComponentModel) -> Worker:
-        """Serialize worker to DTO."""
+        """Serialize worker to DTO with secrets stripped."""
+        # Strip secret values before returning to API
+        if worker.settings:
+            worker.settings = strip_secrets_from_settings(worker.settings)
         return Worker.model_validate(worker)
