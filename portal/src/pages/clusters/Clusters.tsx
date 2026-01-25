@@ -225,11 +225,6 @@ function Clusters() {
             ),
           },
           {
-            key: 'api_address',
-            label: 'API Address',
-            render: (cluster) => <div className="text-sm text-slate-600">{cluster.api_address}</div>,
-          },
-          {
             key: 'environment',
             label: 'Environment',
             render: (cluster) => (
