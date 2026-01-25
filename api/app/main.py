@@ -6,6 +6,9 @@ from fastapi.openapi.docs import get_redoc_html
 
 from app.shared.database.database import Base, engine
 
+# Version is injected at build time via APP_VERSION environment variable
+APP_VERSION = os.getenv("APP_VERSION", "dev")
+
 # Also import Base from old database to ensure compatibility
 from app.database import Base as OldBase
 
@@ -51,7 +54,7 @@ Base.metadata.create_all(bind=engine)
 app = FastAPI(
     title="Tron",
     summary="Platform as a Service built on top of kubernetes",
-    version="0.4.0",
+    version=APP_VERSION,
     openapi_url="/openapi.json",
     docs_url="/docs",
     redoc_url=None,  # Disable default ReDoc to use custom one with fixed CDN URL
