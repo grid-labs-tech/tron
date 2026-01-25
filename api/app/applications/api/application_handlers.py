@@ -13,6 +13,7 @@ from app.applications.api.application_dto import (
 from app.applications.core.application_validators import (
     ApplicationNotFoundError,
     ApplicationNameAlreadyExistsError,
+    ApplicationNameProtectedError,
 )
 from app.users.infra.user_model import User, UserRole
 from app.shared.dependencies.auth import require_role, get_current_user
@@ -45,6 +46,8 @@ def create_application(
         return service.create_application(application)
     except ApplicationNameAlreadyExistsError as e:
         raise HTTPException(status_code=400, detail=str(e))
+    except ApplicationNameProtectedError as e:
+        raise HTTPException(status_code=400, detail=str(e))
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -62,6 +65,8 @@ def update_application(
     except ApplicationNotFoundError as e:
         raise HTTPException(status_code=404, detail=str(e))
     except ApplicationNameAlreadyExistsError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except ApplicationNameProtectedError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))

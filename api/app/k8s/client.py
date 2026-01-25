@@ -153,7 +153,18 @@ class K8sClient:
         return available_memory
 
     def ensure_namespace_exists(self, namespace_name):
-        """Create the namespace if it does not exist."""
+        """
+        Create the namespace if it does not exist.
+
+        Protected namespaces cannot be created by the platform to prevent
+        conflicts with critical Kubernetes system namespaces.
+        """
+        from app.shared.config import is_namespace_protected, ProtectedNamespaceError
+
+        # Check if namespace is protected - we shouldn't try to create it
+        if is_namespace_protected(namespace_name):
+            raise ProtectedNamespaceError(namespace_name, "create")
+
         v1 = client.CoreV1Api(self.api_client)
         try:
             v1.read_namespace(name=namespace_name)
@@ -169,7 +180,16 @@ class K8sClient:
         """
         Delete a namespace from Kubernetes.
         When a namespace is deleted, all resources within it are automatically deleted.
+
+        Protected namespaces cannot be deleted to prevent accidental self-deletion
+        or deletion of critical Kubernetes system namespaces.
         """
+        from app.shared.config import is_namespace_protected, ProtectedNamespaceError
+
+        # Check if namespace is protected
+        if is_namespace_protected(namespace_name):
+            raise ProtectedNamespaceError(namespace_name, "delete")
+
         v1 = client.CoreV1Api(self.api_client)
         try:
             v1.delete_namespace(name=namespace_name, body=client.V1DeleteOptions())
