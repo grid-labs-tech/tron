@@ -270,6 +270,20 @@ docker compose -f docker-compose.prod.yaml run --rm certbot certonly --force-ren
   --webroot -w /var/www/certbot -d your-domain.com
 ```
 
+### PostgreSQL Performance
+
+The database is configured with optimized settings for production:
+
+| Parameter | Value | Description |
+|-----------|-------|-------------|
+| `max_connections` | 100 | Maximum concurrent connections |
+| `shared_buffers` | 128MB | Memory for caching data |
+| `work_mem` | 4MB | Memory per query operation |
+| `maintenance_work_mem` | 64MB | Memory for maintenance operations |
+| `effective_cache_size` | 512MB | Planner's assumption about cache |
+
+For high-traffic deployments, consider increasing these values based on available memory.
+
 ### Reset everything
 
 ```bash
