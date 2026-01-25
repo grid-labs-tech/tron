@@ -24,6 +24,7 @@ from app.shared.core.application_component_helpers import (
     delete_from_kubernetes_safe,
 )
 from app.shared.serializers.serializers import serialize_settings
+from app.shared.crypto import strip_secrets_from_settings
 from app.shared.k8s.cluster_selection import ClusterSelectionService
 from app.k8s.client import K8sClient
 from app.webapps.core.webapp_kubernetes_service import (
@@ -90,11 +91,21 @@ class InstanceService:
     def get_instance(self, uuid: UUID) -> Instance:
         """Get instance by UUID."""
         validate_instance_exists(self.repository, uuid)
-        return self.repository.find_by_uuid(uuid, load_components=True)
+        instance = self.repository.find_by_uuid(uuid, load_components=True)
+        return self._strip_secrets_from_instance(instance)
 
     def get_instances(self, skip: int = 0, limit: int = 100) -> List[Instance]:
         """Get all instances."""
-        return self.repository.find_all(skip=skip, limit=limit, load_components=True)
+        instances = self.repository.find_all(skip=skip, limit=limit, load_components=True)
+        return [self._strip_secrets_from_instance(i) for i in instances]
+
+    def _strip_secrets_from_instance(self, instance: InstanceModel) -> InstanceModel:
+        """Strip secret values from all components in the instance."""
+        if hasattr(instance, "components") and instance.components:
+            for component in instance.components:
+                if component.settings:
+                    component.settings = strip_secrets_from_settings(component.settings)
+        return instance
 
     def delete_instance(self, uuid: UUID, database_session: Session) -> dict:
         """Delete an instance and all its components."""
