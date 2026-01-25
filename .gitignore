@@ -7,3 +7,13 @@ api/pyvenv.cfg
 *.pyc
 .pytest_cache
 portal-bkp/
+
+# Environment files (contain secrets)
+.env
+.env.local
+.env.production
+docker/.env
+
+# IDE
+.idea/
+.vscode/
