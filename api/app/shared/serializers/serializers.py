@@ -76,7 +76,9 @@ def serialize_application_component(application_component):
     # - Legacy apps: namespace = app name (no prefix)
     # - New apps: namespace = tron-ns-{app name} (with prefix)
     application = application_component.instance.application
-    namespace_name = application.namespace if application.namespace else application.name
+    namespace_name = (
+        application.namespace if application.namespace else application.name
+    )
 
     return {
         "component_name": application_component.name,

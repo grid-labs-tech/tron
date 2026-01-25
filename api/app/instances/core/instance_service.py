@@ -214,7 +214,9 @@ class InstanceService:
         # - New apps: namespace = tron-ns-{app name} (with prefix)
         application = instance.application
         if application:
-            application_namespace = application.namespace if application.namespace else application.name
+            application_namespace = (
+                application.namespace if application.namespace else application.name
+            )
         else:
             application_namespace = "default"
 
