@@ -24,7 +24,8 @@ function CreateInstance() {
   const { uuid: applicationUuid } = useParams<{ uuid: string }>()
   const navigate = useNavigate()
   const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null)
-  const [_errors, setErrors] = useState<Record<string, string>>({})
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [errors, setErrors] = useState<Record<string, string>>({})
 
   const { data: application } = useApplication(applicationUuid)
   const { data: clusters } = useClusters()

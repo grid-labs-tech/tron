@@ -1,9 +1,13 @@
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
 import os
 
-# Reuse the Base from app.database to ensure all models are in the same registry
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+
+# Import Base from app.database to ensure all models are in the same registry
 # This is necessary for SQLAlchemy relationships to work correctly
+from app.database import Base
+
+__all__ = ["Base", "SessionLocal", "engine", "get_db"]
 
 if os.getenv("ENV") == "test":
     TEST_DATABASE_URL = "sqlite:///:memory:"
