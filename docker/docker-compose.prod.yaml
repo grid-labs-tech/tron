@@ -91,8 +91,8 @@ services:
       CORS_ALLOW_HEADERS: "Content-Type,Authorization,Accept,Origin,X-Requested-With"
       SKIP_SETUP: ${SKIP_SETUP:-false}
       TRON_SECRETS_KEY: ${TRON_SECRETS_KEY:-}
-    expose:
-      - "8000"
+    ports:
+      - "8000:8000"
     depends_on:
       api-migrate:
         condition: service_completed_successfully
@@ -113,7 +113,7 @@ services:
       - full
     environment:
       VITE_API_BASE_URL: ${API_URL:-/api}
-    expose:
+    ports:
       - "80"
     depends_on:
       - api

@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react'
-import { X, Trash2, Plus, Edit, Mail, UserCheck, UserX, Shield } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
+import { X, Trash2, Plus, Edit, Mail, UserCheck, UserX, Shield, User as UserIcon } from 'lucide-react'
 import { useUsers, useCreateUser, useUpdateUser, useDeleteUser } from '../../features/users'
 import type { User, UserCreate } from '../../features/users'
 import { DataTable, Breadcrumbs, PageHeader } from '../../shared/components'
 import { useAuth } from '../../contexts/AuthContext'
 
 function Users() {
+  const navigate = useNavigate()
   const { user: currentUser } = useAuth()
   const [isOpen, setIsOpen] = useState(false)
   const [editingUser, setEditingUser] = useState<User | null>(null)
@@ -328,8 +330,16 @@ function Users() {
           actions={(user) => {
             const actions = []
 
-            // Do not allow editing/deleting/deactivating own user
-            if (user.uuid !== currentUser?.uuid) {
+            // For own user, only show "View Profile" action
+            if (user.uuid === currentUser?.uuid) {
+              actions.push({
+                label: 'View Profile',
+                icon: <UserIcon size={14} />,
+                onClick: () => navigate('/profile'),
+                variant: 'default' as const,
+              })
+            } else {
+              // For other users, show management actions
               actions.push({
                 label: user.is_active ? 'Deactivate' : 'Activate',
                 icon: user.is_active ? <UserX size={14} /> : <UserCheck size={14} />,
