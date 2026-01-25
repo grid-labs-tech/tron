@@ -6,9 +6,6 @@ from fastapi.openapi.docs import get_redoc_html
 
 from app.shared.database.database import Base, engine
 
-# Version is injected at build time via APP_VERSION environment variable
-APP_VERSION = os.getenv("APP_VERSION", "dev")
-
 # Also import Base from old database to ensure compatibility
 from app.database import Base as OldBase
 
@@ -29,6 +26,9 @@ from app.dashboard.api.dashboard_handlers import router as dashboard_router
 from app.webapps.api.webapp_handlers import router as webapps_router
 from app.workers.api.worker_handlers import router as workers_router
 from app.cron.api.cron_handlers import router as crons_router
+
+# Version is injected at build time via APP_VERSION environment variable
+APP_VERSION = os.getenv("APP_VERSION", "dev")
 
 # Ensure both Bases are the same instance
 assert Base is OldBase, (
