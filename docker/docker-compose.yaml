@@ -20,6 +20,8 @@ x-env-api: &shared_env_api
     CORS_ALLOW_METHODS: "GET,POST,PUT,DELETE,OPTIONS"
     CORS_ALLOW_HEADERS: "Content-Type,Authorization,Accept,Origin,X-Requested-With"
     SECRET_KEY: "your-super-secret-key-minimum-32-characters"
+    # Encryption key for secrets (development only - generate new key for production)
+    TRON_SECRETS_KEY: "NfMA_cWx0cuHAGiwl-qWYfl7u1S6bXvADFt5T9WMfUM="
 
 services:
   database:
@@ -39,8 +41,8 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - ${PWD}/volumes/postgres:/var/lib/postgresql/data
-      - ${PWD}/docker/db-entrypoint:/docker-entrypoint-initdb.d
+      - ./volumes/postgres:/var/lib/postgresql/data
+      - ./db-entrypoint:/docker-entrypoint-initdb.d
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U tron -d api -h localhost"]
       interval: 5s
@@ -54,7 +56,7 @@ services:
       dockerfile: Dockerfile
     image: portal
     volumes:
-      - ${PWD}/portal:/app
+      - ../portal:/app
       - /app/node_modules
     ports:
       - "3000:3000"
@@ -70,7 +72,7 @@ services:
     image: api
     <<: *shared_env_api
     volumes:
-      - ${PWD}/api:/app
+      - ../api:/app
     ports:
       - 8000:8000
     depends_on:
@@ -80,9 +82,14 @@ services:
   api-migrate:
     image: api
     <<: *shared_env_api
-    command: alembic upgrade head
+    command: >
+      sh -c "alembic upgrade head && 
+             python scripts/load_initial_user.py && 
+             python scripts/load_initial_templates.py &&
+             python scripts/load_dev_environment.py"
     volumes:
-      - ${PWD}/api:/app
+      - ../api:/app
+      - ./volumes/kubeconfig:/output:ro
     depends_on:
       database:
         condition: service_healthy
@@ -94,12 +101,12 @@ services:
       - ENV=test
     command: pytest tests/
     volumes:
-      - ${PWD}/api:/app
+      - ../api:/app
 
   portal-test:
     image: portal
     volumes:
-      - ${PWD}/portal:/app
+      - ../portal:/app
       - /app/node_modules
     command: npm run test
 
@@ -120,8 +127,8 @@ services:
     - K3S_KUBECONFIG_OUTPUT=/output/kubeconfig.yaml
     - K3S_KUBECONFIG_MODE=666
     volumes:
-    - ${PWD}/volumes/kubeconfig:/output
-    - ${PWD}/docker/manifests:/var/lib/rancher/k3s/server/manifests
+    - ./volumes/kubeconfig:/output
+    - ./manifests:/var/lib/rancher/k3s/server/manifests
     ports:
     - 5443:5443
     - 8080:80    # Gateway API (Traefik HTTP)
