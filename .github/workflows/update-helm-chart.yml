@@ -46,26 +46,29 @@ jobs:
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "Updating chart to version: $VERSION"
 
+      - name: Install yq
+        run: |
+          sudo wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
+          sudo chmod +x /usr/local/bin/yq
+
       - name: Update Chart.yaml
         working-directory: charts/tron
         run: |
-          # Update version in Chart.yaml
-          sed -i "s/^version:.*/version: ${{ steps.version.outputs.version }}/" Chart.yaml
-          # Update appVersion if needed
-          sed -i "s/^appVersion:.*/appVersion: \"${{ steps.version.outputs.version }}\"/" Chart.yaml
+          VERSION="${{ steps.version.outputs.version }}"
+          yq -i ".version = \"$VERSION\"" Chart.yaml
+          yq -i ".appVersion = \"$VERSION\"" Chart.yaml
+          echo "Updated Chart.yaml:"
+          cat Chart.yaml | head -10
 
       - name: Update values.yaml with image tags
         working-directory: charts/tron
         run: |
+          VERSION="${{ steps.version.outputs.version }}"
           # Update API image tag
-          sed -i "s|repository:.*tron-api|repository: ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-api|" values.yaml
-          sed -i "s|tag:.*|tag: \"${{ steps.version.outputs.version }}\"|" values.yaml || \
-          sed -i "/repository:.*tron-api/a\  tag: \"${{ steps.version.outputs.version }}\"" values.yaml
-          
-          # Update Portal image tag
-          sed -i "s|repository:.*tron-portal|repository: ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-portal|" values.yaml
-          sed -i "/repository:.*tron-portal/a\  tag: \"${{ steps.version.outputs.version }}\"" values.yaml || \
-          sed -i "s|tag:.*|tag: \"${{ steps.version.outputs.version }}\"|" values.yaml
+          yq -i ".api.image.tag = \"$VERSION\"" values.yaml
+          # Update Portal image tag  
+          yq -i ".portal.image.tag = \"$VERSION\"" values.yaml
+          echo "Updated values.yaml image tags to $VERSION"
 
       - name: Package chart
         working-directory: charts/tron
