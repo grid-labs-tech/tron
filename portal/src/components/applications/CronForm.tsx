@@ -2,14 +2,17 @@ import type { CronSettings } from './types'
 import { CpuMemoryInput } from './form-components/CpuMemoryInput'
 import { ScheduleInput } from './form-components/ScheduleInput'
 import { EnvVarsInput } from './form-components/EnvVarsInput'
+import { SecretsInput } from './form-components/SecretsInput'
 import { CommandInput } from './form-components/CommandInput'
 
 interface CronFormProps {
   settings: CronSettings
   onChange: (settings: CronSettings) => void
+  isAdmin?: boolean
+  componentUuid?: string
 }
 
-export function CronForm({ settings, onChange }: CronFormProps) {
+export function CronForm({ settings, onChange, isAdmin = false, componentUuid }: CronFormProps) {
   const updateField = <K extends keyof CronSettings>(field: K, value: CronSettings[K]) => {
     onChange({ ...settings, [field]: value })
   }
@@ -42,6 +45,15 @@ export function CronForm({ settings, onChange }: CronFormProps) {
       <EnvVarsInput
         envs={settings.envs}
         onChange={(envs) => updateField('envs', envs)}
+      />
+
+      {/* Secrets */}
+      <SecretsInput
+        secrets={settings.secrets || []}
+        onChange={(secrets) => updateField('secrets', secrets)}
+        isAdmin={isAdmin}
+        componentUuid={componentUuid}
+        componentType="cron"
       />
     </div>
   )

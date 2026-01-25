@@ -15,6 +15,8 @@ interface ComponentFormProps {
   hasGatewayApi?: boolean
   gatewayResources?: string[]
   gatewayReference?: { namespace: string; name: string }
+  isAdmin?: boolean
+  componentUuid?: string
 }
 
 export function ComponentForm({
@@ -27,6 +29,8 @@ export function ComponentForm({
   hasGatewayApi = true,
   gatewayResources = [],
   gatewayReference = { namespace: '', name: '' },
+  isAdmin = false,
+  componentUuid,
 }: ComponentFormProps) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const updateField = (field: keyof ComponentFormData, value: any) => {
@@ -162,6 +166,8 @@ export function ComponentForm({
                 hasGatewayApi={hasGatewayApi}
                 gatewayResources={gatewayResources}
                 gatewayReference={gatewayReference}
+                isAdmin={isAdmin}
+                componentUuid={componentUuid}
               />
             )}
           </>
@@ -173,6 +179,8 @@ export function ComponentForm({
               <CronForm
                 settings={component.settings as CronSettings}
                 onChange={handleSettingsChange as (settings: CronSettings) => void}
+                isAdmin={isAdmin}
+                componentUuid={componentUuid}
               />
             )}
           </>
@@ -184,6 +192,8 @@ export function ComponentForm({
               <WorkerForm
                 settings={component.settings as WorkerSettings}
                 onChange={handleSettingsChange as (settings: WorkerSettings) => void}
+                isAdmin={isAdmin}
+                componentUuid={componentUuid}
               />
             )}
           </>
