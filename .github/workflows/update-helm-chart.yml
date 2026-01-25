@@ -35,7 +35,11 @@ jobs:
         id: version
         run: |
           if [ "${{ github.event_name }}" == "release" ]; then
-            VERSION=${GITHUB_REF#refs/tags/v}
+            # Extract version from tags like api/v0.6.3 or portal/v0.6.3
+            RAW_REF="${GITHUB_REF#refs/tags/}"
+            # Remove prefix (api/ or portal/) and v prefix
+            VERSION=$(echo "$RAW_REF" | sed 's|^.*/v||')
+            echo "Raw ref: $RAW_REF -> Version: $VERSION"
           else
             VERSION="${{ github.event.inputs.version }}"
           fi
