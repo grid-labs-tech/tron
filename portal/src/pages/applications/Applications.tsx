@@ -19,33 +19,6 @@ function Applications() {
     }
   }
 
-  const getInitials = (name: string): string => {
-    const words = name.trim().split(/\s+/)
-    if (words.length === 0) return ''
-    if (words.length === 1) return words[0].substring(0, 2).toUpperCase()
-    return (words[0][0] + words[words.length - 1][0]).toUpperCase()
-  }
-
-  const getColorFromName = (name: string): string => {
-    const colors = [
-      'bg-blue-500',
-      'bg-green-500',
-      'bg-purple-500',
-      'bg-pink-500',
-      'bg-indigo-500',
-      'bg-yellow-500',
-      'bg-red-500',
-      'bg-teal-500',
-      'bg-orange-500',
-      'bg-cyan-500',
-    ]
-    let hash = 0
-    for (let i = 0; i < name.length; i++) {
-      hash = name.charCodeAt(i) + ((hash << 5) - hash)
-    }
-    return colors[Math.abs(hash) % colors.length]
-  }
-
   return (
     <div className="space-y-6">
       <Breadcrumbs
@@ -69,16 +42,6 @@ function Applications() {
       {/* Table */}
       <DataTable<Application>
         columns={[
-          {
-            key: 'avatar',
-            label: '',
-            width: '80px',
-            render: (application) => (
-              <div className={`w-10 h-10 rounded-full ${getColorFromName(application.name)} flex items-center justify-center text-white font-semibold text-sm`}>
-                {getInitials(application.name)}
-              </div>
-            ),
-          },
           {
             key: 'name',
             label: 'Name',
