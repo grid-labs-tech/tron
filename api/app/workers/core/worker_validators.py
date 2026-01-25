@@ -5,16 +5,19 @@ from app.workers.api.worker_dto import WorkerCreate, WorkerUpdate
 
 class WorkerNotFoundError(Exception):
     """Raised when worker is not found."""
+
     pass
 
 
 class WorkerNotWorkerTypeError(Exception):
     """Raised when component is not a worker type."""
+
     pass
 
 
 class InstanceNotFoundError(Exception):
     """Raised when instance is not found."""
+
     pass
 
 
@@ -23,7 +26,7 @@ def validate_worker_create_dto(dto: WorkerCreate) -> None:
     if not dto.name or not dto.name.strip():
         raise ValueError("Worker name is required and cannot be empty")
 
-    if ' ' in dto.name:
+    if " " in dto.name:
         raise ValueError("Component name cannot contain spaces")
 
     if not dto.instance_uuid:
@@ -48,6 +51,7 @@ def validate_worker_exists(repository: WorkerRepository, uuid: UUID) -> None:
 def validate_worker_type(worker) -> None:
     """Validate that component is a worker type."""
     from app.workers.infra.application_component_model import WebappType
+
     if worker.type != WebappType.worker:
         raise WorkerNotWorkerTypeError("Component is not a worker")
 

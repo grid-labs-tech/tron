@@ -15,13 +15,14 @@ class SettingsRepository:
         """Find settings by UUID."""
         return self.db.query(SettingsModel).filter(SettingsModel.uuid == uuid).first()
 
-    def find_by_key_and_environment_id(self, key: str, environment_id: int) -> Optional[SettingsModel]:
+    def find_by_key_and_environment_id(
+        self, key: str, environment_id: int
+    ) -> Optional[SettingsModel]:
         """Find settings by key and environment ID."""
         return (
             self.db.query(SettingsModel)
             .filter(
-                SettingsModel.key == key,
-                SettingsModel.environment_id == environment_id
+                SettingsModel.key == key, SettingsModel.environment_id == environment_id
             )
             .first()
         )
@@ -32,7 +33,11 @@ class SettingsRepository:
 
     def find_environment_by_uuid(self, uuid: UUID) -> Optional[EnvironmentModel]:
         """Find environment by UUID."""
-        return self.db.query(EnvironmentModel).filter(EnvironmentModel.uuid == uuid).first()
+        return (
+            self.db.query(EnvironmentModel)
+            .filter(EnvironmentModel.uuid == uuid)
+            .first()
+        )
 
     def create(self, settings: SettingsModel) -> SettingsModel:
         """Create a new settings."""

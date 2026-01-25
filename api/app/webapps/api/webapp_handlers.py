@@ -12,7 +12,7 @@ from app.webapps.api.webapp_dto import (
     Pod,
     PodLogs,
     PodCommandRequest,
-    PodCommandResponse
+    PodCommandResponse,
 )
 from app.webapps.core.webapp_validators import (
     WebappNotFoundError,
@@ -20,13 +20,13 @@ from app.webapps.core.webapp_validators import (
     InstanceNotFoundError,
     InvalidExposureTypeError,
     InvalidVisibilityError,
-    InvalidURLError
+    InvalidURLError,
 )
 from app.webapps.core.webapp_pods_service import (
     get_webapp_pods_from_cluster,
     delete_webapp_pod_from_cluster,
     get_webapp_pod_logs_from_cluster,
-    exec_webapp_pod_command_from_cluster
+    exec_webapp_pod_command_from_cluster,
 )
 from app.users.infra.user_model import UserRole, User
 from app.shared.dependencies.auth import require_role, get_current_user
@@ -45,12 +45,17 @@ def get_webapp_service(database_session: Session = Depends(get_db)) -> WebappSer
 def create_webapp(
     webapp: WebappCreate,
     service: WebappService = Depends(get_webapp_service),
-    current_user: User = Depends(require_role([UserRole.ADMIN]))
+    current_user: User = Depends(require_role([UserRole.ADMIN])),
 ):
     """Create a new webapp."""
     try:
         return service.create_webapp(webapp)
-    except (InstanceNotFoundError, InvalidExposureTypeError, InvalidVisibilityError, InvalidURLError) as e:
+    except (
+        InstanceNotFoundError,
+        InvalidExposureTypeError,
+        InvalidVisibilityError,
+        InvalidURLError,
+    ) as e:
         raise HTTPException(status_code=400, detail=str(e))
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -63,7 +68,7 @@ def list_webapps(
     skip: int = 0,
     limit: int = 100,
     service: WebappService = Depends(get_webapp_service),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
 ):
     """List all webapps."""
     return service.get_webapps(skip=skip, limit=limit)
@@ -73,7 +78,7 @@ def list_webapps(
 def get_webapp(
     uuid: UUID,
     service: WebappService = Depends(get_webapp_service),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
 ):
     """Get webapp by UUID."""
     try:
@@ -87,7 +92,7 @@ def update_webapp(
     uuid: UUID,
     webapp: WebappUpdate,
     service: WebappService = Depends(get_webapp_service),
-    current_user: User = Depends(require_role([UserRole.ADMIN]))
+    current_user: User = Depends(require_role([UserRole.ADMIN])),
 ):
     """Update an existing webapp."""
     try:
@@ -104,7 +109,7 @@ def update_webapp(
 def delete_webapp(
     uuid: UUID,
     service: WebappService = Depends(get_webapp_service),
-    current_user: User = Depends(require_role([UserRole.ADMIN]))
+    current_user: User = Depends(require_role([UserRole.ADMIN])),
 ):
     """Delete a webapp."""
     try:
@@ -119,7 +124,7 @@ def delete_webapp(
 def get_webapp_pods(
     uuid: UUID,
     database_session: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
 ):
     """Get pods for a webapp."""
     repository = WebappRepository(database_session)
@@ -133,7 +138,9 @@ def get_webapp_pods(
 
     cluster_instance = repository.find_cluster_instance_by_component_id(webapp.id)
     if not cluster_instance:
-        raise HTTPException(status_code=404, detail="Webapp is not deployed to any cluster")
+        raise HTTPException(
+            status_code=404, detail="Webapp is not deployed to any cluster"
+        )
 
     cluster = cluster_instance.cluster
     application_name = webapp.instance.application.name
@@ -151,7 +158,7 @@ def delete_webapp_pod(
     uuid: UUID,
     pod_name: str,
     database_session: Session = Depends(get_db),
-    current_user: User = Depends(require_role([UserRole.ADMIN]))
+    current_user: User = Depends(require_role([UserRole.ADMIN])),
 ):
     """Delete a pod for a webapp."""
     repository = WebappRepository(database_session)
@@ -165,7 +172,9 @@ def delete_webapp_pod(
 
     cluster_instance = repository.find_cluster_instance_by_component_id(webapp.id)
     if not cluster_instance:
-        raise HTTPException(status_code=404, detail="Webapp is not deployed to any cluster")
+        raise HTTPException(
+            status_code=404, detail="Webapp is not deployed to any cluster"
+        )
 
     cluster = cluster_instance.cluster
     application_name = webapp.instance.application.name
@@ -174,7 +183,9 @@ def delete_webapp_pod(
         delete_webapp_pod_from_cluster(cluster, application_name, pod_name)
         return {"detail": f"Pod {pod_name} deleted successfully"}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to delete pod {pod_name}: {str(e)}")
+        raise HTTPException(
+            status_code=500, detail=f"Failed to delete pod {pod_name}: {str(e)}"
+        )
 
 
 @router.get("/{uuid}/pods/{pod_name}/logs", response_model=PodLogs)
@@ -184,7 +195,7 @@ def get_webapp_pod_logs(
     container_name: str = None,
     tail_lines: int = 100,
     database_session: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
 ):
     """Get logs for a pod."""
     repository = WebappRepository(database_session)
@@ -198,16 +209,22 @@ def get_webapp_pod_logs(
 
     cluster_instance = repository.find_cluster_instance_by_component_id(webapp.id)
     if not cluster_instance:
-        raise HTTPException(status_code=404, detail="Webapp is not deployed to any cluster")
+        raise HTTPException(
+            status_code=404, detail="Webapp is not deployed to any cluster"
+        )
 
     cluster = cluster_instance.cluster
     application_name = webapp.instance.application.name
 
     try:
-        logs = get_webapp_pod_logs_from_cluster(cluster, application_name, pod_name, container_name, tail_lines)
+        logs = get_webapp_pod_logs_from_cluster(
+            cluster, application_name, pod_name, container_name, tail_lines
+        )
         return {"logs": logs, "pod_name": pod_name, "container_name": container_name}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to get logs for pod {pod_name}: {str(e)}")
+        raise HTTPException(
+            status_code=500, detail=f"Failed to get logs for pod {pod_name}: {str(e)}"
+        )
 
 
 @router.post("/{uuid}/pods/{pod_name}/exec", response_model=PodCommandResponse)
@@ -216,7 +233,7 @@ def exec_webapp_pod_command(
     pod_name: str,
     request: PodCommandRequest,
     database_session: Session = Depends(get_db),
-    current_user: User = Depends(require_role([UserRole.ADMIN]))
+    current_user: User = Depends(require_role([UserRole.ADMIN])),
 ):
     """Execute a command in a pod."""
     repository = WebappRepository(database_session)
@@ -230,19 +247,20 @@ def exec_webapp_pod_command(
 
     cluster_instance = repository.find_cluster_instance_by_component_id(webapp.id)
     if not cluster_instance:
-        raise HTTPException(status_code=404, detail="Webapp is not deployed to any cluster")
+        raise HTTPException(
+            status_code=404, detail="Webapp is not deployed to any cluster"
+        )
 
     cluster = cluster_instance.cluster
     application_name = webapp.instance.application.name
 
     try:
         result = exec_webapp_pod_command_from_cluster(
-            cluster,
-            application_name,
-            pod_name,
-            request.command,
-            request.container_name
+            cluster, application_name, pod_name, request.command, request.container_name
         )
         return result
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to execute command in pod {pod_name}: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to execute command in pod {pod_name}: {str(e)}",
+        )

@@ -5,10 +5,14 @@ from uuid import UUID
 from app.shared.database.database import get_db
 from app.applications.infra.application_repository import ApplicationRepository
 from app.applications.core.application_service import ApplicationService
-from app.applications.api.application_dto import ApplicationCreate, ApplicationUpdate, Application
+from app.applications.api.application_dto import (
+    ApplicationCreate,
+    ApplicationUpdate,
+    Application,
+)
 from app.applications.core.application_validators import (
     ApplicationNotFoundError,
-    ApplicationNameAlreadyExistsError
+    ApplicationNameAlreadyExistsError,
 )
 from app.users.infra.user_model import User, UserRole
 from app.shared.dependencies.auth import require_role, get_current_user
@@ -17,7 +21,9 @@ from app.shared.dependencies.auth import require_role, get_current_user
 router = APIRouter()
 
 
-def get_application_service(database_session: Session = Depends(get_db)) -> ApplicationService:
+def get_application_service(
+    database_session: Session = Depends(get_db),
+) -> ApplicationService:
     """Dependency to get ApplicationService instance."""
     from app.instances.infra.instance_repository import InstanceRepository
     from app.instances.core.instance_service import InstanceService
@@ -32,7 +38,7 @@ def get_application_service(database_session: Session = Depends(get_db)) -> Appl
 def create_application(
     application: ApplicationCreate,
     service: ApplicationService = Depends(get_application_service),
-    current_user: User = Depends(require_role([UserRole.ADMIN]))
+    current_user: User = Depends(require_role([UserRole.ADMIN])),
 ):
     """Create a new application."""
     try:
@@ -48,7 +54,7 @@ def update_application(
     uuid: UUID,
     application: ApplicationUpdate,
     service: ApplicationService = Depends(get_application_service),
-    current_user: User = Depends(require_role([UserRole.ADMIN]))
+    current_user: User = Depends(require_role([UserRole.ADMIN])),
 ):
     """Update an existing application."""
     try:
@@ -66,7 +72,7 @@ def list_applications(
     skip: int = 0,
     limit: int = 100,
     service: ApplicationService = Depends(get_application_service),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
 ):
     """List all applications."""
     return service.get_applications(skip=skip, limit=limit)
@@ -76,7 +82,7 @@ def list_applications(
 def get_application(
     uuid: UUID,
     service: ApplicationService = Depends(get_application_service),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
 ):
     """Get application by UUID."""
     try:
@@ -90,7 +96,7 @@ def delete_application(
     uuid: UUID,
     service: ApplicationService = Depends(get_application_service),
     database_session: Session = Depends(get_db),
-    current_user: User = Depends(require_role([UserRole.ADMIN]))
+    current_user: User = Depends(require_role([UserRole.ADMIN])),
 ):
     """Delete an application."""
     try:

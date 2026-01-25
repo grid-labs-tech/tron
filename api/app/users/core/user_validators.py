@@ -5,16 +5,19 @@ from app.users.api.user_dto import UserCreate, UserUpdate
 
 class UserNotFoundError(Exception):
     """Raised when user is not found."""
+
     pass
 
 
 class UserEmailAlreadyExistsError(Exception):
     """Raised when user email already exists."""
+
     pass
 
 
 class CannotDeleteSelfError(Exception):
     """Raised when trying to delete own user."""
+
     pass
 
 
@@ -44,9 +47,7 @@ def validate_user_exists(repository: UserRepository, uuid: UUID) -> None:
 
 
 def validate_user_email_uniqueness(
-    repository: UserRepository,
-    email: str,
-    exclude_uuid: UUID = None
+    repository: UserRepository, email: str, exclude_uuid: UUID = None
 ) -> None:
     """Validate that user email is unique."""
     existing_user = repository.find_by_email(email)
@@ -57,9 +58,7 @@ def validate_user_email_uniqueness(
 
 
 def validate_can_delete_user(
-    repository: UserRepository,
-    user_uuid: UUID,
-    current_user_uuid: UUID
+    repository: UserRepository, user_uuid: UUID, current_user_uuid: UUID
 ) -> None:
     """Validate that user can be deleted (not self)."""
     if user_uuid == current_user_uuid:

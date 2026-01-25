@@ -9,16 +9,15 @@ from app.clusters.api.cluster_dto import (
     ClusterCreate,
     ClusterResponse,
     ClusterResponseWithValidation,
-    ClusterCompletedResponse
+    ClusterCompletedResponse,
 )
 from app.clusters.core.cluster_validators import (
     validate_cluster_create_dto,
     validate_cluster_exists,
     validate_environment_exists,
-    ClusterNotFoundError,
     ClusterConnectionError,
-    EnvironmentNotFoundError
 )
+
 # TODO: Migrate to shared/k8s
 from app.k8s.client import K8sClient
 
@@ -43,10 +42,7 @@ def get_gateway_reference_from_cluster(cluster: ClusterModel) -> dict:
     except Exception as e:
         print(f"Warning: Error getting Gateway reference from cluster: {e}")
 
-    return {
-        "namespace": "",
-        "name": ""
-    }
+    return {"namespace": "", "name": ""}
 
 
 class ClusterService:
@@ -94,10 +90,15 @@ class ClusterService:
         cluster = self.repository.find_by_uuid(uuid)
         return self._build_cluster_completed_response(cluster)
 
-    def get_clusters(self, skip: int = 0, limit: int = 100) -> List[ClusterResponseWithValidation]:
+    def get_clusters(
+        self, skip: int = 0, limit: int = 100
+    ) -> List[ClusterResponseWithValidation]:
         """Get all clusters with validation details."""
         clusters = self.repository.find_all(skip=skip, limit=limit)
-        return [self._build_cluster_response_with_validation(cluster) for cluster in clusters]
+        return [
+            self._build_cluster_response_with_validation(cluster)
+            for cluster in clusters
+        ]
 
     def delete_cluster(self, uuid: UUID) -> dict:
         """Delete a cluster."""
@@ -126,7 +127,9 @@ class ClusterService:
         except Exception as e:
             raise ClusterConnectionError(f"Connection validation failed: {str(e)}")
 
-    def _build_cluster_entity(self, dto: ClusterCreate, environment_id: int) -> ClusterModel:
+    def _build_cluster_entity(
+        self, dto: ClusterCreate, environment_id: int
+    ) -> ClusterModel:
         """Build Cluster entity from DTO."""
         return ClusterModel(
             uuid=uuid4(),
@@ -136,7 +139,9 @@ class ClusterService:
             environment_id=environment_id,
         )
 
-    def _build_cluster_response_with_validation(self, cluster: ClusterModel) -> ClusterResponseWithValidation:
+    def _build_cluster_response_with_validation(
+        self, cluster: ClusterModel
+    ) -> ClusterResponseWithValidation:
         """Build cluster response with validation details."""
         # TODO: Migrate Kubernetes client to shared/k8s
         k8s_client = K8sClient(url=cluster.api_address, token=cluster.token)
@@ -147,7 +152,9 @@ class ClusterService:
         gateway_ref = {"namespace": "", "name": ""}
 
         if success:
-            gateway_api_available = k8s_client.check_api_available("gateway.networking.k8s.io")
+            gateway_api_available = k8s_client.check_api_available(
+                "gateway.networking.k8s.io"
+            )
             if gateway_api_available:
                 gateway_resources = k8s_client.get_gateway_api_resources()
                 gateway_ref = get_gateway_reference_from_cluster(cluster)
@@ -161,18 +168,24 @@ class ClusterService:
             gateway={
                 "api": {
                     "enabled": gateway_api_available,
-                    "resources": gateway_resources
+                    "resources": gateway_resources,
                 },
-                "reference": gateway_ref
-            }
+                "reference": gateway_ref,
+            },
         )
 
-    def _build_cluster_completed_response(self, cluster: ClusterModel) -> ClusterCompletedResponse:
+    def _build_cluster_completed_response(
+        self, cluster: ClusterModel
+    ) -> ClusterCompletedResponse:
         """Build complete cluster response with all details."""
         # TODO: Migrate Kubernetes client to shared/k8s
         k8s_client = K8sClient(url=cluster.api_address, token=cluster.token)
-        gateway_api_available = k8s_client.check_api_available("gateway.networking.k8s.io")
-        gateway_resources = k8s_client.get_gateway_api_resources() if gateway_api_available else []
+        gateway_api_available = k8s_client.check_api_available(
+            "gateway.networking.k8s.io"
+        )
+        gateway_resources = (
+            k8s_client.get_gateway_api_resources() if gateway_api_available else []
+        )
         gateway_ref = get_gateway_reference_from_cluster(cluster)
 
         # Get available CPU and memory from cluster
@@ -193,8 +206,8 @@ class ClusterService:
             gateway={
                 "api": {
                     "enabled": gateway_api_available,
-                    "resources": gateway_resources
+                    "resources": gateway_resources,
                 },
-                "reference": gateway_ref
-            }
+                "reference": gateway_ref,
+            },
         )

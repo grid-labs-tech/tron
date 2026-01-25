@@ -5,21 +5,25 @@ from app.instances.api.instance_dto import InstanceCreate, InstanceUpdate
 
 class InstanceNotFoundError(Exception):
     """Raised when instance is not found."""
+
     pass
 
 
 class InstanceAlreadyExistsError(Exception):
     """Raised when instance already exists for application and environment."""
+
     pass
 
 
 class ApplicationNotFoundError(Exception):
     """Raised when application is not found."""
+
     pass
 
 
 class EnvironmentNotFoundError(Exception):
     """Raised when environment is not found."""
+
     pass
 
 
@@ -58,10 +62,12 @@ def validate_instance_uniqueness(
     repository: InstanceRepository,
     application_id: int,
     environment_id: int,
-    exclude_uuid: UUID = None
+    exclude_uuid: UUID = None,
 ) -> None:
     """Validate that instance is unique for application and environment."""
-    existing_instance = repository.find_by_application_and_environment(application_id, environment_id)
+    existing_instance = repository.find_by_application_and_environment(
+        application_id, environment_id
+    )
     if existing_instance:
         if exclude_uuid and existing_instance.uuid == exclude_uuid:
             return  # Same instance, OK

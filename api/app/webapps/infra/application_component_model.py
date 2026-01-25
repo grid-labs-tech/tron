@@ -1,5 +1,14 @@
 import enum
-from sqlalchemy import Column, Integer, String, ForeignKey, Boolean, Enum, JSON, DateTime
+from sqlalchemy import (
+    Column,
+    Integer,
+    String,
+    ForeignKey,
+    Boolean,
+    Enum,
+    JSON,
+    DateTime,
+)
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
 from sqlalchemy.dialects.postgresql import UUID
@@ -47,10 +56,12 @@ class ApplicationComponent(Base):
         "ClusterInstance",
         back_populates="application_component",
         foreign_keys="[ClusterInstance.application_component_id]",
-        lazy="select"
+        lazy="select",
     )
 
     created_at = Column(DateTime, server_default=func.now(), nullable=False)
-    updated_at = Column(DateTime, server_default=func.now(), server_onupdate=func.now(), nullable=False)
+    updated_at = Column(
+        DateTime, server_default=func.now(), server_onupdate=func.now(), nullable=False
+    )
 
     __table_args__ = ()

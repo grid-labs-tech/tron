@@ -9,12 +9,12 @@ from app.cron.api.cron_dto import CronCreate, CronUpdate, Cron, CronJob, CronJob
 from app.cron.core.cron_validators import (
     CronNotFoundError,
     CronNotCronTypeError,
-    InstanceNotFoundError
+    InstanceNotFoundError,
 )
 from app.cron.core.cron_jobs_service import (
     get_cron_jobs_from_cluster,
     get_cron_job_logs_from_cluster,
-    delete_cron_job_from_cluster
+    delete_cron_job_from_cluster,
 )
 from app.users.infra.user_model import UserRole, User
 from app.shared.dependencies.auth import require_role, get_current_user
@@ -33,7 +33,7 @@ def get_cron_service(database_session: Session = Depends(get_db)) -> CronService
 def create_cron(
     cron: CronCreate,
     service: CronService = Depends(get_cron_service),
-    current_user: User = Depends(require_role([UserRole.ADMIN]))
+    current_user: User = Depends(require_role([UserRole.ADMIN])),
 ):
     """Create a new cron."""
     try:
@@ -49,7 +49,7 @@ def list_crons(
     skip: int = 0,
     limit: int = 100,
     service: CronService = Depends(get_cron_service),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
 ):
     """List all crons."""
     return service.get_crons(skip=skip, limit=limit)
@@ -59,7 +59,7 @@ def list_crons(
 def get_cron(
     uuid: UUID,
     service: CronService = Depends(get_cron_service),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
 ):
     """Get cron by UUID."""
     try:
@@ -73,7 +73,7 @@ def update_cron(
     uuid: UUID,
     cron: CronUpdate,
     service: CronService = Depends(get_cron_service),
-    current_user: User = Depends(require_role([UserRole.ADMIN]))
+    current_user: User = Depends(require_role([UserRole.ADMIN])),
 ):
     """Update an existing cron."""
     try:
@@ -88,7 +88,7 @@ def update_cron(
 def delete_cron(
     uuid: UUID,
     service: CronService = Depends(get_cron_service),
-    current_user: User = Depends(require_role([UserRole.ADMIN]))
+    current_user: User = Depends(require_role([UserRole.ADMIN])),
 ):
     """Delete a cron."""
     try:
@@ -103,7 +103,7 @@ def delete_cron(
 def get_cron_jobs(
     uuid: UUID,
     database_session: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
 ):
     """Get jobs for a cron."""
     repository = CronRepository(database_session)
@@ -117,7 +117,9 @@ def get_cron_jobs(
 
     cluster_instance = repository.find_cluster_instance_by_component_id(cron.id)
     if not cluster_instance:
-        raise HTTPException(status_code=404, detail="Cron is not deployed to any cluster")
+        raise HTTPException(
+            status_code=404, detail="Cron is not deployed to any cluster"
+        )
 
     cluster = cluster_instance.cluster
     application_name = cron.instance.application.name
@@ -137,7 +139,7 @@ def get_cron_job_logs(
     container_name: str = None,
     tail_lines: int = 100,
     database_session: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
 ):
     """Get logs for a cron job."""
     repository = CronRepository(database_session)
@@ -151,16 +153,22 @@ def get_cron_job_logs(
 
     cluster_instance = repository.find_cluster_instance_by_component_id(cron.id)
     if not cluster_instance:
-        raise HTTPException(status_code=404, detail="Cron is not deployed to any cluster")
+        raise HTTPException(
+            status_code=404, detail="Cron is not deployed to any cluster"
+        )
 
     cluster = cluster_instance.cluster
     application_name = cron.instance.application.name
 
     try:
-        result = get_cron_job_logs_from_cluster(cluster, application_name, job_name, container_name, tail_lines)
+        result = get_cron_job_logs_from_cluster(
+            cluster, application_name, job_name, container_name, tail_lines
+        )
         return result
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to get logs for job {job_name}: {str(e)}")
+        raise HTTPException(
+            status_code=500, detail=f"Failed to get logs for job {job_name}: {str(e)}"
+        )
 
 
 @router.delete("/{uuid}/jobs/{job_name}")
@@ -168,7 +176,7 @@ def delete_cron_job(
     uuid: UUID,
     job_name: str,
     database_session: Session = Depends(get_db),
-    current_user: User = Depends(require_role([UserRole.ADMIN]))
+    current_user: User = Depends(require_role([UserRole.ADMIN])),
 ):
     """Delete a cron job."""
     repository = CronRepository(database_session)
@@ -182,7 +190,9 @@ def delete_cron_job(
 
     cluster_instance = repository.find_cluster_instance_by_component_id(cron.id)
     if not cluster_instance:
-        raise HTTPException(status_code=404, detail="Cron is not deployed to any cluster")
+        raise HTTPException(
+            status_code=404, detail="Cron is not deployed to any cluster"
+        )
 
     cluster = cluster_instance.cluster
     application_name = cron.instance.application.name
@@ -191,4 +201,6 @@ def delete_cron_job(
         delete_cron_job_from_cluster(cluster, application_name, job_name)
         return {"detail": f"Job '{job_name}' deleted successfully"}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to delete job {job_name}: {str(e)}")
+        raise HTTPException(
+            status_code=500, detail=f"Failed to delete job {job_name}: {str(e)}"
+        )

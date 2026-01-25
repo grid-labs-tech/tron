@@ -1,4 +1,12 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, Boolean, DateTime, UniqueConstraint
+from sqlalchemy import (
+    Column,
+    Integer,
+    String,
+    ForeignKey,
+    Boolean,
+    DateTime,
+    UniqueConstraint,
+)
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
 from sqlalchemy.dialects.postgresql import UUID
@@ -25,8 +33,12 @@ class Instance(Base):
     enabled = Column(Boolean, nullable=False, default=True)
 
     created_at = Column(DateTime, server_default=func.now(), nullable=False)
-    updated_at = Column(DateTime, server_default=func.now(), server_onupdate=func.now(), nullable=False)
+    updated_at = Column(
+        DateTime, server_default=func.now(), server_onupdate=func.now(), nullable=False
+    )
 
     __table_args__ = (
-        UniqueConstraint('application_id', 'environment_id', name='uix_application_environment'),
+        UniqueConstraint(
+            "application_id", "environment_id", name="uix_application_environment"
+        ),
     )

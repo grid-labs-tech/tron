@@ -9,7 +9,8 @@ import { applicationCreateSchema } from '../../features/applications/schemas'
 import { instanceFormSchema } from '../../features/instances/schemas'
 import { componentCreateSchema } from '../../features/components/schemas'
 import { validateForm } from '../../shared/utils/validation'
-import type { ApplicationCreate, InstanceCreate } from '../../features/applications'
+import type { ApplicationCreate } from '../../features/applications'
+import type { InstanceCreate } from '../../features/instances'
 import {
   ApplicationForm,
   InstanceForm,
@@ -25,8 +26,7 @@ import { Breadcrumbs, PageHeader } from '../../shared/components'
 function CreateApplication() {
   const navigate = useNavigate()
   const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null)
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [errors, setErrors] = useState<Record<string, string>>({})
+  const [, setErrors] = useState<Record<string, string>>({})
   const [isCreating, setIsCreating] = useState(false)
 
   const createApplicationMutation = useCreateApplication()

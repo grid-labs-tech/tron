@@ -15,7 +15,9 @@ from app.shared.dependencies.auth import require_role, get_current_user
 router = APIRouter()
 
 
-def get_template_service(database_session: Session = Depends(get_db)) -> TemplateService:
+def get_template_service(
+    database_session: Session = Depends(get_db),
+) -> TemplateService:
     """Dependency to get TemplateService instance."""
     template_repository = TemplateRepository(database_session)
     return TemplateService(template_repository)
@@ -25,7 +27,7 @@ def get_template_service(database_session: Session = Depends(get_db)) -> Templat
 def create_template(
     template: TemplateCreate,
     service: TemplateService = Depends(get_template_service),
-    current_user: User = Depends(require_role([UserRole.ADMIN]))
+    current_user: User = Depends(require_role([UserRole.ADMIN])),
 ):
     """Create a new template."""
     try:
@@ -41,7 +43,7 @@ def update_template(
     uuid: UUID,
     template: TemplateUpdate,
     service: TemplateService = Depends(get_template_service),
-    current_user: User = Depends(require_role([UserRole.ADMIN]))
+    current_user: User = Depends(require_role([UserRole.ADMIN])),
 ):
     """Update an existing template."""
     try:
@@ -60,7 +62,7 @@ def list_templates(
     limit: int = 100,
     category: Optional[str] = Query(None, description="Filter by category"),
     service: TemplateService = Depends(get_template_service),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
 ):
     """List all templates."""
     return service.get_templates(skip=skip, limit=limit, category=category)
@@ -70,7 +72,7 @@ def list_templates(
 def get_template(
     uuid: UUID,
     service: TemplateService = Depends(get_template_service),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
 ):
     """Get template by UUID."""
     try:
@@ -83,7 +85,7 @@ def get_template(
 def delete_template(
     uuid: UUID,
     service: TemplateService = Depends(get_template_service),
-    current_user: User = Depends(require_role([UserRole.ADMIN]))
+    current_user: User = Depends(require_role([UserRole.ADMIN])),
 ):
     """Delete a template."""
     try:

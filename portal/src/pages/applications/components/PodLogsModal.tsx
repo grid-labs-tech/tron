@@ -3,7 +3,7 @@ import { X } from 'lucide-react'
 
 interface PodLogsModalProps {
   isOpen: boolean
-  podName: string | null
+  podName: string | undefined
   logs: string | undefined
   isLoading: boolean
   isLiveTail: boolean

@@ -30,8 +30,7 @@ export default function Profile() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [errors, setErrors] = useState<Record<string, string>>({})
+  const [, setErrors] = useState<Record<string, string>>({})
 
   useEffect(() => {
     if (updateProfileMutation.isSuccess && updateProfileMutation.data) {

@@ -3,9 +3,13 @@ from typing import Optional
 from jinja2 import Environment, BaseLoader
 from sqlalchemy.orm import Session
 
-from app.templates.infra.component_template_config_repository import ComponentTemplateConfigRepository
+from app.templates.infra.component_template_config_repository import (
+    ComponentTemplateConfigRepository,
+)
 from app.templates.infra.template_repository import TemplateRepository
-from app.templates.core.component_template_config_service import ComponentTemplateConfigService
+from app.templates.core.component_template_config_service import (
+    ComponentTemplateConfigService,
+)
 
 
 class KubernetesApplicationComponentManager:
@@ -21,7 +25,7 @@ class KubernetesApplicationComponentManager:
         component_type: str,
         settings: Optional[dict] = None,
         db: Optional[Session] = None,
-        gateway_reference: Optional[dict] = None
+        gateway_reference: Optional[dict] = None,
     ):
         """
         Render Kubernetes templates for an application component.
@@ -47,20 +51,13 @@ class KubernetesApplicationComponentManager:
 
         # Default values for gateway_reference if not provided
         if gateway_reference is None:
-            gateway_reference = {
-                "namespace": "",
-                "name": ""
-            }
+            gateway_reference = {"namespace": "", "name": ""}
 
         # Prepare variables for templates
         variables = {
             "application": application_component,
             "environment": settings,
-            "cluster": {
-                "gateway": {
-                    "reference": gateway_reference
-                }
-            }
+            "cluster": {"gateway": {"reference": gateway_reference}},
         }
 
         # Fetch configured templates for component type
@@ -81,16 +78,16 @@ class KubernetesApplicationComponentManager:
         # Render each template in configured order
         for template in templates:
             try:
-                rendered_yaml = KubernetesApplicationComponentManager.render_template_from_string(
-                    template.content, variables
+                rendered_yaml = (
+                    KubernetesApplicationComponentManager.render_template_from_string(
+                        template.content, variables
+                    )
                 )
                 # Filter None documents (when template doesn't render anything due to conditions)
                 if rendered_yaml is not None:
                     combined_payloads.append(rendered_yaml)
             except Exception as e:
-                raise ValueError(
-                    f"Error rendering template '{template.name}': {e}"
-                )
+                raise ValueError(f"Error rendering template '{template.name}': {e}")
 
         return combined_payloads
 
@@ -129,8 +126,11 @@ class KubernetesApplicationComponentManager:
             return parsed_yaml
         except yaml.YAMLError as e:
             # Debug: log parsing error for httproute
-            if 'httproute' in template_content.lower():
+            if "httproute" in template_content.lower():
                 import logging
+
                 logger = logging.getLogger(__name__)
-                logger.error(f"HTTPRoute YAML parsing error: {e}. Rendered content:\n{rendered_yaml[:500]}")
+                logger.error(
+                    f"HTTPRoute YAML parsing error: {e}. Rendered content:\n{rendered_yaml[:500]}"
+                )
             raise ValueError(f"Error parsing YAML template: {e}")

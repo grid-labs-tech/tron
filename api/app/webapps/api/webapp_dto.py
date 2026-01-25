@@ -72,44 +72,44 @@ class WebappSettings(BaseModel):
     memory: int
     autoscaling: WebappAutoscaling
 
-    @model_validator(mode='before')
+    @model_validator(mode="before")
     @classmethod
     def migrate_exposure(cls, data: Any) -> Any:
         """Migrate endpoints to exposure format if needed"""
         if isinstance(data, dict):
-            if 'endpoints' in data and 'exposure' not in data:
-                endpoints = data['endpoints']
+            if "endpoints" in data and "exposure" not in data:
+                endpoints = data["endpoints"]
                 if isinstance(endpoints, list) and len(endpoints) > 0:
                     endpoints = endpoints[0]
                 if isinstance(endpoints, dict):
-                    visibility = 'cluster'
-                    if 'exposure' in data and isinstance(data.get('exposure'), dict) and 'visibility' in data['exposure']:
-                        visibility = data['exposure']['visibility']
-                    elif isinstance(endpoints, dict) and 'visibility' in endpoints:
-                        visibility = endpoints['visibility']
+                    visibility = "cluster"
+                    if (
+                        "exposure" in data
+                        and isinstance(data.get("exposure"), dict)
+                        and "visibility" in data["exposure"]
+                    ):
+                        visibility = data["exposure"]["visibility"]
+                    elif isinstance(endpoints, dict) and "visibility" in endpoints:
+                        visibility = endpoints["visibility"]
 
                     if isinstance(visibility, str):
                         visibility = visibility.lower()
                     else:
-                        visibility = 'cluster'
+                        visibility = "cluster"
 
-                    data['exposure'] = {
-                        'type': endpoints.get('source_protocol', 'http'),
-                        'port': endpoints.get('source_port', 80),
-                        'visibility': visibility
+                    data["exposure"] = {
+                        "type": endpoints.get("source_protocol", "http"),
+                        "port": endpoints.get("source_port", 80),
+                        "visibility": visibility,
                     }
-                    del data['endpoints']
-            if 'exposure' not in data:
-                data['exposure'] = {
-                    'type': 'http',
-                    'port': 80,
-                    'visibility': 'cluster'
-                }
-            if 'visibility' in data:
-                del data['visibility']
+                    del data["endpoints"]
+            if "exposure" not in data:
+                data["exposure"] = {"type": "http", "port": 80, "visibility": "cluster"}
+            if "visibility" in data:
+                del data["visibility"]
         return data
 
-    @model_validator(mode='after')
+    @model_validator(mode="after")
     def parse_command(self):
         """Parse command string into array if it's a string"""
         if isinstance(self.command, str):
@@ -124,10 +124,10 @@ class WebappSettings(BaseModel):
 class WebappBase(BaseModel):
     name: str
 
-    @field_validator('name')
+    @field_validator("name")
     @classmethod
     def validate_name_no_spaces(cls, v: str) -> str:
-        if ' ' in v:
+        if " " in v:
             raise ValueError("Component name cannot contain spaces")
         return v
 
@@ -143,21 +143,33 @@ class WebappCreate(WebappBase):
     enabled: bool = True
     settings: WebappSettings
 
-    @model_validator(mode='after')
+    @model_validator(mode="after")
     def validate_url(self):
         """Validate that URL is required only when exposure.type is 'http' and visibility is not 'cluster'"""
         if self.settings and self.settings.exposure:
             exposure_type = self.settings.exposure.type
             exposure_visibility = self.settings.exposure.visibility
 
-            if exposure_type == 'http' and exposure_visibility != 'cluster' and not self.url:
-                raise ValueError("Webapp components with HTTP exposure type and visibility 'public' or 'private' must have a URL")
+            if (
+                exposure_type == "http"
+                and exposure_visibility != "cluster"
+                and not self.url
+            ):
+                raise ValueError(
+                    "Webapp components with HTTP exposure type and visibility 'public' or 'private' must have a URL"
+                )
 
-            if (exposure_type != 'http' or exposure_visibility == 'cluster') and self.url:
-                if exposure_type != 'http':
-                    raise ValueError(f"URL is not allowed for webapp components with exposure type '{exposure_type}'. URL is only allowed for HTTP exposure type.")
+            if (
+                exposure_type != "http" or exposure_visibility == "cluster"
+            ) and self.url:
+                if exposure_type != "http":
+                    raise ValueError(
+                        f"URL is not allowed for webapp components with exposure type '{exposure_type}'. URL is only allowed for HTTP exposure type."
+                    )
                 else:
-                    raise ValueError("URL is not allowed for webapp components with 'cluster' visibility. URL is only allowed for 'public' or 'private' visibility.")
+                    raise ValueError(
+                        "URL is not allowed for webapp components with 'cluster' visibility. URL is only allowed for 'public' or 'private' visibility."
+                    )
 
         return self
 
@@ -167,18 +179,24 @@ class WebappUpdate(BaseModel):
     enabled: bool | None = None
     settings: WebappSettings | None = None
 
-    @model_validator(mode='after')
+    @model_validator(mode="after")
     def validate_url(self):
         """Validate that URL is not allowed when exposure.type is not 'http' or visibility is 'cluster'"""
         if self.settings and self.settings.exposure:
             exposure_type = self.settings.exposure.type
             exposure_visibility = self.settings.exposure.visibility
 
-            if (exposure_type != 'http' or exposure_visibility == 'cluster') and self.url is not None:
-                if exposure_type != 'http':
-                    raise ValueError(f"URL is not allowed for webapp components with exposure type '{exposure_type}'. URL is only allowed for HTTP exposure type.")
+            if (
+                exposure_type != "http" or exposure_visibility == "cluster"
+            ) and self.url is not None:
+                if exposure_type != "http":
+                    raise ValueError(
+                        f"URL is not allowed for webapp components with exposure type '{exposure_type}'. URL is only allowed for HTTP exposure type."
+                    )
                 else:
-                    raise ValueError("URL is not allowed for webapp components with 'cluster' visibility. URL is only allowed for 'public' or 'private' visibility.")
+                    raise ValueError(
+                        "URL is not allowed for webapp components with 'cluster' visibility. URL is only allowed for 'public' or 'private' visibility."
+                    )
 
         return self
 
@@ -192,23 +210,23 @@ class Webapp(WebappBase):
     created_at: str
     updated_at: str
 
-    @model_validator(mode='before')
+    @model_validator(mode="before")
     @classmethod
     def convert_datetime_to_string(cls, data: Any) -> Any:
         if isinstance(data, dict):
-            if 'created_at' in data and isinstance(data['created_at'], datetime):
-                data['created_at'] = data['created_at'].isoformat()
-            if 'updated_at' in data and isinstance(data['updated_at'], datetime):
-                data['updated_at'] = data['updated_at'].isoformat()
-            if 'visibility' in data:
-                del data['visibility']
-        elif hasattr(data, '__dict__'):
-            if hasattr(data, 'created_at') and isinstance(data.created_at, datetime):
+            if "created_at" in data and isinstance(data["created_at"], datetime):
+                data["created_at"] = data["created_at"].isoformat()
+            if "updated_at" in data and isinstance(data["updated_at"], datetime):
+                data["updated_at"] = data["updated_at"].isoformat()
+            if "visibility" in data:
+                del data["visibility"]
+        elif hasattr(data, "__dict__"):
+            if hasattr(data, "created_at") and isinstance(data.created_at, datetime):
                 data.created_at = data.created_at.isoformat()
-            if hasattr(data, 'updated_at') and isinstance(data.updated_at, datetime):
+            if hasattr(data, "updated_at") and isinstance(data.updated_at, datetime):
                 data.updated_at = data.updated_at.isoformat()
-            if hasattr(data, 'visibility'):
-                delattr(data, 'visibility')
+            if hasattr(data, "visibility"):
+                delattr(data, "visibility")
         return data
 
     model_config = ConfigDict(

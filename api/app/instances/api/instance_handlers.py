@@ -10,13 +10,13 @@ from app.instances.api.instance_dto import (
     InstanceCreate,
     InstanceUpdate,
     Instance,
-    KubernetesEvent
+    KubernetesEvent,
 )
 from app.instances.core.instance_validators import (
     InstanceNotFoundError,
     InstanceAlreadyExistsError,
     ApplicationNotFoundError,
-    EnvironmentNotFoundError
+    EnvironmentNotFoundError,
 )
 from app.users.infra.user_model import User, UserRole
 from app.shared.dependencies.auth import require_role, get_current_user
@@ -25,7 +25,9 @@ from app.shared.dependencies.auth import require_role, get_current_user
 router = APIRouter()
 
 
-def get_instance_service(database_session: Session = Depends(get_db)) -> InstanceService:
+def get_instance_service(
+    database_session: Session = Depends(get_db),
+) -> InstanceService:
     """Dependency to get InstanceService instance."""
     instance_repository = InstanceRepository(database_session)
     return InstanceService(instance_repository, database_session)
@@ -35,7 +37,7 @@ def get_instance_service(database_session: Session = Depends(get_db)) -> Instanc
 def create_instance(
     instance: InstanceCreate,
     service: InstanceService = Depends(get_instance_service),
-    current_user: User = Depends(require_role([UserRole.ADMIN]))
+    current_user: User = Depends(require_role([UserRole.ADMIN])),
 ):
     """Create a new instance."""
     try:
@@ -53,7 +55,7 @@ def update_instance(
     uuid: UUID,
     instance: InstanceUpdate,
     service: InstanceService = Depends(get_instance_service),
-    current_user: User = Depends(require_role([UserRole.ADMIN]))
+    current_user: User = Depends(require_role([UserRole.ADMIN])),
 ):
     """Update an existing instance."""
     try:
@@ -69,7 +71,7 @@ def list_instances(
     skip: int = 0,
     limit: int = 100,
     service: InstanceService = Depends(get_instance_service),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
 ):
     """List all instances."""
     return service.get_instances(skip=skip, limit=limit)
@@ -79,7 +81,7 @@ def list_instances(
 def get_instance(
     uuid: UUID,
     service: InstanceService = Depends(get_instance_service),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
 ):
     """Get instance by UUID."""
     try:
@@ -93,7 +95,7 @@ def delete_instance(
     uuid: UUID,
     service: InstanceService = Depends(get_instance_service),
     database_session: Session = Depends(get_db),
-    current_user: User = Depends(require_role([UserRole.ADMIN]))
+    current_user: User = Depends(require_role([UserRole.ADMIN])),
 ):
     """Delete an instance."""
     try:
@@ -108,7 +110,7 @@ def delete_instance(
 def get_instance_events(
     uuid: UUID,
     service: InstanceService = Depends(get_instance_service),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
 ):
     """Get Kubernetes events for an instance."""
     try:
@@ -127,7 +129,7 @@ def get_instance_events(
 def sync_instance(
     uuid: UUID,
     service: InstanceService = Depends(get_instance_service),
-    current_user: User = Depends(require_role([UserRole.ADMIN]))
+    current_user: User = Depends(require_role([UserRole.ADMIN])),
 ):
     """Sync instance components with Kubernetes."""
     try:

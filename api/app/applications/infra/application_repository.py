@@ -13,24 +13,35 @@ class ApplicationRepository:
 
     def find_by_uuid(self, uuid: UUID) -> Optional[ApplicationModel]:
         """Find application by UUID."""
-        return self.db.query(ApplicationModel).filter(ApplicationModel.uuid == uuid).first()
+        return (
+            self.db.query(ApplicationModel)
+            .filter(ApplicationModel.uuid == uuid)
+            .first()
+        )
 
     def find_by_name(self, name: str) -> Optional[ApplicationModel]:
         """Find application by name."""
-        return self.db.query(ApplicationModel).filter(ApplicationModel.name == name).first()
+        return (
+            self.db.query(ApplicationModel)
+            .filter(ApplicationModel.name == name)
+            .first()
+        )
 
-    def find_by_name_excluding_uuid(self, name: str, exclude_uuid: UUID) -> Optional[ApplicationModel]:
+    def find_by_name_excluding_uuid(
+        self, name: str, exclude_uuid: UUID
+    ) -> Optional[ApplicationModel]:
         """Find application by name excluding a specific UUID."""
         return (
             self.db.query(ApplicationModel)
             .filter(
-                ApplicationModel.name == name,
-                ApplicationModel.uuid != exclude_uuid
+                ApplicationModel.name == name, ApplicationModel.uuid != exclude_uuid
             )
             .first()
         )
 
-    def find_all_with_instances(self, skip: int = 0, limit: int = 100) -> List[ApplicationModel]:
+    def find_all_with_instances(
+        self, skip: int = 0, limit: int = 100
+    ) -> List[ApplicationModel]:
         """Find all applications with instances loaded."""
         return (
             self.db.query(ApplicationModel)
@@ -58,7 +69,10 @@ class ApplicationRepository:
         original_created_at = application.created_at
         self.db.commit()
         # Restore created_at in case it was modified
-        if hasattr(application, 'created_at') and application.created_at != original_created_at:
+        if (
+            hasattr(application, "created_at")
+            and application.created_at != original_created_at
+        ):
             application.created_at = original_created_at
         self.db.refresh(application)
         return application

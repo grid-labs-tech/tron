@@ -4,16 +4,19 @@ from app.clusters.infra.cluster_repository import ClusterRepository
 
 class ClusterNotFoundError(Exception):
     """Raised when cluster is not found."""
+
     pass
 
 
 class ClusterConnectionError(Exception):
     """Raised when cluster connection validation fails."""
+
     pass
 
 
 class EnvironmentNotFoundError(Exception):
     """Raised when environment is not found."""
+
     pass
 
 

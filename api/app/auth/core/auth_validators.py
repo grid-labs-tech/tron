@@ -4,21 +4,25 @@ from app.auth.api.auth_dto import LoginRequest, UpdateProfileRequest
 
 class InvalidCredentialsError(Exception):
     """Raised when credentials are invalid."""
+
     pass
 
 
 class UserInactiveError(Exception):
     """Raised when user is inactive."""
+
     pass
 
 
 class EmailAlreadyExistsError(Exception):
     """Raised when email already exists."""
+
     pass
 
 
 class InvalidCurrentPasswordError(Exception):
     """Raised when current password is incorrect."""
+
     pass
 
 
@@ -32,9 +36,7 @@ def validate_login_request(dto: LoginRequest) -> None:
 
 
 def validate_update_profile_request(
-    dto: UpdateProfileRequest,
-    repository: UserRepository,
-    current_user_email: str
+    dto: UpdateProfileRequest, repository: UserRepository, current_user_email: str
 ) -> None:
     """Validate update profile request."""
     if dto.email and dto.email != current_user_email:
@@ -47,9 +49,7 @@ def validate_update_profile_request(
 
 
 def validate_current_password(
-    repository: UserRepository,
-    user_uuid: str,
-    current_password: str
+    repository: UserRepository, user_uuid: str, current_password: str
 ) -> None:
     """Validate current password."""
     from uuid import UUID as UUIDType

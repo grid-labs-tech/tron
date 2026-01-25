@@ -3,7 +3,9 @@ from sqlalchemy.orm import Session
 from sqlalchemy import func
 
 from app.clusters.infra.cluster_model import Cluster as ClusterModel
-from app.shared.infra.cluster_instance_model import ClusterInstance as ClusterInstanceModel
+from app.shared.infra.cluster_instance_model import (
+    ClusterInstance as ClusterInstanceModel,
+)
 
 
 class ClusterSelectionService:
@@ -52,7 +54,9 @@ class ClusterSelectionService:
         return cluster_loads[0][0]
 
     @staticmethod
-    def get_cluster_with_least_load_or_raise(db: Session, environment_id: int, environment_name: str = None):
+    def get_cluster_with_least_load_or_raise(
+        db: Session, environment_id: int, environment_name: str = None
+    ):
         """
         Encontra o cluster de menor carga no environment especificado.
         Lança uma exceção HTTPException se não houver clusters disponíveis.
@@ -68,13 +72,15 @@ class ClusterSelectionService:
         Raises:
             HTTPException: Se não houver clusters disponíveis no environment
         """
-        cluster = ClusterSelectionService.get_cluster_with_least_load(db, environment_id)
+        cluster = ClusterSelectionService.get_cluster_with_least_load(
+            db, environment_id
+        )
 
         if cluster is None:
             env_name = environment_name or f"ID {environment_id}"
             raise HTTPException(
                 status_code=400,
-                detail=f"No clusters available in environment '{env_name}'. Please create at least one cluster."
+                detail=f"No clusters available in environment '{env_name}'. Please create at least one cluster.",
             )
 
         return cluster

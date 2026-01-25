@@ -4,11 +4,13 @@ from app.templates.infra.template_repository import TemplateRepository
 
 class TemplateNotFoundError(Exception):
     """Raised when template is not found."""
+
     pass
 
 
 class TemplateHasConfigsError(Exception):
     """Raised when trying to delete template with associated component configs."""
+
     pass
 
 
@@ -40,7 +42,9 @@ def validate_template_exists(repository: TemplateRepository, uuid: UUID) -> None
         raise TemplateNotFoundError(f"Template with UUID '{uuid}' not found")
 
 
-def validate_template_can_be_deleted(repository: TemplateRepository, uuid: UUID) -> None:
+def validate_template_can_be_deleted(
+    repository: TemplateRepository, uuid: UUID
+) -> None:
     """Validate that template can be deleted (no associated configs)."""
     template = repository.find_by_uuid(uuid)
     if not template:

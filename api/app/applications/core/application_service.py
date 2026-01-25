@@ -4,14 +4,16 @@ from sqlalchemy.orm import Session
 
 from app.applications.infra.application_repository import ApplicationRepository
 from app.applications.infra.application_model import Application as ApplicationModel
-from app.applications.api.application_dto import ApplicationCreate, ApplicationUpdate, Application
+from app.applications.api.application_dto import (
+    ApplicationCreate,
+    ApplicationUpdate,
+    Application,
+)
 from app.applications.core.application_validators import (
     validate_application_create_dto,
     validate_application_update_dto,
     validate_application_name_uniqueness,
     validate_application_exists,
-    ApplicationNotFoundError,
-    ApplicationNameAlreadyExistsError
 )
 from app.instances.core.instance_service import InstanceService
 from app.instances.infra.instance_repository import InstanceRepository
@@ -20,7 +22,11 @@ from app.instances.infra.instance_repository import InstanceRepository
 class ApplicationService:
     """Business logic for applications. No direct database access."""
 
-    def __init__(self, repository: ApplicationRepository, instance_service: InstanceService = None):
+    def __init__(
+        self,
+        repository: ApplicationRepository,
+        instance_service: InstanceService = None,
+    ):
         self.repository = repository
         self.instance_service = instance_service
 
@@ -40,7 +46,9 @@ class ApplicationService:
         application = self.repository.find_by_uuid(uuid)
 
         if dto.name is not None:
-            validate_application_name_uniqueness(self.repository, dto.name, exclude_uuid=uuid)
+            validate_application_name_uniqueness(
+                self.repository, dto.name, exclude_uuid=uuid
+            )
             application.name = dto.name
 
         if dto.repository is not None:
@@ -71,7 +79,9 @@ class ApplicationService:
         if not self.instance_service:
             # Create instance service if not provided
             instance_repository = InstanceRepository(database_session)
-            self.instance_service = InstanceService(instance_repository, database_session)
+            self.instance_service = InstanceService(
+                instance_repository, database_session
+            )
 
         for instance in instances:
             try:
@@ -83,7 +93,9 @@ class ApplicationService:
                 error_msg = str(e)
                 # Log the full error for debugging
                 print(f"Error deleting instance '{instance.uuid}': {error_msg}")
-                raise Exception(f"Failed to delete instance '{instance.uuid}': {error_msg}")
+                raise Exception(
+                    f"Failed to delete instance '{instance.uuid}': {error_msg}"
+                )
 
         # Delete application
         try:

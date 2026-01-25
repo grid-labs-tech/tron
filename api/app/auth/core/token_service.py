@@ -1,13 +1,17 @@
 """Business logic for tokens. Broken into small, focused functions."""
-from uuid import UUID
+
 from typing import List, Optional
 from sqlalchemy.orm import Session
-from datetime import datetime
 
 from app.auth.infra.token_repository import TokenRepository
 from app.auth.infra.token_model import Token as TokenModel
-from app.auth.api.token_dto import TokenCreate, TokenUpdate, TokenResponse, TokenCreateResponse
-from app.auth.core.token_validators import validate_token_exists, TokenNotFoundError
+from app.auth.api.token_dto import (
+    TokenCreate,
+    TokenUpdate,
+    TokenResponse,
+    TokenCreateResponse,
+)
+from app.auth.core.token_validators import validate_token_exists
 from app.auth.core.auth_service import AuthService
 
 
@@ -18,7 +22,9 @@ class TokenService:
         self.repository = repository
         self.db = database_session
 
-    def list_tokens(self, skip: int = 0, limit: int = 100, search: Optional[str] = None) -> List[TokenResponse]:
+    def list_tokens(
+        self, skip: int = 0, limit: int = 100, search: Optional[str] = None
+    ) -> List[TokenResponse]:
         """List all tokens with optional search."""
         tokens = self.repository.find_all(skip=skip, limit=limit, search=search)
         return [self._serialize_token(t) for t in tokens]
@@ -29,7 +35,9 @@ class TokenService:
         token = self.repository.find_by_uuid(token_uuid)
         return self._serialize_token(token)
 
-    def create_token(self, dto: TokenCreate, user_id: Optional[int] = None) -> TokenCreateResponse:
+    def create_token(
+        self, dto: TokenCreate, user_id: Optional[int] = None
+    ) -> TokenCreateResponse:
         """Create a new token."""
         # Generate random token
         plain_token = AuthService.generate_token()
@@ -46,7 +54,7 @@ class TokenService:
             token=plain_token,  # Plain text token - only appears here
             role=token.role,
             expires_at=token.expires_at.isoformat() if token.expires_at else None,
-            created_at=token.created_at.isoformat()
+            created_at=token.created_at.isoformat(),
         )
 
     def update_token(self, token_uuid: str, dto: TokenUpdate) -> TokenResponse:
@@ -67,10 +75,7 @@ class TokenService:
         return {"detail": "Token deleted successfully"}
 
     def _build_token_entity(
-        self,
-        dto: TokenCreate,
-        token_hash: str,
-        user_id: Optional[int]
+        self, dto: TokenCreate, token_hash: str, user_id: Optional[int]
     ) -> TokenModel:
         """Build token entity from DTO."""
         return TokenModel(
@@ -78,7 +83,7 @@ class TokenService:
             token_hash=token_hash,
             role=dto.role,
             expires_at=dto.expires_at,
-            user_id=user_id
+            user_id=user_id,
         )
 
     def _update_token_fields(self, token: TokenModel, dto: TokenUpdate) -> None:

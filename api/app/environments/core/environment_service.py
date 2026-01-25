@@ -2,13 +2,15 @@ from uuid import uuid4, UUID
 from typing import List
 from app.environments.infra.environment_repository import EnvironmentRepository
 from app.environments.infra.environment_model import Environment as EnvironmentModel
-from app.environments.api.environment_dto import EnvironmentCreate, Environment, EnvironmentWithClusters
+from app.environments.api.environment_dto import (
+    EnvironmentCreate,
+    Environment,
+    EnvironmentWithClusters,
+)
 from app.environments.core.environment_validators import (
     validate_environment_create_dto,
     validate_environment_exists,
     validate_environment_can_be_deleted,
-    EnvironmentNotFoundError,
-    EnvironmentHasComponentsError
 )
 
 
@@ -42,7 +44,9 @@ class EnvironmentService:
         environment = self.repository.find_by_uuid(uuid)
         return self._serialize_environment_with_clusters(environment)
 
-    def get_environments(self, skip: int = 0, limit: int = 100) -> List[EnvironmentWithClusters]:
+    def get_environments(
+        self, skip: int = 0, limit: int = 100
+    ) -> List[EnvironmentWithClusters]:
         """Get all environments with clusters and settings."""
         environments = self.repository.find_all(skip=skip, limit=limit)
         return [self._serialize_environment_with_clusters(env) for env in environments]
@@ -58,12 +62,11 @@ class EnvironmentService:
 
     def _build_environment_entity(self, dto: EnvironmentCreate) -> EnvironmentModel:
         """Build Environment entity from DTO."""
-        return EnvironmentModel(
-            uuid=uuid4(),
-            name=dto.name
-        )
+        return EnvironmentModel(uuid=uuid4(), name=dto.name)
 
-    def _serialize_environment_with_clusters(self, environment: EnvironmentModel) -> EnvironmentWithClusters:
+    def _serialize_environment_with_clusters(
+        self, environment: EnvironmentModel
+    ) -> EnvironmentWithClusters:
         """Serialize environment with clusters and settings."""
         return EnvironmentWithClusters(
             uuid=environment.uuid,
@@ -73,10 +76,10 @@ class EnvironmentService:
                 {
                     "key": setting.key,
                     "value": setting.value,
-                    "description": setting.description
+                    "description": setting.description,
                 }
                 for setting in environment.settings
             ],
             created_at=environment.created_at.isoformat(),
-            updated_at=environment.updated_at.isoformat()
+            updated_at=environment.updated_at.isoformat(),
         )

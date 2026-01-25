@@ -1,4 +1,3 @@
-from fastapi import HTTPException
 from uuid import UUID
 from app.applications.infra.application_repository import ApplicationRepository
 from app.applications.api.application_dto import ApplicationCreate, ApplicationUpdate
@@ -6,18 +5,18 @@ from app.applications.api.application_dto import ApplicationCreate, ApplicationU
 
 class ApplicationNotFoundError(Exception):
     """Raised when application is not found."""
+
     pass
 
 
 class ApplicationNameAlreadyExistsError(Exception):
     """Raised when application name already exists."""
+
     pass
 
 
 def validate_application_name_uniqueness(
-    repository: ApplicationRepository,
-    name: str,
-    exclude_uuid: UUID = None
+    repository: ApplicationRepository, name: str, exclude_uuid: UUID = None
 ) -> None:
     """
     Validate that application name is unique.
@@ -25,18 +24,19 @@ def validate_application_name_uniqueness(
     """
     existing_application = None
     if exclude_uuid:
-        existing_application = repository.find_by_name_excluding_uuid(name, exclude_uuid)
+        existing_application = repository.find_by_name_excluding_uuid(
+            name, exclude_uuid
+        )
     else:
         existing_application = repository.find_by_name(name)
 
     if existing_application:
-        raise ApplicationNameAlreadyExistsError(f"Application with name '{name}' already exists")
+        raise ApplicationNameAlreadyExistsError(
+            f"Application with name '{name}' already exists"
+        )
 
 
-def validate_application_exists(
-    repository: ApplicationRepository,
-    uuid: UUID
-) -> None:
+def validate_application_exists(repository: ApplicationRepository, uuid: UUID) -> None:
     """
     Validate that application exists.
     Raises ApplicationNotFoundError if application not found.

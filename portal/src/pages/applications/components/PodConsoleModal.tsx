@@ -4,7 +4,7 @@ import type { PodCommandResponse } from '../../../features/components'
 
 interface PodConsoleModalProps {
   isOpen: boolean
-  podName: string | null
+  podName: string | undefined
   commandOutput: Array<{ command: string; response: PodCommandResponse; timestamp: Date }>
   currentCommand: string
   isExecuting: boolean

@@ -3,7 +3,7 @@ import { useWebappPods, useDeleteWebappPod, useWebappPodLogs, useExecWebappPodCo
 import type { PodCommandResponse } from '../../../features/components'
 
 export const useWebappDetail = (componentUuid: string | undefined, refreshInterval: number) => {
-  const [selectedPod, setSelectedPod] = useState<string | null>(null)
+  const [selectedPod, setSelectedPod] = useState<string | undefined>(undefined)
   const [isLogsModalOpen, setIsLogsModalOpen] = useState(false)
   const [isConsoleModalOpen, setIsConsoleModalOpen] = useState(false)
   const [isLiveTail, setIsLiveTail] = useState(true)
@@ -64,13 +64,13 @@ export const useWebappDetail = (componentUuid: string | undefined, refreshInterv
 
   const handleCloseLogsModal = () => {
     setIsLogsModalOpen(false)
-    setSelectedPod(null)
+    setSelectedPod(undefined)
     setIsLiveTail(true)
   }
 
   const handleCloseConsoleModal = () => {
     setIsConsoleModalOpen(false)
-    setSelectedPod(null)
+    setSelectedPod(undefined)
     setCommandOutput([])
     setCommandHistory([])
     setCurrentCommand('')

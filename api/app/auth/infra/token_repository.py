@@ -11,7 +11,9 @@ class TokenRepository:
     def __init__(self, database_session: Session):
         self.db = database_session
 
-    def find_all(self, skip: int = 0, limit: int = 100, search: Optional[str] = None) -> List[TokenModel]:
+    def find_all(
+        self, skip: int = 0, limit: int = 100, search: Optional[str] = None
+    ) -> List[TokenModel]:
         """Find all tokens with optional search."""
         query = self.db.query(TokenModel)
 
@@ -19,15 +21,21 @@ class TokenRepository:
             search_term = f"%{search}%"
             query = query.filter(TokenModel.name.ilike(search_term))
 
-        return query.order_by(TokenModel.created_at.desc()).offset(skip).limit(limit).all()
+        return (
+            query.order_by(TokenModel.created_at.desc()).offset(skip).limit(limit).all()
+        )
 
     def find_by_uuid(self, token_uuid: str) -> Optional[TokenModel]:
         """Find token by UUID."""
-        return self.db.query(TokenModel).filter(TokenModel.uuid == UUID(token_uuid)).first()
+        return (
+            self.db.query(TokenModel)
+            .filter(TokenModel.uuid == UUID(token_uuid))
+            .first()
+        )
 
     def find_active_tokens(self) -> List[TokenModel]:
         """Find all active tokens."""
-        return self.db.query(TokenModel).filter(TokenModel.is_active == True).all()
+        return self.db.query(TokenModel).filter(TokenModel.is_active.is_(True)).all()
 
     def create(self, token: TokenModel) -> TokenModel:
         """Create a new token."""

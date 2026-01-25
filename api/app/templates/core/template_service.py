@@ -8,7 +8,6 @@ from app.templates.core.template_validators import (
     validate_template_update_dto,
     validate_template_exists,
     validate_template_can_be_deleted,
-    TemplateNotFoundError
 )
 
 
@@ -52,10 +51,7 @@ class TemplateService:
         return self.repository.find_by_uuid(uuid)
 
     def get_templates(
-        self,
-        skip: int = 0,
-        limit: int = 100,
-        category: Optional[str] = None
+        self, skip: int = 0, limit: int = 100, category: Optional[str] = None
     ) -> List[Template]:
         """Get all templates, optionally filtered by category."""
         return self.repository.find_all(skip=skip, limit=limit, category=category)
