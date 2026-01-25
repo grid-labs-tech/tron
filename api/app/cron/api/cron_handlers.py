@@ -99,6 +99,61 @@ def delete_cron(
         raise HTTPException(status_code=400, detail=str(e))
 
 
+@router.get("/{uuid}/secrets")
+def get_cron_secrets(
+    uuid: UUID,
+    service: CronService = Depends(get_cron_service),
+    current_user: User = Depends(require_role([UserRole.ADMIN])),
+):
+    """
+    Get decrypted secrets for a cron.
+    Admin only endpoint - returns plaintext secret values.
+    
+    Security: This endpoint is protected by admin role requirement.
+    All access is logged for audit purposes.
+    """
+    import logging
+    from app.shared.crypto import decrypt_secret
+
+    logger = logging.getLogger(__name__)
+
+    try:
+        cron = service.get_cron_raw(uuid)
+        if not cron:
+            raise HTTPException(status_code=404, detail="Cron not found")
+
+        # Audit log: Admin accessing secrets
+        logger.info(
+            f"SECURITY_AUDIT: Admin '{current_user.email}' accessed secrets "
+            f"for cron '{cron.name}' (uuid: {uuid})"
+        )
+
+        settings = cron.settings or {}
+        encrypted_secrets = settings.get("secrets", [])
+
+        decrypted_secrets = []
+        for secret in encrypted_secrets:
+            try:
+                decrypted_value = decrypt_secret(secret.get("value", ""))
+                decrypted_secrets.append({
+                    "key": secret.get("key", ""),
+                    "value": decrypted_value
+                })
+            except Exception as e:
+                logger.warning(
+                    f"SECURITY_AUDIT: Failed to decrypt secret '{secret.get('key')}' "
+                    f"for cron {uuid}: {type(e).__name__}"
+                )
+                decrypted_secrets.append({
+                    "key": secret.get("key", ""),
+                    "value": "********"
+                })
+
+        return {"secrets": decrypted_secrets}
+    except (CronNotFoundError, CronNotCronTypeError) as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
+
 @router.get("/{uuid}/jobs", response_model=list[CronJob])
 def get_cron_jobs(
     uuid: UUID,

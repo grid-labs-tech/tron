@@ -8,11 +8,14 @@ import { ComponentForm, type ComponentFormData, getDefaultWebappSettings, getDef
 import { Breadcrumbs } from '../../components/Breadcrumbs'
 import { PageHeader } from '../../components/PageHeader'
 import DataTable from '../../components/DataTable'
+import { useAuth } from '../../contexts/AuthContext'
 
 function InstanceDetail() {
   const { uuid: applicationUuid, instanceUuid } = useParams<{ uuid: string; instanceUuid: string }>()
   const navigate = useNavigate()
   const queryClient = useQueryClient()
+  const { user } = useAuth()
+  const isAdmin = user?.role === 'admin'
 
   const { data: instance, isLoading: isLoadingInstance } = useQuery({
     queryKey: ['instances', instanceUuid],
@@ -965,6 +968,8 @@ function InstanceDetail() {
                     hasGatewayApi={hasGatewayApi}
                     gatewayResources={gatewayResources}
                     gatewayReference={gatewayReference}
+                    isAdmin={isAdmin}
+                    componentUuid={editingComponentUuid || undefined}
                     title={editingComponentUuid
                       ? `Edit ${component.type.charAt(0).toUpperCase() + component.type.slice(1)}`
                       : `Add ${component.type.charAt(0).toUpperCase() + component.type.slice(1)}`}
