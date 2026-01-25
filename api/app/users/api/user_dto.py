@@ -1,12 +1,22 @@
-from pydantic import BaseModel, EmailStr, ConfigDict, model_validator
+from pydantic import BaseModel, ConfigDict, model_validator, field_validator
 from typing import Optional, Any
 from datetime import datetime
 from uuid import UUID
 
+from app.shared.utils.validators import (
+    validate_email_permissive,
+    validate_email_optional,
+)
+
 
 class UserBase(BaseModel):
-    email: EmailStr
+    email: str
     full_name: Optional[str] = None
+
+    @field_validator("email")
+    @classmethod
+    def validate_email(cls, v: str) -> str:
+        return validate_email_permissive(v)
 
 
 class UserCreate(UserBase):
@@ -14,11 +24,16 @@ class UserCreate(UserBase):
 
 
 class UserUpdate(BaseModel):
-    email: Optional[EmailStr] = None
+    email: Optional[str] = None
     full_name: Optional[str] = None
     password: Optional[str] = None
     is_active: Optional[bool] = None
     role: Optional[str] = None
+
+    @field_validator("email")
+    @classmethod
+    def validate_email(cls, v: Optional[str]) -> Optional[str]:
+        return validate_email_optional(v)
 
 
 class UserResponse(UserBase):
