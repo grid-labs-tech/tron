@@ -8,6 +8,8 @@ class ClusterBase(BaseModel):
     name: str
     api_address: str
     token: str
+    gateway_namespace: Optional[str] = None
+    gateway_name: Optional[str] = None
 
 
 class ClusterCreate(ClusterBase):

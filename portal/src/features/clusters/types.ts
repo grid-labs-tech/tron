@@ -38,4 +38,6 @@ export interface ClusterCreate {
   api_address: string
   token: string
   environment_uuid: string
+  gateway_namespace?: string
+  gateway_name?: string
 }

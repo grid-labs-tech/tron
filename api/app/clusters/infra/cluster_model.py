@@ -19,6 +19,10 @@ class Cluster(Base):
     api_address = Column(String, unique=True, nullable=False)
     token = Column(String, nullable=False)
 
+    # Optional Gateway configuration (if not set, auto-discovery is used)
+    gateway_namespace = Column(String, nullable=True)
+    gateway_name = Column(String, nullable=True)
+
     environment_id = Column(Integer, ForeignKey("environments.id"), nullable=False)
     environment = relationship("Environment", back_populates="clusters")
 

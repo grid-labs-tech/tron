@@ -19,6 +19,8 @@ function Clusters() {
     api_address: '',
     token: '',
     environment_uuid: '',
+    gateway_namespace: '',
+    gateway_name: '',
   })
 
   const createMutation = useCreateCluster()
@@ -31,7 +33,7 @@ function Clusters() {
       setNotification({ type: 'success', message: 'Cluster created successfully' })
       setIsOpen(false)
       setEditingCluster(null)
-      setFormData({ name: '', api_address: '', token: '', environment_uuid: '' })
+      setFormData({ name: '', api_address: '', token: '', environment_uuid: '', gateway_namespace: '', gateway_name: '' })
       setTimeout(() => setNotification(null), 5000)
       createMutation.reset()
     }
@@ -54,7 +56,7 @@ function Clusters() {
       setNotification({ type: 'success', message: 'Cluster updated successfully' })
       setIsOpen(false)
       setEditingCluster(null)
-      setFormData({ name: '', api_address: '', token: '', environment_uuid: '' })
+      setFormData({ name: '', api_address: '', token: '', environment_uuid: '', gateway_namespace: '', gateway_name: '' })
       setTimeout(() => setNotification(null), 5000)
       updateMutation.reset()
     }
@@ -113,10 +115,17 @@ function Clusters() {
         api_address: formData.api_address,
         token: formData.token,
         environment_uuid: formData.environment_uuid,
+        gateway_namespace: formData.gateway_namespace || undefined,
+        gateway_name: formData.gateway_name || undefined,
       }
       updateMutation.mutate({ uuid: editingCluster.uuid, data: updateData })
     } else {
-      createMutation.mutate(formData)
+      const createData: ClusterCreate = {
+        ...formData,
+        gateway_namespace: formData.gateway_namespace || undefined,
+        gateway_name: formData.gateway_name || undefined,
+      }
+      createMutation.mutate(createData)
     }
   }
 
@@ -128,6 +137,8 @@ function Clusters() {
       api_address: cluster.api_address,
       token: '', // Token is not returned by API for security
       environment_uuid: environmentUuid,
+      gateway_namespace: cluster.gateway?.reference?.namespace || '',
+      gateway_name: cluster.gateway?.reference?.name || '',
     })
     setIsOpen(true)
   }
@@ -186,7 +197,7 @@ function Clusters() {
         <button
           onClick={() => {
             setEditingCluster(null)
-            setFormData({ name: '', api_address: '', token: '', environment_uuid: '' })
+            setFormData({ name: '', api_address: '', token: '', environment_uuid: '', gateway_namespace: '', gateway_name: '' })
             setIsOpen(true)
           }}
           className="btn-primary flex items-center gap-2"
@@ -399,6 +410,40 @@ function Clusters() {
                   </p>
                 )}
               </div>
+
+              {/* Gateway Configuration (Optional) */}
+              <div className="border-t border-slate-200 pt-4 mt-4">
+                <div className="flex items-center gap-2 mb-3">
+                  <h3 className="text-sm font-medium text-slate-700">Gateway Configuration</h3>
+                  <span className="text-xs text-slate-400">(Optional)</span>
+                </div>
+                <p className="text-xs text-slate-500 mb-3">
+                  Leave empty to auto-detect the Gateway. Specify values to use a specific Gateway when multiple controllers are installed.
+                </p>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1.5">Namespace</label>
+                    <input
+                      type="text"
+                      value={formData.gateway_namespace || ''}
+                      onChange={(e) => setFormData({ ...formData, gateway_namespace: e.target.value })}
+                      className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500/50 focus:border-blue-400 transition-all text-sm"
+                      placeholder="kube-system"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1.5">Gateway Name</label>
+                    <input
+                      type="text"
+                      value={formData.gateway_name || ''}
+                      onChange={(e) => setFormData({ ...formData, gateway_name: e.target.value })}
+                      className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500/50 focus:border-blue-400 transition-all text-sm"
+                      placeholder="gateway"
+                    />
+                  </div>
+                </div>
+              </div>
+
               <div className="flex justify-end gap-2.5 pt-3">
                 <button
                   type="button"
