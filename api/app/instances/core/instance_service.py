@@ -13,39 +13,39 @@ from app.instances.core.instance_validators import (
     validate_application_exists,
     validate_environment_exists,
     InstanceNotFoundError,
-    InstanceAlreadyExistsError,
-    ApplicationNotFoundError,
-    EnvironmentNotFoundError
 )
-from app.webapps.infra.application_component_model import ApplicationComponent as ApplicationComponentModel, WebappType
-from app.shared.infra.cluster_instance_model import ClusterInstance as ClusterInstanceModel
+from app.webapps.infra.application_component_model import (
+    ApplicationComponent as ApplicationComponentModel,
+    WebappType,
+)
 from app.shared.core.application_component_helpers import (
     get_or_create_cluster_instance,
-    get_cluster_for_instance,
     delete_component,
-    delete_from_kubernetes_safe
+    delete_from_kubernetes_safe,
 )
 from app.shared.serializers.serializers import serialize_settings
 from app.shared.k8s.cluster_selection import ClusterSelectionService
 from app.k8s.client import K8sClient
 from app.webapps.core.webapp_kubernetes_service import (
     upsert_to_kubernetes as upsert_webapp_to_k8s,
-    delete_from_kubernetes as delete_webapp_from_k8s
+    delete_from_kubernetes as delete_webapp_from_k8s,
 )
 from app.workers.core.worker_kubernetes_service import (
     upsert_to_kubernetes as upsert_worker_to_k8s,
-    delete_from_kubernetes as delete_worker_from_k8s
+    delete_from_kubernetes as delete_worker_from_k8s,
 )
 from app.cron.core.cron_kubernetes_service import (
     upsert_to_kubernetes as upsert_cron_to_k8s,
-    delete_from_kubernetes as delete_cron_from_k8s
+    delete_from_kubernetes as delete_cron_from_k8s,
 )
 
 
 class InstanceService:
     """Business logic for instances. No direct database access."""
 
-    def __init__(self, repository: InstanceRepository, database_session: Session = None):
+    def __init__(
+        self, repository: InstanceRepository, database_session: Session = None
+    ):
         self.repository = repository
         self.db = database_session
 
@@ -61,11 +61,7 @@ class InstanceService:
         environment = self.repository.find_environment_by_uuid(dto.environment_uuid)
 
         # Validate uniqueness
-        validate_instance_uniqueness(
-            self.repository,
-            application.id,
-            environment.id
-        )
+        validate_instance_uniqueness(self.repository, application.id, environment.id)
 
         instance = self._build_instance_entity(dto, application.id, environment.id)
         return self.repository.create(instance)
@@ -112,30 +108,42 @@ class InstanceService:
             raise InstanceNotFoundError(f"Instance with UUID {uuid} not found")
 
         # Delete all components first
-        components = instance.components if hasattr(instance, 'components') else []
+        components = instance.components if hasattr(instance, "components") else []
 
         for component in components:
             repository = None
             component_type = None
             try:
                 # Get component type
-                component_type = component.type.value if hasattr(component.type, 'value') else str(component.type)
+                component_type = (
+                    component.type.value
+                    if hasattr(component.type, "value")
+                    else str(component.type)
+                )
 
                 # Get appropriate repository
                 repository = self._get_component_repository(component)
 
                 # Get appropriate delete function
-                if component_type == 'webapp':
-                    delete_from_k8s_func = lambda c, cl: delete_from_kubernetes_safe(
-                        c, cl, self.db, repository, delete_webapp_from_k8s, 'webapp'
+                def make_delete_func(delete_k8s_func, comp_type):
+                    def delete_func(c, cl):
+                        return delete_from_kubernetes_safe(
+                            c, cl, self.db, repository, delete_k8s_func, comp_type
+                        )
+
+                    return delete_func
+
+                if component_type == "webapp":
+                    delete_from_k8s_func = make_delete_func(
+                        delete_webapp_from_k8s, "webapp"
                     )
-                elif component_type == 'worker':
-                    delete_from_k8s_func = lambda c, cl: delete_from_kubernetes_safe(
-                        c, cl, self.db, repository, delete_worker_from_k8s, 'worker'
+                elif component_type == "worker":
+                    delete_from_k8s_func = make_delete_func(
+                        delete_worker_from_k8s, "worker"
                     )
-                elif component_type == 'cron':
-                    delete_from_k8s_func = lambda c, cl: delete_from_kubernetes_safe(
-                        c, cl, self.db, repository, delete_cron_from_k8s, 'cron'
+                elif component_type == "cron":
+                    delete_from_k8s_func = make_delete_func(
+                        delete_cron_from_k8s, "cron"
                     )
                 else:
                     # Unknown component type, just delete from database
@@ -144,14 +152,18 @@ class InstanceService:
                     continue
 
                 # Delete component (handles Kubernetes cleanup and database deletion)
-                delete_component(component, repository, self.db, delete_from_k8s_func, component_type)
+                delete_component(
+                    component, repository, self.db, delete_from_k8s_func, component_type
+                )
                 self.db.commit()
 
             except Exception as e:
                 # Log error and try to delete from database anyway
-                component_name = getattr(component, 'name', 'unknown')
+                component_name = getattr(component, "name", "unknown")
                 error_msg = str(e)
-                print(f"Error deleting component '{component_name}' (type: {component_type or 'unknown'}): {error_msg}")
+                print(
+                    f"Error deleting component '{component_name}' (type: {component_type or 'unknown'}): {error_msg}"
+                )
                 # Try to delete from database anyway
                 try:
                     if repository is None:
@@ -163,7 +175,9 @@ class InstanceService:
                     db_error_msg = str(db_error)
                     print(f"Error deleting component from database: {db_error_msg}")
                     # Re-raise the original error if database deletion also fails
-                    raise Exception(f"Failed to delete component '{component_name}': {error_msg}. Database error: {db_error_msg}")
+                    raise Exception(
+                        f"Failed to delete component '{component_name}': {error_msg}. Database error: {db_error_msg}"
+                    )
 
         # Delete instance
         try:
@@ -191,12 +205,14 @@ class InstanceService:
             cluster = ClusterSelectionService.get_cluster_with_least_load_or_raise(
                 self.db, instance.environment_id, instance.environment.name
             )
-        except Exception as e:
+        except Exception:
             # If no cluster available, return empty list
             return []
 
         # Get application name for namespace
-        application_name = instance.application.name if instance.application else "default"
+        application_name = (
+            instance.application.name if instance.application else "default"
+        )
 
         # Get events from Kubernetes
         try:
@@ -206,26 +222,30 @@ class InstanceService:
             # Format events to match KubernetesEvent DTO
             formatted_events = []
             for event in events:
-                formatted_events.append({
-                    "name": event.get("name", ""),
-                    "namespace": event.get("namespace", application_name),
-                    "type": event.get("type", "Unknown"),
-                    "reason": event.get("reason", "Unknown"),
-                    "message": event.get("message", ""),
-                    "involved_object": {
-                        "kind": event.get("involved_object", {}).get("kind"),
-                        "name": event.get("involved_object", {}).get("name"),
-                        "namespace": event.get("involved_object", {}).get("namespace"),
-                    },
-                    "source": {
-                        "component": event.get("source", {}).get("component"),
-                        "host": event.get("source", {}).get("host"),
-                    },
-                    "first_timestamp": event.get("first_timestamp"),
-                    "last_timestamp": event.get("last_timestamp"),
-                    "count": event.get("count", 1),
-                    "age_seconds": event.get("age_seconds", 0),
-                })
+                formatted_events.append(
+                    {
+                        "name": event.get("name", ""),
+                        "namespace": event.get("namespace", application_name),
+                        "type": event.get("type", "Unknown"),
+                        "reason": event.get("reason", "Unknown"),
+                        "message": event.get("message", ""),
+                        "involved_object": {
+                            "kind": event.get("involved_object", {}).get("kind"),
+                            "name": event.get("involved_object", {}).get("name"),
+                            "namespace": event.get("involved_object", {}).get(
+                                "namespace"
+                            ),
+                        },
+                        "source": {
+                            "component": event.get("source", {}).get("component"),
+                            "host": event.get("source", {}).get("host"),
+                        },
+                        "first_timestamp": event.get("first_timestamp"),
+                        "last_timestamp": event.get("last_timestamp"),
+                        "count": event.get("count", 1),
+                        "age_seconds": event.get("age_seconds", 0),
+                    }
+                )
 
             return formatted_events
         except Exception as e:
@@ -247,9 +267,12 @@ class InstanceService:
 
         # Get settings for the environment
         from app.settings.infra.settings_model import Settings as SettingsModel
-        settings = self.db.query(SettingsModel).filter(
-            SettingsModel.environment_id == instance.environment_id
-        ).first()
+
+        settings = (
+            self.db.query(SettingsModel)
+            .filter(SettingsModel.environment_id == instance.environment_id)
+            .first()
+        )
         settings_serialized = serialize_settings(settings) if settings else {}
 
         synced_components = 0
@@ -264,9 +287,7 @@ class InstanceService:
             try:
                 # Get or create cluster instance
                 cluster_instance = get_or_create_cluster_instance(
-                    self._get_component_repository(component),
-                    self.db,
-                    component
+                    self._get_component_repository(component), self.db, component
                 )
                 cluster = cluster_instance.cluster
 
@@ -283,10 +304,12 @@ class InstanceService:
                 elif component_type == WebappType.cron.value:
                     upsert_func = upsert_cron_to_k8s
                 else:
-                    errors.append({
-                        "component": component.name,
-                        "error": f"Unknown component type: {component_type}"
-                    })
+                    errors.append(
+                        {
+                            "component": component.name,
+                            "error": f"Unknown component type: {component_type}",
+                        }
+                    )
                     continue
 
                 # Deploy to Kubernetes
@@ -298,39 +321,40 @@ class InstanceService:
                 synced_components += 1
             except Exception as e:
                 self.db.rollback()
-                errors.append({
-                    "component": component.name,
-                    "error": str(e)
-                })
+                errors.append({"component": component.name, "error": str(e)})
 
         return {
             "detail": f"Sync completed. {synced_components}/{total_components} components synced.",
             "synced_components": synced_components,
             "total_components": total_components,
-            "errors": errors
+            "errors": errors,
         }
 
     def _get_component_repository(self, component: ApplicationComponentModel):
         """Get appropriate repository for component type."""
-        component_type = component.type.value if hasattr(component.type, 'value') else str(component.type)
+        component_type = (
+            component.type.value
+            if hasattr(component.type, "value")
+            else str(component.type)
+        )
 
-        if component_type == 'webapp':
+        if component_type == "webapp":
             from app.webapps.infra.webapp_repository import WebappRepository
+
             return WebappRepository(self.db)
-        elif component_type == 'worker':
+        elif component_type == "worker":
             from app.workers.infra.worker_repository import WorkerRepository
+
             return WorkerRepository(self.db)
-        elif component_type == 'cron':
+        elif component_type == "cron":
             from app.cron.infra.cron_repository import CronRepository
+
             return CronRepository(self.db)
         else:
             raise ValueError(f"Unknown component type: {component_type}")
 
     def _build_instance_entity(
-        self,
-        dto: InstanceCreate,
-        application_id: int,
-        environment_id: int
+        self, dto: InstanceCreate, application_id: int, environment_id: int
     ) -> InstanceModel:
         """Build Instance entity from DTO."""
         return InstanceModel(
