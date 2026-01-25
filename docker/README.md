@@ -9,6 +9,8 @@ This directory contains Docker Compose configurations for running Tron in differ
 | `docker-compose.yaml` | Development environment with local builds and hot-reload |
 | `docker-compose.prod.yaml` | Production environment with pre-built images from GHCR |
 | `.env.example` | Example environment variables for production |
+| `nginx/nginx.conf` | Nginx configuration for HTTP |
+| `nginx/nginx-ssl.conf` | Nginx configuration for HTTPS with Let's Encrypt |
 
 ## Development Environment
 
@@ -53,39 +55,106 @@ docker-compose down
 
 ## Production Environment
 
-The production environment uses pre-built images from GitHub Container Registry.
+The production environment uses pre-built images from GitHub Container Registry with Nginx as a reverse proxy.
 
-### Quick Start
+### Architecture
+
+```
+                    ┌─────────────┐
+                    │   Internet  │
+                    └──────┬──────┘
+                           │
+                    ┌──────▼──────┐
+                    │    Nginx    │ :80 (HTTP) / :443 (HTTPS)
+                    └──────┬──────┘
+                           │
+              ┌────────────┼────────────┐
+              │            │            │
+       ┌──────▼──────┐  ┌──▼──┐  ┌─────▼─────┐
+       │   Portal    │  │ API │  │  Certbot  │
+       │   (React)   │  │     │  │ (optional)│
+       └─────────────┘  └──┬──┘  └───────────┘
+                           │
+                    ┌──────▼──────┐
+                    │  PostgreSQL │
+                    └─────────────┘
+```
+
+### Quick Start (HTTP)
 
 ```bash
+cd docker
+
 # 1. Create environment file
 cp .env.example .env
 
 # 2. Edit .env with your production values
 #    - Set a strong DB_PASSWORD
 #    - Set a secure SECRET_KEY (minimum 32 characters)
-#    - Configure CORS_ORIGINS for your domain
 
 # 3. Start all services
 docker compose -f docker-compose.prod.yaml --profile full up -d
 
 # 4. Check status
 docker compose -f docker-compose.prod.yaml ps
+
+# 5. Access the application
+#    - Portal: http://localhost
+#    - API: http://localhost/api/
 ```
+
+### HTTPS with Let's Encrypt
+
+For production deployments with HTTPS:
+
+```bash
+cd docker
+
+# 1. Create environment file
+cp .env.example .env
+
+# 2. Edit .env with your domain and email
+#    - DOMAIN=your-domain.com
+#    - CERTBOT_EMAIL=admin@your-domain.com
+#    - CORS_ORIGINS=https://your-domain.com
+
+# 3. Start services with SSL profile
+docker compose -f docker-compose.prod.yaml --profile full --profile ssl up -d
+
+# 4. First time setup: wait for certbot to obtain certificate
+docker compose -f docker-compose.prod.yaml logs certbot
+
+# 5. Restart nginx to load the certificate
+docker compose -f docker-compose.prod.yaml restart nginx-ssl
+
+# 6. Access the application
+#    - Portal: https://your-domain.com
+#    - API: https://your-domain.com/api/
+```
+
+**Note:** When using `--profile ssl`, use `nginx-ssl` instead of `nginx` for commands.
 
 ### Production Profiles
 
-Use profiles to control which services to start:
+| Profile | Services | Use Case |
+|---------|----------|----------|
+| `db` | PostgreSQL | External app servers |
+| `app` | API, Portal, Nginx | External database |
+| `full` | All (db + app) | Complete deployment |
+| `ssl` | Nginx-SSL, Certbot | HTTPS with Let's Encrypt |
 
 ```bash
-# Database only (useful when using external app servers)
+# HTTP deployment (full stack)
+docker compose -f docker-compose.prod.yaml --profile full up -d
+
+# HTTPS deployment (full stack + SSL)
+docker compose -f docker-compose.prod.yaml --profile full --profile ssl up -d
+
+# Database only
 docker compose -f docker-compose.prod.yaml --profile db up -d
 
-# Application only (useful when using external database)
+# Application only (external DB)
 docker compose -f docker-compose.prod.yaml --profile app up -d
-
-# Full stack (database + application)
-docker compose -f docker-compose.prod.yaml --profile full up -d
 ```
 
 ### Environment Variables
@@ -97,10 +166,12 @@ docker compose -f docker-compose.prod.yaml --profile full up -d
 | `DB_USER` | No | `tron` | Database username |
 | `API_IMAGE_TAG` | No | `latest` | API Docker image tag |
 | `PORTAL_IMAGE_TAG` | No | `latest` | Portal Docker image tag |
-| `API_PORT` | No | `8000` | Host port for API |
-| `PORTAL_PORT` | No | `80` | Host port for Portal |
+| `HTTP_PORT` | No | `80` | Host port for HTTP |
+| `HTTPS_PORT` | No | `443` | Host port for HTTPS |
 | `CORS_ORIGINS` | No | `http://localhost` | Allowed CORS origins |
-| `API_URL` | No | `http://api:8000` | API URL for Portal |
+| `API_URL` | No | `/api` | API URL for Portal |
+| `DOMAIN` | SSL only | - | Domain for SSL certificate |
+| `CERTBOT_EMAIL` | SSL only | - | Email for Let's Encrypt |
 
 ### Using Specific Versions
 
@@ -108,14 +179,14 @@ For production stability, always use specific image versions:
 
 ```bash
 # In .env file
-API_IMAGE_TAG=0.2.0
-PORTAL_IMAGE_TAG=0.2.0
+API_IMAGE_TAG=0.3.0
+PORTAL_IMAGE_TAG=0.3.0
 ```
 
 Or via command line:
 
 ```bash
-API_IMAGE_TAG=0.2.0 PORTAL_IMAGE_TAG=0.2.0 \
+API_IMAGE_TAG=0.3.0 PORTAL_IMAGE_TAG=0.3.0 \
   docker compose -f docker-compose.prod.yaml --profile full up -d
 ```
 
@@ -124,11 +195,18 @@ API_IMAGE_TAG=0.2.0 PORTAL_IMAGE_TAG=0.2.0 \
 Images are published to GitHub Container Registry:
 
 - `ghcr.io/grid-labs-tech/tron-api:latest`
-- `ghcr.io/grid-labs-tech/tron-api:0.2.0`
-- `ghcr.io/grid-labs-tech/tron-api:0.2`
+- `ghcr.io/grid-labs-tech/tron-api:0.3.0`
 - `ghcr.io/grid-labs-tech/tron-portal:latest`
-- `ghcr.io/grid-labs-tech/tron-portal:0.2.0`
-- `ghcr.io/grid-labs-tech/tron-portal:0.2`
+- `ghcr.io/grid-labs-tech/tron-portal:0.3.0`
+
+### SSL Certificate Renewal
+
+The `certbot-renew` service automatically renews certificates every 12 hours. To manually renew:
+
+```bash
+docker compose -f docker-compose.prod.yaml run --rm certbot renew
+docker compose -f docker-compose.prod.yaml restart nginx-ssl
+```
 
 ## Kubernetes (K3s)
 
@@ -151,10 +229,10 @@ kubectl get nodes
 
 ```bash
 # Check database logs
-docker compose logs database
+docker compose -f docker-compose.prod.yaml logs database
 
 # Verify database is healthy
-docker compose exec database pg_isready -U tron -d api
+docker compose -f docker-compose.prod.yaml exec database pg_isready -U tron -d api
 ```
 
 ### API not starting
@@ -168,12 +246,40 @@ docker compose -f docker-compose.prod.yaml --profile db up -d
 docker compose -f docker-compose.prod.yaml run --rm api-migrate
 ```
 
+### Nginx issues
+
+```bash
+# Check nginx logs
+docker compose -f docker-compose.prod.yaml logs nginx
+
+# Test nginx configuration
+docker compose -f docker-compose.prod.yaml exec nginx nginx -t
+```
+
+### SSL Certificate issues
+
+```bash
+# Check certbot logs
+docker compose -f docker-compose.prod.yaml logs certbot
+
+# Verify certificate exists
+docker compose -f docker-compose.prod.yaml exec nginx-ssl ls -la /etc/letsencrypt/live/
+
+# Force certificate renewal
+docker compose -f docker-compose.prod.yaml run --rm certbot certonly --force-renewal \
+  --webroot -w /var/www/certbot -d your-domain.com
+```
+
 ### Reset everything
 
 ```bash
 # Development
 docker compose down -v
 
-# Production
-docker compose -f docker-compose.prod.yaml down -v
+# Production (preserves SSL certificates)
+docker compose -f docker-compose.prod.yaml down -v --remove-orphans
+
+# Production (including SSL certificates)
+docker compose -f docker-compose.prod.yaml down -v --remove-orphans
+docker volume rm docker_certbot_certs docker_certbot_webroot
 ```
