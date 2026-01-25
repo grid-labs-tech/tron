@@ -1,7 +1,7 @@
 from uuid import UUID
 from app.applications.infra.application_repository import ApplicationRepository
 from app.applications.api.application_dto import ApplicationCreate, ApplicationUpdate
-from app.shared.config import is_namespace_protected, ProtectedNamespaceError
+from app.shared.config import is_namespace_protected
 
 
 class ApplicationNotFoundError(Exception):
