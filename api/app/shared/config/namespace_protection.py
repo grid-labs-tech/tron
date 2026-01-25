@@ -3,14 +3,16 @@ Namespace protection and naming configuration.
 
 This module provides:
 1. Configuration for protected namespaces that cannot be used or deleted
-2. Namespace naming convention with configurable prefix (default: tron-ns-)
+2. Namespace naming convention with fixed prefix (tron-ns-)
+3. Hardcoded protection to prevent deletion of non-Tron namespaces
 """
 
 import os
 from typing import Set
 
-# Default namespace prefix for all Tron-managed namespaces
-DEFAULT_NAMESPACE_PREFIX = "tron-ns-"
+# Fixed namespace prefix for all Tron-managed namespaces
+# This is intentionally NOT configurable for security reasons
+TRON_NAMESPACE_PREFIX = "tron-ns-"
 
 # Default Kubernetes system namespaces that should always be protected
 DEFAULT_PROTECTED_NAMESPACES = {
@@ -25,21 +27,23 @@ def get_namespace_prefix() -> str:
     """
     Get the namespace prefix for Tron-managed namespaces.
 
-    Configurable via TRON_NAMESPACE_PREFIX environment variable.
-    Default: "tron-ns-"
+    This is a fixed value (tron-ns-) and is NOT configurable
+    for security reasons.
 
     Returns:
         The namespace prefix string
     """
-    return os.getenv("TRON_NAMESPACE_PREFIX", DEFAULT_NAMESPACE_PREFIX)
+    return TRON_NAMESPACE_PREFIX
 
 
 def get_namespace_for_application(application_name: str) -> str:
     """
     Generate the Kubernetes namespace name for an application.
 
-    All Tron-managed namespaces use a configurable prefix to avoid
-    conflicts with existing namespaces in the cluster.
+    All Tron-managed namespaces use the fixed prefix 'tron-ns-' to:
+    - Avoid conflicts with existing namespaces in the cluster
+    - Ensure Tron can only manage its own namespaces
+    - Prevent accidental deletion of system or user namespaces
 
     Args:
         application_name: The application name
@@ -47,8 +51,7 @@ def get_namespace_for_application(application_name: str) -> str:
     Returns:
         The full namespace name (e.g., "tron-ns-my-app")
     """
-    prefix = get_namespace_prefix()
-    return f"{prefix}{application_name}"
+    return f"{TRON_NAMESPACE_PREFIX}{application_name}"
 
 
 def get_protected_namespaces() -> Set[str]:
@@ -92,7 +95,10 @@ def is_namespace_protected(namespace: str) -> bool:
 
 def is_tron_managed_namespace(namespace: str) -> bool:
     """
-    Check if a namespace is managed by Tron (has the Tron prefix).
+    Check if a namespace is managed by Tron (has the tron-ns- prefix).
+
+    This is a critical security check - Tron can ONLY delete namespaces
+    that it created (i.e., namespaces with the tron-ns- prefix).
 
     Args:
         namespace: The namespace name to check
@@ -100,8 +106,7 @@ def is_tron_managed_namespace(namespace: str) -> bool:
     Returns:
         True if the namespace is managed by Tron, False otherwise
     """
-    prefix = get_namespace_prefix()
-    return namespace.startswith(prefix)
+    return namespace.startswith(TRON_NAMESPACE_PREFIX)
 
 
 class ProtectedNamespaceError(Exception):
@@ -114,5 +119,17 @@ class ProtectedNamespaceError(Exception):
         self.message = (
             f"Cannot {operation} namespace '{namespace}': it is a protected namespace. "
             f"Protected namespaces: {protected_list}"
+        )
+        super().__init__(self.message)
+
+
+class NotTronManagedNamespaceError(Exception):
+    """Raised when trying to delete a namespace not managed by Tron."""
+
+    def __init__(self, namespace: str):
+        self.namespace = namespace
+        self.message = (
+            f"Cannot delete namespace '{namespace}': it is not managed by Tron. "
+            f"Tron can only delete namespaces with the '{TRON_NAMESPACE_PREFIX}' prefix."
         )
         super().__init__(self.message)

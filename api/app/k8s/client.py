@@ -181,14 +181,27 @@ class K8sClient:
         Delete a namespace from Kubernetes.
         When a namespace is deleted, all resources within it are automatically deleted.
 
-        Protected namespaces cannot be deleted to prevent accidental self-deletion
-        or deletion of critical Kubernetes system namespaces.
-        """
-        from app.shared.config import is_namespace_protected, ProtectedNamespaceError
+        SECURITY: This method has TWO layers of protection:
+        1. Protected namespaces (kube-system, etc.) cannot be deleted
+        2. Only namespaces with 'tron-ns-' prefix can be deleted (hardcoded)
 
-        # Check if namespace is protected
+        This ensures Tron can NEVER delete namespaces it didn't create.
+        """
+        from app.shared.config import (
+            is_namespace_protected,
+            is_tron_managed_namespace,
+            ProtectedNamespaceError,
+            NotTronManagedNamespaceError,
+        )
+
+        # SECURITY CHECK 1: Protected namespaces cannot be deleted
         if is_namespace_protected(namespace_name):
             raise ProtectedNamespaceError(namespace_name, "delete")
+
+        # SECURITY CHECK 2: Only Tron-managed namespaces (tron-ns-*) can be deleted
+        # This is a HARDCODED protection - Tron can NEVER delete external namespaces
+        if not is_tron_managed_namespace(namespace_name):
+            raise NotTronManagedNamespaceError(namespace_name)
 
         v1 = client.CoreV1Api(self.api_client)
         try:
