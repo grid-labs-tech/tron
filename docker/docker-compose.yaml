@@ -23,11 +23,19 @@ x-env-api: &shared_env_api
 
 services:
   database:
-    image: postgres:14.1
+    image: postgres:16-alpine
     environment:
       - POSTGRES_USER=tron
       - POSTGRES_PASSWORD=tron
       - POSTGRES_MULTIPLE_DATABASES=api,portal
+      - PGDATA=/var/lib/postgresql/data/pgdata
+    command: >
+      postgres
+      -c max_connections=100
+      -c shared_buffers=128MB
+      -c work_mem=4MB
+      -c maintenance_work_mem=64MB
+      -c effective_cache_size=512MB
     ports:
       - "5432:5432"
     volumes:
@@ -35,9 +43,10 @@ services:
       - ${PWD}/docker/db-entrypoint:/docker-entrypoint-initdb.d
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U tron -d api -h localhost"]
-      interval: 3s
-      timeout: 10s
+      interval: 5s
+      timeout: 5s
       retries: 10
+      start_period: 10s
 
   portal:
     build:
