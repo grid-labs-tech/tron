@@ -25,6 +25,8 @@ spec:
       kubernetesIngress:
         publishedService:
           enabled: true
+      kubernetesGateway:
+        enabled: true
     priorityClassName: "system-cluster-critical"
     image:
       repository: "rancher/mirrored-library-traefik"
