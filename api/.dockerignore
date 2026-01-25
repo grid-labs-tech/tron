@@ -13,6 +13,7 @@ build
 htmlcov
 .env
 .venv
+.venv/
 venv/
 ENV/
 env/

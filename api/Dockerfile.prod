@@ -2,6 +2,8 @@ FROM python:3.13-alpine AS builder
 
 ARG _WORKDIR=/app
 
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /bin/uv
+
 WORKDIR ${_WORKDIR}
 
 # Install build dependencies
@@ -16,10 +18,14 @@ RUN apk add --virtual .build-dependencies \
             postgresql-libs \
             postgresql-dev
 
+# Variáveis para otimizar o uv
+ENV UV_COMPILE_BYTECODE=1
+ENV UV_LINK_MODE=copy
+
 # Copy requirements and install dependencies
-COPY requirements.txt /tmp/
-RUN pip install --upgrade pip \
-    && pip install --user --no-cache-dir -r /tmp/requirements.txt
+COPY pyproject.toml uv.lock ./
+
+RUN uv sync --frozen --no-install-project --no-dev
 
 # Production stage
 FROM python:3.13-alpine
@@ -35,12 +41,12 @@ RUN apk add --no-cache \
     curl
 
 # Copy Python packages from builder
-COPY --from=builder /root/.local /root/.local
+COPY --from=builder /app/.venv /app/.venv
 
-# Make sure scripts in .local are usable
-ENV PATH=/root/.local/bin:$PATH
+# Define the PATH to use the venv automatically
+ENV PATH="/app/.venv/bin:$PATH"
 
-# Copy application code
+# Copy the code
 COPY . ${_WORKDIR}
 
 # Create non-root user
