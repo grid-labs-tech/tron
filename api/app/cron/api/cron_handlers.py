@@ -108,7 +108,7 @@ def get_cron_secrets(
     """
     Get decrypted secrets for a cron.
     Admin only endpoint - returns plaintext secret values.
-    
+
     Security: This endpoint is protected by admin role requirement.
     All access is logged for audit purposes.
     """
@@ -135,19 +135,17 @@ def get_cron_secrets(
         for secret in encrypted_secrets:
             try:
                 decrypted_value = decrypt_secret(secret.get("value", ""))
-                decrypted_secrets.append({
-                    "key": secret.get("key", ""),
-                    "value": decrypted_value
-                })
+                decrypted_secrets.append(
+                    {"key": secret.get("key", ""), "value": decrypted_value}
+                )
             except Exception as e:
                 logger.warning(
                     f"SECURITY_AUDIT: Failed to decrypt secret '{secret.get('key')}' "
                     f"for cron {uuid}: {type(e).__name__}"
                 )
-                decrypted_secrets.append({
-                    "key": secret.get("key", ""),
-                    "value": "********"
-                })
+                decrypted_secrets.append(
+                    {"key": secret.get("key", ""), "value": "********"}
+                )
 
         return {"secrets": decrypted_secrets}
     except (CronNotFoundError, CronNotCronTypeError) as e:

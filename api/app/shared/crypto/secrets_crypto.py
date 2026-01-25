@@ -21,7 +21,7 @@ class SecretsKeyNotConfiguredError(Exception):
     def __init__(self):
         super().__init__(
             "TRON_SECRETS_KEY environment variable is not configured. "
-            "Generate a key using: python -c \"from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())\""
+            'Generate a key using: python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"'
         )
 
 

@@ -96,7 +96,9 @@ class InstanceService:
 
     def get_instances(self, skip: int = 0, limit: int = 100) -> List[Instance]:
         """Get all instances."""
-        instances = self.repository.find_all(skip=skip, limit=limit, load_components=True)
+        instances = self.repository.find_all(
+            skip=skip, limit=limit, load_components=True
+        )
         return [self._strip_secrets_from_instance(i) for i in instances]
 
     def _strip_secrets_from_instance(self, instance: InstanceModel) -> InstanceModel:

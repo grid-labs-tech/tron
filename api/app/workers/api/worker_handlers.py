@@ -103,7 +103,7 @@ def get_worker_secrets(
     """
     Get decrypted secrets for a worker.
     Admin only endpoint - returns plaintext secret values.
-    
+
     Security: This endpoint is protected by admin role requirement.
     All access is logged for audit purposes.
     """
@@ -130,19 +130,17 @@ def get_worker_secrets(
         for secret in encrypted_secrets:
             try:
                 decrypted_value = decrypt_secret(secret.get("value", ""))
-                decrypted_secrets.append({
-                    "key": secret.get("key", ""),
-                    "value": decrypted_value
-                })
+                decrypted_secrets.append(
+                    {"key": secret.get("key", ""), "value": decrypted_value}
+                )
             except Exception as e:
                 logger.warning(
                     f"SECURITY_AUDIT: Failed to decrypt secret '{secret.get('key')}' "
                     f"for worker {uuid}: {type(e).__name__}"
                 )
-                decrypted_secrets.append({
-                    "key": secret.get("key", ""),
-                    "value": "********"
-                })
+                decrypted_secrets.append(
+                    {"key": secret.get("key", ""), "value": "********"}
+                )
 
         return {"secrets": decrypted_secrets}
     except (WorkerNotFoundError, WorkerNotWorkerTypeError) as e:

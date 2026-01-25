@@ -71,7 +71,9 @@ class WebappSettings(BaseModel):
     custom_metrics: WebappCustomMetrics
     exposure: WebappExposure
     envs: List[WebappEnvs] = []
-    secrets: List[WebappSecrets] = []  # Encrypted in database, used to create K8s Secrets
+    secrets: List[
+        WebappSecrets
+    ] = []  # Encrypted in database, used to create K8s Secrets
     command: Union[str, List[str], None] = None
     cpu_scaling_threshold: int = 80
     memory_scaling_threshold: int = 80

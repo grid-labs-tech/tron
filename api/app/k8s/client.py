@@ -559,7 +559,10 @@ class K8sClient:
                                 )
 
                                 # Include resourceVersion in document if it exists
-                                if existing_resource and "metadata" in existing_resource:
+                                if (
+                                    existing_resource
+                                    and "metadata" in existing_resource
+                                ):
                                     existing_metadata = existing_resource["metadata"]
                                     if "resourceVersion" in existing_metadata:
                                         if "metadata" not in document:
@@ -612,7 +615,10 @@ class K8sClient:
                                 )
 
                                 # Include resourceVersion in document if it exists
-                                if existing_resource and "metadata" in existing_resource:
+                                if (
+                                    existing_resource
+                                    and "metadata" in existing_resource
+                                ):
                                     existing_metadata = existing_resource["metadata"]
                                     if "resourceVersion" in existing_metadata:
                                         if "metadata" not in document:

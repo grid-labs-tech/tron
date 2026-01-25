@@ -14,7 +14,13 @@ from app.templates.core.component_template_config_service import (
 
 # Path to the shared secrets template
 SECRETS_TEMPLATE_PATH = os.path.join(
-    os.path.dirname(__file__), "..", "..", "k8s", "templates", "shared", "secret.yaml.j2"
+    os.path.dirname(__file__),
+    "..",
+    "..",
+    "k8s",
+    "templates",
+    "shared",
+    "secret.yaml.j2",
 )
 
 
@@ -85,8 +91,10 @@ class KubernetesApplicationComponentManager:
         component_settings = application_component.get("settings", {})
         secrets = component_settings.get("secrets", [])
         if secrets and len(secrets) > 0:
-            secret_payload = KubernetesApplicationComponentManager._render_secrets_template(
-                variables
+            secret_payload = (
+                KubernetesApplicationComponentManager._render_secrets_template(
+                    variables
+                )
             )
             if secret_payload:
                 combined_payloads.append(secret_payload)

@@ -129,7 +129,7 @@ def get_webapp_secrets(
     """
     Get decrypted secrets for a webapp.
     Admin only endpoint - returns plaintext secret values.
-    
+
     Security: This endpoint is protected by admin role requirement.
     All access is logged for audit purposes.
     """
@@ -156,20 +156,18 @@ def get_webapp_secrets(
         for secret in encrypted_secrets:
             try:
                 decrypted_value = decrypt_secret(secret.get("value", ""))
-                decrypted_secrets.append({
-                    "key": secret.get("key", ""),
-                    "value": decrypted_value
-                })
+                decrypted_secrets.append(
+                    {"key": secret.get("key", ""), "value": decrypted_value}
+                )
             except Exception as e:
                 # Log decryption failure (could indicate key rotation issue)
                 logger.warning(
                     f"SECURITY_AUDIT: Failed to decrypt secret '{secret.get('key')}' "
                     f"for webapp {uuid}: {type(e).__name__}"
                 )
-                decrypted_secrets.append({
-                    "key": secret.get("key", ""),
-                    "value": "********"
-                })
+                decrypted_secrets.append(
+                    {"key": secret.get("key", ""), "value": "********"}
+                )
 
         return {"secrets": decrypted_secrets}
     except (WebappNotFoundError, WebappNotWebappTypeError) as e:

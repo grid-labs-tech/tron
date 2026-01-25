@@ -31,7 +31,9 @@ class WorkerAutoscaling(BaseModel):
 class WorkerSettings(BaseModel):
     custom_metrics: WorkerCustomMetrics
     envs: List[WorkerEnvs] = []
-    secrets: List[WorkerSecrets] = []  # Encrypted in database, used to create K8s Secrets
+    secrets: List[
+        WorkerSecrets
+    ] = []  # Encrypted in database, used to create K8s Secrets
     command: Union[str, List[str], None] = None
     cpu: float
     memory: int
