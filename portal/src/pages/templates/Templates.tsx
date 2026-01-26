@@ -43,7 +43,7 @@ const WEBAPP_VARIABLES = {
         port: 'number',
       },
       exposure: {
-        type: 'string (http|tcp|udp)',
+        type: 'string (http/https|tcp|udp)',
         port: 'number',
         visibility: 'string (cluster|private|public)',
       },

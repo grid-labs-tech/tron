@@ -57,7 +57,10 @@ def apply_to_kubernetes(
 
     ensure_namespace_exists(k8s_client, application_name)
 
-    gateway_reference = get_gateway_reference_from_cluster(cluster)
+    # Get visibility from settings to determine which gateway to use
+    visibility = settings_serialized.get("exposure", {}).get("visibility", "private")
+    gateway_reference = get_gateway_reference_from_cluster(cluster, visibility)
+
     kubernetes_payload = build_kubernetes_payload(
         component,
         component_type,

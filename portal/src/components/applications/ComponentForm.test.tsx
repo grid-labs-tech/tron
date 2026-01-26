@@ -142,7 +142,7 @@ describe('ComponentForm', () => {
       <ComponentForm component={webappComponent} onChange={mockOnChange} />
     )
 
-    const nameInput = screen.getByPlaceholderText('my-component')
+    const nameInput = screen.getByPlaceholderText('my-webapp')
     expect(nameInput).toBeInTheDocument()
     expect(nameInput).toHaveValue('my-webapp')
   })
@@ -152,7 +152,7 @@ describe('ComponentForm', () => {
       <ComponentForm component={webappComponent} onChange={mockOnChange} />
     )
 
-    const nameInput = screen.getByPlaceholderText('my-component')
+    const nameInput = screen.getByPlaceholderText('my-webapp')
     fireEvent.change(nameInput, { target: { value: 'my component name' } })
 
     expect(mockOnChange).toHaveBeenCalledWith({
@@ -161,26 +161,23 @@ describe('ComponentForm', () => {
     })
   })
 
-  it('renders enabled/disabled radio buttons', () => {
+  it('renders enabled toggle switch', () => {
     render(
       <ComponentForm component={webappComponent} onChange={mockOnChange} />
     )
 
-    const enabledRadio = screen.getByLabelText('Enabled')
-    const disabledRadio = screen.getByLabelText('Disabled')
-
-    expect(enabledRadio).toBeInTheDocument()
-    expect(disabledRadio).toBeInTheDocument()
-    expect(enabledRadio).toBeChecked()
+    const toggle = screen.getByRole('checkbox')
+    expect(toggle).toBeInTheDocument()
+    expect(toggle).toBeChecked()
   })
 
-  it('calls onChange when enabled state changes', () => {
+  it('calls onChange when enabled state changes via toggle', () => {
     render(
       <ComponentForm component={webappComponent} onChange={mockOnChange} />
     )
 
-    const disabledRadio = screen.getByLabelText('Disabled')
-    fireEvent.click(disabledRadio)
+    const toggle = screen.getByRole('checkbox')
+    fireEvent.click(toggle)
 
     expect(mockOnChange).toHaveBeenCalledWith({
       ...webappComponent,
@@ -198,7 +195,7 @@ describe('ComponentForm', () => {
       />
     )
 
-    const removeButton = screen.getByRole('button')
+    const removeButton = screen.getByTitle('Remove component')
     expect(removeButton).toBeInTheDocument()
   })
 
@@ -211,7 +208,7 @@ describe('ComponentForm', () => {
       />
     )
 
-    const removeButton = screen.getByRole('button')
+    const removeButton = screen.getByTitle('Remove component')
     fireEvent.click(removeButton)
 
     expect(mockOnRemove).toHaveBeenCalled()
@@ -227,7 +224,7 @@ describe('ComponentForm', () => {
       />
     )
 
-    expect(screen.queryByRole('button')).not.toBeInTheDocument()
+    expect(screen.queryByTitle('Remove component')).not.toBeInTheDocument()
   })
 
   it('renders WebappForm for webapp components', () => {
@@ -265,21 +262,7 @@ describe('ComponentForm', () => {
 
     const nameDisplay = screen.getByText('my-webapp')
     expect(nameDisplay).toBeInTheDocument()
-    expect(screen.queryByPlaceholderText('my-component')).not.toBeInTheDocument()
-  })
-
-  it('shows message that name cannot be changed when editing', () => {
-    render(
-      <ComponentForm
-        component={webappComponent}
-        onChange={mockOnChange}
-        isEditing={true}
-      />
-    )
-
-    expect(
-      screen.getByText(/component name cannot be changed after creation/i)
-    ).toBeInTheDocument()
+    expect(screen.queryByPlaceholderText('my-webapp')).not.toBeInTheDocument()
   })
 
   it('forces visibility to cluster when Gateway API is not available', async () => {

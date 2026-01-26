@@ -67,10 +67,12 @@ function InstanceDetail() {
       (cluster) => cluster.environment?.uuid === instance.environment.uuid
     )
     // Get the first gateway reference found that has namespace and name filled
+    // Use private gateway as default reference (both public and private use same auto-discovery if not configured)
     for (const cluster of environmentClusters) {
       if (cluster.gateway?.reference) {
-        const namespace = cluster.gateway.reference.namespace || ''
-        const name = cluster.gateway.reference.name || ''
+        const ref = cluster.gateway.reference.private || cluster.gateway.reference.public || { namespace: '', name: '' }
+        const namespace = ref.namespace || ''
+        const name = ref.name || ''
         if (namespace && name) {
           return { namespace, name }
         }
@@ -459,10 +461,13 @@ function InstanceDetail() {
           return <div className="text-sm text-slate-400">No exposure</div>
         }
 
+        // Display HTTP(S) instead of http for better clarity
+        const displayType = exposure.type === 'http' ? 'HTTP(S)' : exposure.type.toUpperCase()
+
         return (
           <div className="text-sm text-slate-600">
             <div className="text-xs">
-              {exposure.type}:{exposure.port} ({exposure.visibility})
+              {displayType}:{exposure.port} ({exposure.visibility})
             </div>
           </div>
         )

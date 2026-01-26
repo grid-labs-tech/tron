@@ -87,10 +87,13 @@ export const getWebappColumns = () => [
         return <div className="text-sm text-slate-400">No exposure</div>
       }
 
+      // Display HTTP(S) instead of http for better clarity
+      const displayType = exposure.type === 'http' ? 'HTTP(S)' : exposure.type.toUpperCase()
+      
       return (
         <div className="text-sm text-slate-600">
           <div className="text-xs">
-            {exposure.type}:{exposure.port} ({exposure.visibility})
+            {displayType}:{exposure.port} ({exposure.visibility})
           </div>
         </div>
       )

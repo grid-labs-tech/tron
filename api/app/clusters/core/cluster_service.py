@@ -22,23 +22,35 @@ from app.clusters.core.cluster_validators import (
 from app.k8s.client import K8sClient
 
 
-def get_gateway_reference_from_cluster(cluster: ClusterModel) -> dict:
+def get_gateway_reference_from_cluster(
+    cluster: ClusterModel, visibility: str = "private"
+) -> dict:
     """
-    Get gateway reference information from a cluster.
+    Get gateway reference information from a cluster based on visibility.
     Uses manual configuration if available, otherwise dynamically searches
     for Gateway in Kubernetes cluster.
 
     Args:
         cluster: Cluster database object
+        visibility: "public" or "private" to determine which gateway to use
 
     Returns:
         Dict with namespace and name of gateway, or empty values if not found
     """
+    # Select gateway fields based on visibility
+    if visibility == "public":
+        gateway_namespace = cluster.public_gateway_namespace
+        gateway_name = cluster.public_gateway_name
+    else:
+        # Default to private gateway
+        gateway_namespace = cluster.private_gateway_namespace
+        gateway_name = cluster.private_gateway_name
+
     # If manual configuration is set, use it
-    if cluster.gateway_namespace and cluster.gateway_name:
+    if gateway_namespace and gateway_name:
         return {
-            "namespace": cluster.gateway_namespace,
-            "name": cluster.gateway_name,
+            "namespace": gateway_namespace,
+            "name": gateway_name,
         }
 
     # Otherwise, try auto-discovery
@@ -52,6 +64,22 @@ def get_gateway_reference_from_cluster(cluster: ClusterModel) -> dict:
         print(f"Warning: Error getting Gateway reference from cluster: {e}")
 
     return {"namespace": "", "name": ""}
+
+
+def get_all_gateway_references_from_cluster(cluster: ClusterModel) -> dict:
+    """
+    Get both public and private gateway references from a cluster.
+
+    Args:
+        cluster: Cluster database object
+
+    Returns:
+        Dict with public and private gateway references
+    """
+    return {
+        "public": get_gateway_reference_from_cluster(cluster, "public"),
+        "private": get_gateway_reference_from_cluster(cluster, "private"),
+    }
 
 
 class ClusterService:
@@ -88,8 +116,10 @@ class ClusterService:
         cluster.name = dto.name
         cluster.api_address = dto.api_address
         cluster.token = dto.token
-        cluster.gateway_namespace = dto.gateway_namespace or None
-        cluster.gateway_name = dto.gateway_name or None
+        cluster.private_gateway_namespace = dto.private_gateway_namespace or None
+        cluster.private_gateway_name = dto.private_gateway_name or None
+        cluster.public_gateway_namespace = dto.public_gateway_namespace or None
+        cluster.public_gateway_name = dto.public_gateway_name or None
         cluster.environment_id = environment.id
 
         return self.repository.update(cluster)
@@ -147,8 +177,10 @@ class ClusterService:
             name=dto.name,
             api_address=dto.api_address,
             token=dto.token,
-            gateway_namespace=dto.gateway_namespace or None,
-            gateway_name=dto.gateway_name or None,
+            private_gateway_namespace=dto.private_gateway_namespace or None,
+            private_gateway_name=dto.private_gateway_name or None,
+            public_gateway_namespace=dto.public_gateway_namespace or None,
+            public_gateway_name=dto.public_gateway_name or None,
             environment_id=environment_id,
         )
 
@@ -162,7 +194,10 @@ class ClusterService:
 
         gateway_api_available = False
         gateway_resources = []
-        gateway_ref = {"namespace": "", "name": ""}
+        gateway_refs = {
+            "public": {"namespace": "", "name": ""},
+            "private": {"namespace": "", "name": ""},
+        }
 
         if success:
             gateway_api_available = k8s_client.check_api_available(
@@ -170,7 +205,7 @@ class ClusterService:
             )
             if gateway_api_available:
                 gateway_resources = k8s_client.get_gateway_api_resources()
-                gateway_ref = get_gateway_reference_from_cluster(cluster)
+                gateway_refs = get_all_gateway_references_from_cluster(cluster)
 
         return ClusterResponseWithValidation(
             uuid=cluster.uuid,
@@ -183,7 +218,7 @@ class ClusterService:
                     "enabled": gateway_api_available,
                     "resources": gateway_resources,
                 },
-                "reference": gateway_ref,
+                "reference": gateway_refs,
             },
         )
 
@@ -199,7 +234,7 @@ class ClusterService:
         gateway_resources = (
             k8s_client.get_gateway_api_resources() if gateway_api_available else []
         )
-        gateway_ref = get_gateway_reference_from_cluster(cluster)
+        gateway_refs = get_all_gateway_references_from_cluster(cluster)
 
         # Get available CPU and memory from cluster
         try:
@@ -221,6 +256,6 @@ class ClusterService:
                     "enabled": gateway_api_available,
                     "resources": gateway_resources,
                 },
-                "reference": gateway_ref,
+                "reference": gateway_refs,
             },
         )

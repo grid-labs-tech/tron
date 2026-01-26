@@ -5,6 +5,11 @@ export interface GatewayApiReference {
   name: string
 }
 
+export interface GatewayReferences {
+  public: GatewayApiReference
+  private: GatewayApiReference
+}
+
 export interface GatewayApi {
   enabled: boolean
   resources: string[]
@@ -12,7 +17,7 @@ export interface GatewayApi {
 
 export interface GatewayFeatures {
   api: GatewayApi
-  reference: GatewayApiReference
+  reference: GatewayReferences
 }
 
 export interface Cluster {
@@ -38,6 +43,8 @@ export interface ClusterCreate {
   api_address: string
   token: string
   environment_uuid: string
-  gateway_namespace?: string
-  gateway_name?: string
+  private_gateway_namespace?: string
+  private_gateway_name?: string
+  public_gateway_namespace?: string
+  public_gateway_name?: string
 }

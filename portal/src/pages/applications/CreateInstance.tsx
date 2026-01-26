@@ -75,11 +75,13 @@ function CreateInstance() {
     const environmentClusters = clusters.filter(
       (cluster) => cluster.environment?.uuid === instanceData.environment_uuid
     )
-    // Pegar o primeiro gateway reference encontrado que tenha namespace e name preenchidos
+    // Get the first gateway reference found that has namespace and name filled
+    // Use private gateway as default reference (both public and private use same auto-discovery if not configured)
     for (const cluster of environmentClusters) {
       if (cluster.gateway?.reference) {
-        const namespace = cluster.gateway.reference.namespace || ''
-        const name = cluster.gateway.reference.name || ''
+        const ref = cluster.gateway.reference.private || cluster.gateway.reference.public || { namespace: '', name: '' }
+        const namespace = ref.namespace || ''
+        const name = ref.name || ''
         if (namespace && name) {
           return { namespace, name }
         }
@@ -180,6 +182,44 @@ function CreateInstance() {
       }
     }
 
+    // Validate envs and secrets for empty values
+    for (const component of components) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const settings = component.settings as any
+      if (!settings) continue
+
+      // Check envs
+      if (settings.envs && Array.isArray(settings.envs)) {
+        for (const env of settings.envs) {
+          if (!env.key?.trim() && !env.value?.trim()) continue // Skip completely empty rows
+          if (!env.key?.trim()) {
+            setNotification({ type: 'error', message: `Component "${component.name}": Environment variable is missing a key` })
+            return
+          }
+          if (!env.value?.trim()) {
+            setNotification({ type: 'error', message: `Component "${component.name}": Environment variable "${env.key}" is missing a value` })
+            return
+          }
+        }
+      }
+
+      // Check secrets
+      if (settings.secrets && Array.isArray(settings.secrets)) {
+        for (const secret of settings.secrets) {
+          if (secret.value === '********') continue // Skip masked values
+          if (!secret.key?.trim() && !secret.value?.trim()) continue // Skip completely empty rows
+          if (!secret.key?.trim()) {
+            setNotification({ type: 'error', message: `Component "${component.name}": Secret is missing a key` })
+            return
+          }
+          if (!secret.value?.trim()) {
+            setNotification({ type: 'error', message: `Component "${component.name}": Secret "${secret.key}" is missing a value` })
+            return
+          }
+        }
+      }
+    }
+
     try {
       // Step 1: Create instance
       const instance = await createInstanceMutation.mutateAsync({
@@ -190,11 +230,34 @@ function CreateInstance() {
       // Step 2: Create components
       if (components.length > 0) {
         const componentPromises = components.map((component) => {
+          // Filter out completely empty rows (both key and value empty)
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          let cleanedSettings = component.settings as any
+          if (cleanedSettings) {
+            if (cleanedSettings.envs && Array.isArray(cleanedSettings.envs)) {
+              cleanedSettings = {
+                ...cleanedSettings,
+                envs: cleanedSettings.envs.filter(
+                  (env: { key: string; value: string }) => env.key?.trim() || env.value?.trim()
+                ),
+              }
+            }
+            if (cleanedSettings.secrets && Array.isArray(cleanedSettings.secrets)) {
+              cleanedSettings = {
+                ...cleanedSettings,
+                secrets: cleanedSettings.secrets.filter(
+                  (secret: { key: string; value: string }) => 
+                    secret.value === '********' || secret.key?.trim() || secret.value?.trim()
+                ),
+              }
+            }
+          }
+
           const componentData = {
             instance_uuid: instance.uuid,
             name: component.name,
             type: component.type,
-            settings: component.settings,
+            settings: cleanedSettings,
             visibility: component.visibility,
             url: component.url,
             enabled: component.enabled,
@@ -366,6 +429,7 @@ function CreateInstance() {
                     gatewayReference={gatewayReference}
                     isAdmin={isAdmin}
                     title={`Component ${index + 1}`}
+                    hasEnvironmentSelected={!!instanceData.environment_uuid}
                   />
                 ))}
               </div>

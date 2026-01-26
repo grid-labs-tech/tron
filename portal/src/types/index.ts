@@ -3,6 +3,11 @@ export interface GatewayApiReference {
   name: string
 }
 
+export interface GatewayReferences {
+  public: GatewayApiReference
+  private: GatewayApiReference
+}
+
 export interface GatewayApi {
   enabled: boolean
   resources: string[]
@@ -10,7 +15,7 @@ export interface GatewayApi {
 
 export interface GatewayFeatures {
   api: GatewayApi
-  reference: GatewayApiReference
+  reference: GatewayReferences
 }
 
 export interface Cluster {

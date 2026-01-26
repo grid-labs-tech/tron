@@ -1,4 +1,4 @@
-{% if application.settings.exposure.type == "http" and (application.settings.exposure.visibility == "public" or application.settings.exposure.visibility == "private") %}
+{% if application.settings.exposure.type == "http" and (application.settings.exposure.visibility == "public" or application.settings.exposure.visibility == "private") and cluster.gateway.reference.name and cluster.gateway.reference.namespace %}
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:

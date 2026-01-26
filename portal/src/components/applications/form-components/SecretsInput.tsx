@@ -22,6 +22,9 @@ export function SecretsInput({ secrets, onChange, isAdmin = false, componentUuid
   const [loadingSecrets, setLoadingSecrets] = useState<Record<number, boolean>>({})
   const [hasFetchedSecrets, setHasFetchedSecrets] = useState(false)
 
+  // Ensure secrets is always an array
+  const safeSecrets = Array.isArray(secrets) ? secrets : []
+
   // Security: Clear decrypted secrets from memory when component unmounts
   // or when componentUuid changes (different component selected)
   useEffect(() => {
@@ -41,18 +44,18 @@ export function SecretsInput({ secrets, onChange, isAdmin = false, componentUuid
   }, [componentUuid])
 
   const addSecret = () => {
-    onChange([...secrets, { key: '', value: '' }])
+    onChange([...safeSecrets, { key: '', value: '' }])
   }
 
   const updateSecret = (index: number, field: 'key' | 'value', value: string) => {
-    const updated = secrets.map((secret, i) =>
+    const updated = safeSecrets.map((secret, i) =>
       i === index ? { ...secret, [field]: value } : secret
     )
     onChange(updated)
   }
 
   const removeSecret = (index: number) => {
-    onChange(secrets.filter((_, i) => i !== index))
+    onChange(safeSecrets.filter((_, i) => i !== index))
     // Clean up showValues state
     const newShowValues = { ...showValues }
     delete newShowValues[index]
@@ -81,7 +84,8 @@ export function SecretsInput({ secrets, onChange, isAdmin = false, componentUuid
   }, [componentUuid, componentType])
 
   const toggleShowValue = async (index: number) => {
-    const secret = secrets[index]
+    const secret = safeSecrets[index]
+    if (!secret) return
     
     // If already showing, just hide
     if (showValues[index]) {
@@ -113,10 +117,10 @@ export function SecretsInput({ secrets, onChange, isAdmin = false, componentUuid
     }
   }
 
-  const isValueMasked = (value: string) => value === '********'
+  const isValueMasked = (value: string | undefined | null) => value === '********'
 
   // Check if toggle should be disabled (masked value and not admin)
-  const isToggleDisabled = (value: string) => isValueMasked(value) && !isAdmin
+  const isToggleDisabled = (value: string | undefined | null) => isValueMasked(value) && !isAdmin
 
   // Get display value for a secret (decrypted if available and showing)
   const getDisplayValue = (secret: Secret, index: number): string => {
@@ -127,7 +131,7 @@ export function SecretsInput({ secrets, onChange, isAdmin = false, componentUuid
         return decrypted.value
       }
     }
-    return secret.value
+    return secret.value || ''
   }
 
   return (
@@ -148,12 +152,12 @@ export function SecretsInput({ secrets, onChange, isAdmin = false, componentUuid
           + Add Secret
         </button>
       </div>
-      {secrets.map((secret, secretIndex) => (
+      {safeSecrets.map((secret, secretIndex) => (
         <div key={secretIndex} className="mb-2 grid grid-cols-[1fr_1fr_auto_auto] gap-2 items-center">
           <div>
             <input
               type="text"
-              value={secret.key}
+              value={secret.key || ''}
               onChange={(e) => updateSecret(secretIndex, 'key', e.target.value)}
               placeholder="Secret Key"
               className="w-full px-2 py-1 border border-slate-300 rounded text-xs focus:ring-2 focus:ring-blue-500/50 focus:border-blue-400"
@@ -204,7 +208,7 @@ export function SecretsInput({ secrets, onChange, isAdmin = false, componentUuid
           </button>
         </div>
       ))}
-      {secrets.length === 0 && (
+      {safeSecrets.length === 0 && (
         <p className="text-xs text-slate-400 text-center py-2">
           No secrets configured. Click "+ Add Secret" to add one.
         </p>

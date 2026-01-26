@@ -52,10 +52,12 @@ export const useInstanceDetail = (applicationUuid: string | undefined, instanceU
     const environmentClusters = clusters.filter(
       (cluster) => cluster.environment?.uuid === instance.environment.uuid
     )
+    // Use private gateway as default reference (both public and private use same auto-discovery if not configured)
     for (const cluster of environmentClusters) {
       if (cluster.gateway?.reference) {
-        const namespace = cluster.gateway.reference.namespace || ''
-        const name = cluster.gateway.reference.name || ''
+        const ref = cluster.gateway.reference.private || cluster.gateway.reference.public || { namespace: '', name: '' }
+        const namespace = ref.namespace || ''
+        const name = ref.name || ''
         if (namespace && name) {
           return { namespace, name }
         }

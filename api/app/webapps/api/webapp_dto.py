@@ -166,7 +166,7 @@ class WebappCreate(WebappBase):
                 and not self.url
             ):
                 raise ValueError(
-                    "Webapp components with HTTP exposure type and visibility 'public' or 'private' must have a URL"
+                    "Webapp components with HTTP(S) exposure type and visibility 'public' or 'private' must have a URL"
                 )
 
             if (
@@ -174,7 +174,7 @@ class WebappCreate(WebappBase):
             ) and self.url:
                 if exposure_type != "http":
                     raise ValueError(
-                        f"URL is not allowed for webapp components with exposure type '{exposure_type}'. URL is only allowed for HTTP exposure type."
+                        f"URL is not allowed for webapp components with exposure type '{exposure_type}'. URL is only allowed for HTTP(S) exposure type."
                     )
                 else:
                     raise ValueError(
@@ -201,7 +201,7 @@ class WebappUpdate(BaseModel):
             ) and self.url is not None:
                 if exposure_type != "http":
                     raise ValueError(
-                        f"URL is not allowed for webapp components with exposure type '{exposure_type}'. URL is only allowed for HTTP exposure type."
+                        f"URL is not allowed for webapp components with exposure type '{exposure_type}'. URL is only allowed for HTTP(S) exposure type."
                     )
                 else:
                     raise ValueError(

@@ -20,8 +20,12 @@ class Cluster(Base):
     token = Column(String, nullable=False)
 
     # Optional Gateway configuration (if not set, auto-discovery is used)
-    gateway_namespace = Column(String, nullable=True)
-    gateway_name = Column(String, nullable=True)
+    # Private gateway - used for visibility "private"
+    private_gateway_namespace = Column(String, nullable=True)
+    private_gateway_name = Column(String, nullable=True)
+    # Public gateway - used for visibility "public"
+    public_gateway_namespace = Column(String, nullable=True)
+    public_gateway_name = Column(String, nullable=True)
 
     environment_id = Column(Integer, ForeignKey("environments.id"), nullable=False)
     environment = relationship("Environment", back_populates="clusters")

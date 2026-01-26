@@ -101,7 +101,7 @@ export const getDefaultWebappSettings = (): WebappSettings => ({
   cpu_scaling_threshold: 80,
   memory_scaling_threshold: 80,
   healthcheck: {
-    path: '/healthcheck',
+    path: '/',
     protocol: 'http',
     port: 80,
     timeout: 3,
@@ -112,8 +112,8 @@ export const getDefaultWebappSettings = (): WebappSettings => ({
   cpu: 0.5,
   memory: 512,
   autoscaling: {
-    min: 2,
-    max: 10,
+    min: 1,
+    max: 2,
   },
 })
 
@@ -140,8 +140,8 @@ export const getDefaultWorkerSettings = (): WorkerSettings => ({
   cpu_scaling_threshold: 80,
   memory_scaling_threshold: 80,
   autoscaling: {
-    min: 2,
-    max: 10,
+    min: 1,
+    max: 2,
   },
 })
 
