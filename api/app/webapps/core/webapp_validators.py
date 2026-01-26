@@ -2,6 +2,32 @@ from uuid import UUID
 from app.webapps.infra.webapp_repository import WebappRepository
 from app.webapps.api.webapp_dto import WebappCreate, WebappUpdate
 from app.clusters.infra.cluster_model import Cluster as ClusterModel
+from app.shared.utils.validators import (
+    validate_env_vars,
+    validate_secrets,
+    InvalidEnvVarError,
+    InvalidSecretError,
+)
+
+# Re-export for backward compatibility
+__all__ = [
+    "WebappNotFoundError",
+    "WebappNotWebappTypeError",
+    "InstanceNotFoundError",
+    "InvalidExposureTypeError",
+    "InvalidVisibilityError",
+    "InvalidURLError",
+    "InvalidEnvVarError",
+    "InvalidSecretError",
+    "validate_webapp_create_dto",
+    "validate_webapp_update_dto",
+    "validate_webapp_exists",
+    "validate_webapp_type",
+    "validate_instance_exists",
+    "validate_exposure_type_for_cluster",
+    "validate_visibility_for_cluster",
+    "validate_url_for_exposure",
+]
 
 
 class WebappNotFoundError(Exception):
@@ -53,6 +79,14 @@ def validate_webapp_create_dto(dto: WebappCreate) -> None:
 
     if not dto.settings:
         raise ValueError("Webapp settings are required")
+
+    # Validate envs - no empty keys or values
+    if dto.settings.envs:
+        validate_env_vars(dto.settings.envs)
+
+    # Validate secrets - no empty keys or values
+    if dto.settings.secrets:
+        validate_secrets(dto.settings.secrets)
 
 
 def validate_webapp_update_dto(dto: WebappUpdate) -> None:
@@ -142,7 +176,7 @@ def validate_url_for_exposure(
     if exposure_type == "http" and exposure_visibility != "cluster" and not url:
         if not is_update:
             raise InvalidURLError(
-                "URL is required for webapp components with HTTP exposure type and visibility 'public' or 'private'"
+                "URL is required for webapp components with HTTP(S) exposure type and visibility 'public' or 'private'"
             )
 
     # URL is not allowed if exposure.type is not 'http' or visibility is 'cluster'
@@ -150,7 +184,7 @@ def validate_url_for_exposure(
         if exposure_type != "http":
             raise InvalidURLError(
                 f"URL is not allowed for webapp components with exposure type '{exposure_type}'. "
-                f"URL is only allowed for HTTP exposure type."
+                f"URL is only allowed for HTTP(S) exposure type."
             )
         else:
             raise InvalidURLError(

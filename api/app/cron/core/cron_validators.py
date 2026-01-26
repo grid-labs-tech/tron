@@ -1,6 +1,26 @@
 from uuid import UUID
 from app.cron.infra.cron_repository import CronRepository
 from app.cron.api.cron_dto import CronCreate, CronUpdate
+from app.shared.utils.validators import (
+    validate_env_vars,
+    validate_secrets,
+    InvalidEnvVarError,
+    InvalidSecretError,
+)
+
+# Re-export for backward compatibility
+__all__ = [
+    "CronNotFoundError",
+    "CronNotCronTypeError",
+    "InstanceNotFoundError",
+    "InvalidEnvVarError",
+    "InvalidSecretError",
+    "validate_cron_create_dto",
+    "validate_cron_update_dto",
+    "validate_cron_exists",
+    "validate_cron_type",
+    "validate_instance_exists",
+]
 
 
 class CronNotFoundError(Exception):
@@ -37,6 +57,14 @@ def validate_cron_create_dto(dto: CronCreate) -> None:
 
     if not dto.settings.schedule or not dto.settings.schedule.strip():
         raise ValueError("Cron schedule is required")
+
+    # Validate envs - no empty keys or values
+    if dto.settings.envs:
+        validate_env_vars(dto.settings.envs)
+
+    # Validate secrets - no empty keys or values
+    if dto.settings.secrets:
+        validate_secrets(dto.settings.secrets)
 
 
 def validate_cron_update_dto(dto: CronUpdate) -> None:

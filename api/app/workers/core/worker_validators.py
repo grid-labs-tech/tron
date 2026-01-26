@@ -1,6 +1,26 @@
 from uuid import UUID
 from app.workers.infra.worker_repository import WorkerRepository
 from app.workers.api.worker_dto import WorkerCreate, WorkerUpdate
+from app.shared.utils.validators import (
+    validate_env_vars,
+    validate_secrets,
+    InvalidEnvVarError,
+    InvalidSecretError,
+)
+
+# Re-export for backward compatibility
+__all__ = [
+    "WorkerNotFoundError",
+    "WorkerNotWorkerTypeError",
+    "InstanceNotFoundError",
+    "InvalidEnvVarError",
+    "InvalidSecretError",
+    "validate_worker_create_dto",
+    "validate_worker_update_dto",
+    "validate_worker_exists",
+    "validate_worker_type",
+    "validate_instance_exists",
+]
 
 
 class WorkerNotFoundError(Exception):
@@ -34,6 +54,14 @@ def validate_worker_create_dto(dto: WorkerCreate) -> None:
 
     if not dto.settings:
         raise ValueError("Worker settings are required")
+
+    # Validate envs - no empty keys or values
+    if dto.settings.envs:
+        validate_env_vars(dto.settings.envs)
+
+    # Validate secrets - no empty keys or values
+    if dto.settings.secrets:
+        validate_secrets(dto.settings.secrets)
 
 
 def validate_worker_update_dto(dto: WorkerUpdate) -> None:
