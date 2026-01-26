@@ -27,6 +27,7 @@ function CreateApplication() {
   const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null)
   const [, setErrors] = useState<Record<string, string>>({})
   const [isCreating, setIsCreating] = useState(false)
+  const [partialSuccess, setPartialSuccess] = useState<{ applicationUuid: string; instanceUuid: string } | null>(null)
   const { user } = useAuth()
   const isAdmin = user?.role === 'admin'
 
@@ -55,21 +56,25 @@ function CreateApplication() {
     enabled: true,
   })
 
+  // Check if environment has any clusters
+  const environmentClusters = useMemo(() => {
+    if (!instanceData.environment_uuid || !clusters) return []
+    return clusters.filter(
+      (cluster) => cluster.environment?.uuid === instanceData.environment_uuid
+    )
+  }, [instanceData.environment_uuid, clusters])
+
+  const hasNoClusters = instanceData.environment_uuid && environmentClusters.length === 0
+
   // Check if any cluster in the selected environment has gateway_api available
   const hasGatewayApi = useMemo(() => {
     if (!instanceData.environment_uuid || !clusters) return false
-    const environmentClusters = clusters.filter(
-      (cluster) => cluster.environment?.uuid === instanceData.environment_uuid
-    )
     return environmentClusters.some((cluster) => cluster.gateway?.api?.enabled === true)
-  }, [instanceData.environment_uuid, clusters])
+  }, [instanceData.environment_uuid, clusters, environmentClusters])
 
   // Get Gateway API resources available in clusters of the selected environment
   const gatewayResources = useMemo(() => {
-    if (!instanceData.environment_uuid || !clusters) return []
-    const environmentClusters = clusters.filter(
-      (cluster) => cluster.environment?.uuid === instanceData.environment_uuid
-    )
+    if (environmentClusters.length === 0) return []
     const allResources = new Set<string>()
     environmentClusters.forEach((cluster) => {
       if (cluster.gateway?.api?.enabled && cluster.gateway.api.resources) {
@@ -77,14 +82,11 @@ function CreateApplication() {
       }
     })
     return Array.from(allResources)
-  }, [instanceData.environment_uuid, clusters])
+  }, [environmentClusters])
 
   // Get Gateway reference from clusters of the selected environment
   const gatewayReference = useMemo(() => {
-    if (!instanceData.environment_uuid || !clusters) return { namespace: '', name: '' }
-    const environmentClusters = clusters.filter(
-      (cluster) => cluster.environment?.uuid === instanceData.environment_uuid
-    )
+    if (environmentClusters.length === 0) return { namespace: '', name: '' }
     for (const cluster of environmentClusters) {
       if (cluster.gateway?.reference) {
         const ref = cluster.gateway.reference.private || cluster.gateway.reference.public || { namespace: '', name: '' }
@@ -96,7 +98,7 @@ function CreateApplication() {
       }
     }
     return { namespace: '', name: '' }
-  }, [instanceData.environment_uuid, clusters])
+  }, [environmentClusters])
 
   // Components
   const [components, setComponents] = useState<ComponentFormData[]>([])
@@ -228,6 +230,15 @@ function CreateApplication() {
       return
     }
 
+    // Check if environment has clusters
+    if (hasNoClusters) {
+      setNotification({
+        type: 'error',
+        message: 'The selected environment has no clusters. Please add a cluster in Settings → Clusters before creating components.',
+      })
+      return
+    }
+
     setIsCreating(true)
     
     let application: { uuid: string } | null = null
@@ -297,34 +308,31 @@ function CreateApplication() {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
       const errorMessage = error.response?.data?.detail || error.message || 'Error creating application'
+      setIsCreating(false)
       
-      // If application and instance were created, redirect anyway (partial success)
+      // If application and instance were created, show error but allow user to decide
       if (application && instance) {
+        setPartialSuccess({ applicationUuid: application.uuid, instanceUuid: instance.uuid })
         setNotification({
           type: 'error',
-          message: `Application created but there was an error with components: ${errorMessage}. Redirecting...`,
+          message: `Application and instance created, but component failed: ${errorMessage}`,
         })
-        setTimeout(() => {
-          navigate(`/applications/${application!.uuid}/instances/${instance!.uuid}/components`)
-        }, 2000)
+        // Show a button to navigate or let user fix the issue and retry
+        // Don't auto-redirect - let user see the error and decide
       } else if (application) {
         // Application created but instance failed
         setNotification({
           type: 'error',
-          message: `Application created but instance failed: ${errorMessage}. Redirecting...`,
+          message: `Application created but instance failed: ${errorMessage}`,
         })
-        setTimeout(() => {
-          navigate(`/applications/${application!.uuid}`)
-        }, 2000)
       } else {
         // Complete failure - allow retry
-        setIsCreating(false)
         setNotification({
           type: 'error',
           message: errorMessage,
         })
-        setTimeout(() => setNotification(null), 5000)
       }
+      // Don't auto-hide error notifications - let user dismiss them
     }
   }
 
@@ -360,7 +368,23 @@ function CreateApplication() {
   )
 
   const step2Content = (
-    <InstanceForm data={instanceData} onChange={setInstanceData} showInfoCard={false} />
+    <div className="space-y-4">
+      <InstanceForm data={instanceData} onChange={setInstanceData} showInfoCard={false} />
+      {hasNoClusters && (
+        <div className="p-4 rounded-lg bg-amber-50 border border-amber-200 text-amber-800">
+          <div className="flex items-start gap-2">
+            <span className="text-amber-500 mt-0.5">⚠️</span>
+            <div>
+              <p className="font-medium">No clusters in this environment</p>
+              <p className="text-sm mt-1">
+                This environment has no clusters configured. You won't be able to deploy components until a cluster is added.
+                Go to <span className="font-medium">Settings → Clusters</span> to add one.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
   )
 
   const step3Content = (
@@ -513,7 +537,42 @@ function CreateApplication() {
               notification.type === 'success' ? 'bg-green-50 text-green-800 border border-green-200' : 'bg-red-50 text-red-800 border border-red-200'
             }`}
           >
-            {notification.message}
+            <div className="flex flex-col gap-3">
+              <div className="flex items-start justify-between">
+                <span>{notification.message}</span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setNotification(null)
+                    if (!partialSuccess) setPartialSuccess(null)
+                  }}
+                  className="text-slate-400 hover:text-slate-600 ml-2"
+                >
+                  ✕
+                </button>
+              </div>
+              {partialSuccess && notification.type === 'error' && (
+                <div className="flex gap-2 mt-2">
+                  <button
+                    type="button"
+                    onClick={() => navigate(`/applications/${partialSuccess.applicationUuid}/instances/${partialSuccess.instanceUuid}/components`)}
+                    className="px-3 py-1.5 text-sm bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+                  >
+                    Go to Instance (add components there)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setNotification(null)
+                      setPartialSuccess(null)
+                    }}
+                    className="px-3 py-1.5 text-sm bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 transition-colors"
+                  >
+                    Stay and fix
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         )}
 
