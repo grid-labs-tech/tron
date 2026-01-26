@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Plus, ChevronDown, ChevronUp, Check, Circle } from 'lucide-react'
+import { Plus, ChevronDown, ChevronUp, Circle } from 'lucide-react'
 import { useCreateApplication } from '../../features/applications'
 import { useClusters } from '../../features/clusters'
 import { useCreateInstance } from '../../features/instances'
@@ -19,68 +19,8 @@ import {
   getDefaultCronSettings,
   getDefaultWorkerSettings,
 } from '../../components/applications'
-import { Breadcrumbs, PageHeader } from '../../shared/components'
+import { Breadcrumbs, PageHeader, Stepper, useStepper, type Step } from '../../shared/components'
 import { useAuth } from '../../contexts/AuthContext'
-
-type StepStatus = 'pending' | 'active' | 'completed'
-
-interface StepHeaderProps {
-  number: number
-  title: string
-  status: StepStatus
-  summary?: string
-  onClick?: () => void
-  isClickable?: boolean
-}
-
-function StepHeader({ number, title, status, summary, onClick, isClickable }: StepHeaderProps) {
-  const isActive = status === 'active'
-  const isCompleted = status === 'completed'
-  
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      disabled={!isClickable}
-      className={`w-full flex items-start gap-4 p-4 text-left transition-colors ${
-        isClickable ? 'cursor-pointer hover:bg-slate-50' : 'cursor-default'
-      } ${isActive ? 'bg-white' : ''}`}
-    >
-      {/* Step number/icon */}
-      <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold transition-colors ${
-        isCompleted 
-          ? 'bg-blue-600 text-white' 
-          : isActive 
-            ? 'bg-blue-600 text-white'
-            : 'bg-slate-200 text-slate-500'
-      }`}>
-        {isCompleted ? <Check size={16} /> : number}
-      </div>
-      
-      {/* Step title and summary */}
-      <div className="flex-1 min-w-0">
-        <h3 className={`text-base font-semibold ${
-          isActive ? 'text-slate-900' : isCompleted ? 'text-slate-700' : 'text-slate-400'
-        }`}>
-          {title}
-        </h3>
-        {isCompleted && summary && (
-          <p className="text-sm text-slate-500 mt-0.5 truncate">{summary}</p>
-        )}
-        {!isActive && !isCompleted && (
-          <p className="text-sm text-slate-400 mt-0.5">Complete the previous step to continue</p>
-        )}
-      </div>
-      
-      {/* Expand indicator */}
-      {isClickable && (
-        <div className="flex-shrink-0 text-slate-400">
-          {isActive ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
-        </div>
-      )}
-    </button>
-  )
-}
 
 function CreateApplication() {
   const navigate = useNavigate()
@@ -91,8 +31,7 @@ function CreateApplication() {
   const isAdmin = user?.role === 'admin'
 
   // Stepper state
-  const [currentStep, setCurrentStep] = useState(1)
-  const [completedSteps, setCompletedSteps] = useState<number[]>([])
+  const { currentStep, completedSteps, goToStep, completeStep } = useStepper(1)
 
   const createApplicationMutation = useCreateApplication()
   const { data: clusters } = useClusters()
@@ -233,55 +172,6 @@ function CreateApplication() {
       }
     }
     return true
-  }
-
-  // Step navigation
-  const goToStep = (step: number) => {
-    if (step < currentStep || completedSteps.includes(step - 1) || step === 1) {
-      setCurrentStep(step)
-    }
-  }
-
-  const continueToNextStep = () => {
-    let isValid = false
-    
-    if (currentStep === 1) {
-      isValid = validateStep1()
-    } else if (currentStep === 2) {
-      isValid = validateStep2()
-    } else if (currentStep === 3) {
-      isValid = validateStep3()
-    }
-
-    if (isValid) {
-      if (!completedSteps.includes(currentStep)) {
-        setCompletedSteps([...completedSteps, currentStep])
-      }
-      if (currentStep < 3) {
-        setCurrentStep(currentStep + 1)
-      }
-    }
-  }
-
-  // Get step status
-  const getStepStatus = (step: number): StepStatus => {
-    if (currentStep === step) return 'active'
-    if (completedSteps.includes(step)) return 'completed'
-    return 'pending'
-  }
-
-  // Get step summary
-  const getStepSummary = (step: number): string => {
-    if (step === 1 && completedSteps.includes(1)) {
-      return applicationData.name
-    }
-    if (step === 2 && completedSteps.includes(2)) {
-      return `${instanceData.image}:${instanceData.version}`
-    }
-    if (step === 3 && completedSteps.includes(3)) {
-      return `${components.length} component${components.length !== 1 ? 's' : ''}`
-    }
-    return ''
   }
 
   // Validate envs and secrets for empty values
@@ -440,6 +330,155 @@ function CreateApplication() {
 
   const canSubmit = completedSteps.includes(1) && completedSteps.includes(2) && components.length > 0
 
+  // Step content components
+  const step1Content = (
+    <div className="space-y-4">
+      <div>
+        <label className="block text-sm font-medium text-slate-700 mb-1.5">Application Name *</label>
+        <input
+          type="text"
+          value={applicationData.name}
+          onChange={(e) => setApplicationData({ ...applicationData, name: e.target.value.replace(/\s/g, '') })}
+          className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500/50 focus:border-blue-400 transition-all text-sm"
+          placeholder="my-application"
+          required
+        />
+        <p className="text-xs text-slate-500 mt-1">A unique name for your application (no spaces)</p>
+      </div>
+      <div>
+        <label className="block text-sm font-medium text-slate-700 mb-1.5">Repository (optional)</label>
+        <input
+          type="text"
+          value={applicationData.repository || ''}
+          onChange={(e) => setApplicationData({ ...applicationData, repository: e.target.value })}
+          className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500/50 focus:border-blue-400 transition-all text-sm"
+          placeholder="https://github.com/org/repo"
+        />
+        <p className="text-xs text-slate-500 mt-1">Link to the source code repository</p>
+      </div>
+    </div>
+  )
+
+  const step2Content = (
+    <InstanceForm data={instanceData} onChange={setInstanceData} showInfoCard={false} />
+  )
+
+  const step3Content = (
+    <>
+      {/* Add Component Button */}
+      <div className="flex items-center justify-between mb-4">
+        <p className="text-sm text-slate-600">Add at least one component to your application.</p>
+        <div className="relative">
+          <button
+            type="button"
+            onClick={() => setIsComponentTypeDropdownOpen(!isComponentTypeDropdownOpen)}
+            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 shadow-soft hover:shadow-soft-lg transition-all duration-200 text-sm font-medium"
+          >
+            <Plus size={18} />
+            <span>Add Component</span>
+            {isComponentTypeDropdownOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+          </button>
+          {isComponentTypeDropdownOpen && (
+            <>
+              <div
+                className="fixed inset-0 z-10"
+                onClick={() => setIsComponentTypeDropdownOpen(false)}
+              />
+              <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-slate-200 z-20">
+                <button
+                  type="button"
+                  onClick={() => addComponent('webapp')}
+                  className="w-full text-left px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 first:rounded-t-lg transition-colors"
+                >
+                  <div className="flex items-center gap-2">
+                    <Circle size={8} className="text-green-500 fill-green-500" />
+                    <span>Webapp</span>
+                  </div>
+                  <p className="text-xs text-slate-400 mt-0.5 ml-4">HTTP/HTTPS service</p>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => addComponent('worker')}
+                  className="w-full text-left px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 transition-colors"
+                >
+                  <div className="flex items-center gap-2">
+                    <Circle size={8} className="text-purple-500 fill-purple-500" />
+                    <span>Worker</span>
+                  </div>
+                  <p className="text-xs text-slate-400 mt-0.5 ml-4">Background process</p>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => addComponent('cron')}
+                  className="w-full text-left px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 last:rounded-b-lg transition-colors"
+                >
+                  <div className="flex items-center gap-2">
+                    <Circle size={8} className="text-orange-500 fill-orange-500" />
+                    <span>Cron</span>
+                  </div>
+                  <p className="text-xs text-slate-400 mt-0.5 ml-4">Scheduled job</p>
+                </button>
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+
+      {/* Components List */}
+      {components.length === 0 ? (
+        <div className="text-center py-12 border-2 border-dashed border-slate-200 rounded-lg">
+          <div className="text-slate-400 mb-2">
+            <Plus size={32} className="mx-auto" />
+          </div>
+          <p className="text-slate-500">No components added yet</p>
+          <p className="text-sm text-slate-400 mt-1">Click "Add Component" to get started</p>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {components.map((component, index) => (
+            <ComponentForm
+              key={index}
+              component={component}
+              onChange={(updatedComponent) => updateComponent(index, updatedComponent)}
+              onRemove={() => removeComponent(index)}
+              hasGatewayApi={hasGatewayApi}
+              gatewayResources={gatewayResources}
+              gatewayReference={gatewayReference}
+              isAdmin={isAdmin}
+              title={`Component ${index + 1}: ${component.type.charAt(0).toUpperCase() + component.type.slice(1)}`}
+              hasEnvironmentSelected={!!instanceData.environment_uuid}
+            />
+          ))}
+        </div>
+      )}
+    </>
+  )
+
+  // Steps configuration
+  const steps: Step[] = [
+    {
+      id: 1,
+      title: 'Application',
+      summary: completedSteps.includes(1) ? applicationData.name : undefined,
+      content: step1Content,
+      validate: validateStep1,
+    },
+    {
+      id: 2,
+      title: 'Instance',
+      summary: completedSteps.includes(2) ? `${instanceData.image}:${instanceData.version}` : undefined,
+      content: step2Content,
+      validate: validateStep2,
+    },
+    {
+      id: 3,
+      title: 'Components',
+      summary: completedSteps.includes(3) ? `${components.length} component${components.length !== 1 ? 's' : ''}` : undefined,
+      content: step3Content,
+      validate: validateStep3,
+    },
+  ]
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-50 relative">
       {isCreating && (
@@ -481,184 +520,14 @@ function CreateApplication() {
         <form onSubmit={handleSubmit}>
           {/* Stepper Container */}
           <div className="bg-white rounded-xl shadow-soft border border-slate-200/60 overflow-hidden divide-y divide-slate-200">
-            
-            {/* Step 1: Application */}
-            <div>
-              <StepHeader
-                number={1}
-                title="Application"
-                status={getStepStatus(1)}
-                summary={getStepSummary(1)}
-                onClick={() => goToStep(1)}
-                isClickable={true}
-              />
-              {currentStep === 1 && (
-                <div className="px-4 pb-6 pt-2 ml-12">
-                  <div className="space-y-4">
-                    <div>
-                      <label className="block text-sm font-medium text-slate-700 mb-1.5">Application Name *</label>
-                      <input
-                        type="text"
-                        value={applicationData.name}
-                        onChange={(e) => setApplicationData({ ...applicationData, name: e.target.value.replace(/\s/g, '') })}
-                        className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500/50 focus:border-blue-400 transition-all text-sm"
-                        placeholder="my-application"
-                        required
-                      />
-                      <p className="text-xs text-slate-500 mt-1">A unique name for your application (no spaces)</p>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-slate-700 mb-1.5">Repository (optional)</label>
-                      <input
-                        type="text"
-                        value={applicationData.repository || ''}
-                        onChange={(e) => setApplicationData({ ...applicationData, repository: e.target.value })}
-                        className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500/50 focus:border-blue-400 transition-all text-sm"
-                        placeholder="https://github.com/org/repo"
-                      />
-                      <p className="text-xs text-slate-500 mt-1">Link to the source code repository</p>
-                    </div>
-                  </div>
-                  <div className="mt-6">
-                    <button
-                      type="button"
-                      onClick={continueToNextStep}
-                      className="px-5 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
-                    >
-                      Continue
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Step 2: Instance */}
-            <div>
-              <StepHeader
-                number={2}
-                title="Instance"
-                status={getStepStatus(2)}
-                summary={getStepSummary(2)}
-                onClick={() => goToStep(2)}
-                isClickable={completedSteps.includes(1) || currentStep === 2}
-              />
-              {currentStep === 2 && (
-                <div className="px-4 pb-6 pt-2 ml-12">
-                  <InstanceForm data={instanceData} onChange={setInstanceData} showInfoCard={false} />
-                  <div className="mt-6">
-                    <button
-                      type="button"
-                      onClick={continueToNextStep}
-                      className="px-5 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
-                    >
-                      Continue
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Step 3: Components */}
-            <div>
-              <StepHeader
-                number={3}
-                title="Components"
-                status={getStepStatus(3)}
-                summary={getStepSummary(3)}
-                onClick={() => goToStep(3)}
-                isClickable={completedSteps.includes(2) || currentStep === 3}
-              />
-              {currentStep === 3 && (
-                <div className="px-4 pb-6 pt-2 ml-12">
-                  {/* Add Component Button */}
-                  <div className="flex items-center justify-between mb-4">
-                    <p className="text-sm text-slate-600">Add at least one component to your application.</p>
-                    <div className="relative">
-                      <button
-                        type="button"
-                        onClick={() => setIsComponentTypeDropdownOpen(!isComponentTypeDropdownOpen)}
-                        className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 shadow-soft hover:shadow-soft-lg transition-all duration-200 text-sm font-medium"
-                      >
-                        <Plus size={18} />
-                        <span>Add Component</span>
-                        {isComponentTypeDropdownOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-                      </button>
-                      {isComponentTypeDropdownOpen && (
-                        <>
-                          <div
-                            className="fixed inset-0 z-10"
-                            onClick={() => setIsComponentTypeDropdownOpen(false)}
-                          />
-                          <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-slate-200 z-20">
-                            <button
-                              type="button"
-                              onClick={() => addComponent('webapp')}
-                              className="w-full text-left px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 first:rounded-t-lg transition-colors"
-                            >
-                              <div className="flex items-center gap-2">
-                                <Circle size={8} className="text-green-500 fill-green-500" />
-                                <span>Webapp</span>
-                              </div>
-                              <p className="text-xs text-slate-400 mt-0.5 ml-4">HTTP/HTTPS service</p>
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => addComponent('worker')}
-                              className="w-full text-left px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 transition-colors"
-                            >
-                              <div className="flex items-center gap-2">
-                                <Circle size={8} className="text-purple-500 fill-purple-500" />
-                                <span>Worker</span>
-                              </div>
-                              <p className="text-xs text-slate-400 mt-0.5 ml-4">Background process</p>
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => addComponent('cron')}
-                              className="w-full text-left px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 last:rounded-b-lg transition-colors"
-                            >
-                              <div className="flex items-center gap-2">
-                                <Circle size={8} className="text-orange-500 fill-orange-500" />
-                                <span>Cron</span>
-                              </div>
-                              <p className="text-xs text-slate-400 mt-0.5 ml-4">Scheduled job</p>
-                            </button>
-                          </div>
-                        </>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Components List */}
-                  {components.length === 0 ? (
-                    <div className="text-center py-12 border-2 border-dashed border-slate-200 rounded-lg">
-                      <div className="text-slate-400 mb-2">
-                        <Plus size={32} className="mx-auto" />
-                      </div>
-                      <p className="text-slate-500">No components added yet</p>
-                      <p className="text-sm text-slate-400 mt-1">Click "Add Component" to get started</p>
-                    </div>
-                  ) : (
-                    <div className="space-y-4">
-                      {components.map((component, index) => (
-                        <ComponentForm
-                          key={index}
-                          component={component}
-                          onChange={(updatedComponent) => updateComponent(index, updatedComponent)}
-                          onRemove={() => removeComponent(index)}
-                          hasGatewayApi={hasGatewayApi}
-                          gatewayResources={gatewayResources}
-                          gatewayReference={gatewayReference}
-                          isAdmin={isAdmin}
-                          title={`Component ${index + 1}: ${component.type.charAt(0).toUpperCase() + component.type.slice(1)}`}
-                          hasEnvironmentSelected={!!instanceData.environment_uuid}
-                        />
-                      ))}
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
+            <Stepper
+              steps={steps}
+              currentStep={currentStep}
+              completedSteps={completedSteps}
+              onStepChange={goToStep}
+              onStepComplete={completeStep}
+              showContinueButton={currentStep < 3}
+            />
           </div>
 
           {/* Submit Button - Always visible at bottom */}
