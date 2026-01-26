@@ -40,6 +40,7 @@ class GatewayApi(BaseModel):
 
 class GatewayReferences(BaseModel):
     """References to public and private gateways."""
+
     public: GatewayApiReference = GatewayApiReference()
     private: GatewayApiReference = GatewayApiReference()
 

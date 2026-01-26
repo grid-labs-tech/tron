@@ -28,8 +28,8 @@ def validate_env_vars(envs: List[Any]) -> None:
     """
     for i, env in enumerate(envs):
         key = getattr(env, "key", None) if hasattr(env, "key") else env.get("key")
-        value = getattr(env, "value", None) if hasattr(env, "value") else env.get(
-            "value"
+        value = (
+            getattr(env, "value", None) if hasattr(env, "value") else env.get("value")
         )
 
         if not key or not str(key).strip():
