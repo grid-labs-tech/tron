@@ -240,7 +240,7 @@ class WebappService:
             and not webapp.url
         ):
             raise InvalidURLError(
-                "URL is required for webapp components with HTTP exposure type and visibility 'public' or 'private'"
+                "URL is required for webapp components with HTTP(S) exposure type and visibility 'public' or 'private'"
             )
 
         self.repository.update(webapp)

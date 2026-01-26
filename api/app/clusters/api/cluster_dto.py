@@ -8,8 +8,12 @@ class ClusterBase(BaseModel):
     name: str
     api_address: str
     token: str
-    gateway_namespace: Optional[str] = None
-    gateway_name: Optional[str] = None
+    # Private gateway - used for visibility "private"
+    private_gateway_namespace: Optional[str] = None
+    private_gateway_name: Optional[str] = None
+    # Public gateway - used for visibility "public"
+    public_gateway_namespace: Optional[str] = None
+    public_gateway_name: Optional[str] = None
 
 
 class ClusterCreate(ClusterBase):
@@ -34,9 +38,15 @@ class GatewayApi(BaseModel):
     resources: list[str] = []
 
 
+class GatewayReferences(BaseModel):
+    """References to public and private gateways."""
+    public: GatewayApiReference = GatewayApiReference()
+    private: GatewayApiReference = GatewayApiReference()
+
+
 class GatewayFeatures(BaseModel):
     api: GatewayApi
-    reference: GatewayApiReference
+    reference: GatewayReferences
 
 
 class ClusterResponseWithValidation(BaseModel):
