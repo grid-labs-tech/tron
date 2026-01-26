@@ -152,7 +152,10 @@ describe('useInstanceDetail', () => {
         environment: { uuid: 'env-1' },
         gateway: {
           api: { enabled: true, resources: ['HTTPRoute'] },
-          reference: { namespace: 'gateway', name: 'main' },
+          reference: {
+            public: { namespace: 'gateway', name: 'main' },
+            private: { namespace: 'gateway', name: 'main' },
+          },
         },
       },
     ]

@@ -14,9 +14,10 @@ interface ExposureInputProps {
   hasGatewayApi?: boolean
   gatewayResources?: string[]
   gatewayReference?: { namespace: string; name: string }
+  hasEnvironmentSelected?: boolean
 }
 
-export function ExposureInput({ exposure, onChange, url, onUrlChange, hasGatewayApi = true, gatewayResources = [], gatewayReference = { namespace: '', name: '' } }: ExposureInputProps) {
+export function ExposureInput({ exposure, onChange, url, onUrlChange, hasGatewayApi = true, gatewayResources = [], gatewayReference = { namespace: '', name: '' }, hasEnvironmentSelected = true }: ExposureInputProps) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const updateField = (field: keyof Exposure, value: any) => {
     onChange({ ...exposure, [field]: value })
@@ -88,7 +89,7 @@ export function ExposureInput({ exposure, onChange, url, onUrlChange, hasGateway
               className="w-full px-2 py-1 border border-slate-300 rounded text-xs focus:ring-2 focus:ring-blue-500/50 focus:border-blue-400"
             >
               <option value="http" disabled={!availableTypes.includes('http')}>
-                HTTP{!availableTypes.includes('http') && exposure.visibility !== 'cluster' ? ' (Not available)' : ''}
+                HTTP(S){!availableTypes.includes('http') && exposure.visibility !== 'cluster' ? ' (Not available)' : ''}
               </option>
               <option value="tcp" disabled={!availableTypes.includes('tcp')}>
                 TCP{!availableTypes.includes('tcp') && exposure.visibility !== 'cluster' ? ' (Not available)' : ''}
@@ -137,25 +138,30 @@ export function ExposureInput({ exposure, onChange, url, onUrlChange, hasGateway
               </option>
               <option value="cluster">Cluster - Only accessible via cluster service</option>
             </select>
-            {!hasGatewayApi && (
+            {!hasEnvironmentSelected && (
               <p className="text-xs text-amber-600 mt-1">
-                Gateway API is not available. Only "Cluster" visibility is available.
+                Please select an environment first to check Gateway API availability.
               </p>
             )}
-            {hasGatewayApi && !hasGatewayReference && (
+            {hasEnvironmentSelected && !hasGatewayApi && (
+              <p className="text-xs text-amber-600 mt-1">
+                Gateway API is not available in this environment. Only "Cluster" visibility is available.
+              </p>
+            )}
+            {hasEnvironmentSelected && hasGatewayApi && !hasGatewayReference && (
               <p className="text-xs text-amber-600 mt-1">
                 No Gateway created in the cluster. Only "Cluster" visibility is available.
               </p>
             )}
             <div className="mt-2 p-2 bg-blue-50 border border-blue-200 rounded text-xs text-slate-700">
               {exposure.visibility === 'public' && (
-                <p><strong className="text-blue-800">Public:</strong> The service will have a public endpoint accessible externally through Ingress.</p>
+                <p><strong className="text-blue-800">Public:</strong> The service will be exposed on the internet with a public URL.</p>
               )}
               {exposure.visibility === 'private' && (
-                <p><strong className="text-blue-800">Private:</strong> The service will not have a public endpoint, only internal access.</p>
+                <p><strong className="text-blue-800">Private:</strong> The service will not be exposed on the internet. Accessible only via private network or VPN.</p>
               )}
               {exposure.visibility === 'cluster' && (
-                <p><strong className="text-blue-800">Cluster:</strong> The service will be accessible only via Kubernetes Service within the cluster.</p>
+                <p><strong className="text-blue-800">Cluster:</strong> Internal only. The service will be accessible only by other services within the cluster.</p>
               )}
             </div>
           </div>
@@ -171,7 +177,7 @@ export function ExposureInput({ exposure, onChange, url, onUrlChange, hasGateway
               placeholder="myapp.example.com"
               required
             />
-            <p className="text-xs text-slate-500 mt-1">This URL will be used as the vhost for the Ingress</p>
+            <p className="text-xs text-slate-500 mt-1">The hostname where your application will be accessible</p>
           </div>
         )}
       </div>

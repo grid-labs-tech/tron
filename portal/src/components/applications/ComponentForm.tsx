@@ -1,4 +1,4 @@
-import { X } from 'lucide-react'
+import { X, Globe, Clock, Cpu } from 'lucide-react'
 import { useEffect } from 'react'
 import type { ComponentFormData, WebappSettings, CronSettings, WorkerSettings } from './types'
 import { WebappForm } from './WebappForm'
@@ -17,6 +17,25 @@ interface ComponentFormProps {
   gatewayReference?: { namespace: string; name: string }
   isAdmin?: boolean
   componentUuid?: string
+  hasEnvironmentSelected?: boolean
+}
+
+const typeIcons = {
+  webapp: Globe,
+  cron: Clock,
+  worker: Cpu,
+}
+
+const typeColors = {
+  webapp: 'text-slate-700 bg-emerald-50 border-emerald-200',
+  cron: 'text-slate-700 bg-orange-50 border-orange-200',
+  worker: 'text-slate-700 bg-purple-50 border-purple-200',
+}
+
+const iconColors = {
+  webapp: 'text-emerald-600',
+  cron: 'text-orange-600',
+  worker: 'text-purple-600',
 }
 
 export function ComponentForm({
@@ -24,13 +43,15 @@ export function ComponentForm({
   onChange,
   onRemove,
   showRemoveButton = true,
-  title,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  title: _title,
   isEditing = false,
   hasGatewayApi = true,
   gatewayResources = [],
   gatewayReference = { namespace: '', name: '' },
   isAdmin = false,
   componentUuid,
+  hasEnvironmentSelected = true,
 }: ComponentFormProps) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const updateField = (field: keyof ComponentFormData, value: any) => {
@@ -63,98 +84,64 @@ export function ComponentForm({
     }
   }, [hasGatewayApi]) // eslint-disable-line react-hooks/exhaustive-deps
 
+  const TypeIcon = typeIcons[component.type]
+
   return (
-    <div className="border border-slate-200 rounded-lg p-4 bg-slate-50/50">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold text-slate-800">{title || 'Component'}</h3>
+    <div className={`border rounded-lg overflow-hidden bg-white ${typeColors[component.type]}`}>
+      {/* Compact Header */}
+      <div className="flex items-center gap-3 px-4 py-3 bg-slate-50 border-b border-slate-200">
+        <div className={`p-1.5 rounded ${typeColors[component.type]}`}>
+          <TypeIcon size={16} className={iconColors[component.type]} />
+        </div>
+        
+        {/* Name Input or Display */}
+        {!isEditing ? (
+          <input
+            type="text"
+            value={component.name}
+            onChange={(e) => {
+              const value = e.target.value.replace(/\s/g, '')
+              updateField('name', value)
+            }}
+            className="flex-1 px-2 py-1 border border-slate-300 rounded text-sm focus:ring-2 focus:ring-blue-500/50 focus:border-blue-400 bg-white"
+            placeholder={`my-${component.type}`}
+            required
+            pattern="[^\s]+"
+            title="Component name cannot contain spaces"
+          />
+        ) : (
+          <span className="flex-1 text-sm font-medium text-slate-700">{component.name}</span>
+        )}
+
+        {/* Enabled Toggle */}
+        <div className="flex items-center gap-2">
+          <label className="relative inline-flex items-center cursor-pointer">
+            <input
+              type="checkbox"
+              checked={component.enabled}
+              onChange={(e) => updateField('enabled', e.target.checked)}
+              className="sr-only peer"
+            />
+            <div className="w-9 h-5 bg-slate-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue-500/50 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-600"></div>
+          </label>
+          <span className="text-xs text-slate-500">{component.enabled ? 'On' : 'Off'}</span>
+        </div>
+
+        {/* Remove Button */}
         {showRemoveButton && onRemove && (
           <button
             type="button"
             onClick={onRemove}
-            className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+            className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
+            title="Remove component"
           >
-            <X size={18} />
+            <X size={16} />
           </button>
         )}
       </div>
 
-      <div className="space-y-4">
-        {!isEditing && (
-        <div>
-          <label className="block text-xs font-medium text-slate-600 mb-1">Name *</label>
-          <div className="flex items-center gap-4">
-            <input
-              type="text"
-              value={component.name}
-              onChange={(e) => {
-                const value = e.target.value.replace(/\s/g, '')
-                updateField('name', value)
-              }}
-              className="flex-1 px-2 py-1.5 border border-slate-300 rounded text-sm focus:ring-2 focus:ring-blue-500/50 focus:border-blue-400"
-              placeholder="my-component"
-              required
-              pattern="[^\s]+"
-              title="Component name cannot contain spaces"
-            />
-            <div className="flex items-center gap-4 whitespace-nowrap">
-              <label className="flex items-center gap-2 text-xs font-medium text-slate-600">
-                <input
-                  type="radio"
-                  name={`enabled-${component.name || 'component'}`}
-                  checked={component.enabled === true}
-                  onChange={() => updateField('enabled', true)}
-                  className="border-slate-300 text-blue-600 focus:ring-blue-500"
-                />
-                Enabled
-              </label>
-              <label className="flex items-center gap-2 text-xs font-medium text-slate-600">
-                <input
-                  type="radio"
-                  name={`enabled-${component.name || 'component'}`}
-                  checked={component.enabled === false}
-                  onChange={() => updateField('enabled', false)}
-                  className="border-slate-300 text-blue-600 focus:ring-blue-500"
-                />
-                Disabled
-              </label>
-            </div>
-          </div>
-        </div>
-        )}
-        {isEditing && (
-          <div>
-            <label className="block text-xs font-medium text-slate-600 mb-1">Name</label>
-            <div className="flex items-center gap-4">
-              <div className="flex-1 px-2 py-1.5 border border-slate-200 rounded text-sm bg-slate-50 text-slate-600">
-                {component.name}
-              </div>
-              <div className="flex items-center gap-4 whitespace-nowrap">
-                <label className="flex items-center gap-2 text-xs font-medium text-slate-600">
-                  <input
-                    type="radio"
-                    name={`enabled-${component.name || 'component'}`}
-                    checked={component.enabled === true}
-                    onChange={() => updateField('enabled', true)}
-                    className="border-slate-300 text-blue-600 focus:ring-blue-500"
-                  />
-                  Enabled
-                </label>
-                <label className="flex items-center gap-2 text-xs font-medium text-slate-600">
-                  <input
-                    type="radio"
-                    name={`enabled-${component.name || 'component'}`}
-                    checked={component.enabled === false}
-                    onChange={() => updateField('enabled', false)}
-                    className="border-slate-300 text-blue-600 focus:ring-blue-500"
-                  />
-                  Disabled
-                </label>
-              </div>
-            </div>
-            <p className="text-xs text-slate-500 mt-1">Component name cannot be changed after creation</p>
-          </div>
-        )}
-
+      {/* Component Settings */}
+      <div className="px-4 py-3">
         {component.type === 'webapp' && (
           <>
             {component.settings && ('exposure' in component.settings || 'endpoints' in component.settings) && (
@@ -168,6 +155,7 @@ export function ComponentForm({
                 gatewayReference={gatewayReference}
                 isAdmin={isAdmin}
                 componentUuid={componentUuid}
+                hasEnvironmentSelected={hasEnvironmentSelected}
               />
             )}
           </>
