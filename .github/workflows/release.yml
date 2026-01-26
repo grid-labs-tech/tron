@@ -133,12 +133,19 @@ jobs:
           output: 'trivy-portal-results.sarif'
           severity: 'CRITICAL,HIGH'
 
-      - name: Upload Trivy scan results
-        uses: github/codeql-action/upload-sarif@v3
+      - name: Upload Trivy scan results (API)
+        uses: github/codeql-action/upload-sarif@v4
         if: always()
         with:
-          sarif_file: '.'
-          category: 'container-scanning'
+          sarif_file: 'trivy-api-results.sarif'
+          category: 'container-scanning-api'
+
+      - name: Upload Trivy scan results (Portal)
+        uses: github/codeql-action/upload-sarif@v4
+        if: always()
+        with:
+          sarif_file: 'trivy-portal-results.sarif'
+          category: 'container-scanning-portal'
 
       - name: Generate changelog
         id: changelog
