@@ -35,21 +35,24 @@ function InstanceDetail() {
     queryFn: () => clustersApi.list(),
   })
 
-  // Check if any cluster in the instance's environment has gateway_api available
-  const hasGatewayApi = useMemo(() => {
-    if (!instance || !clusters || !instance.environment) return false
-    const environmentClusters = clusters.filter(
+  // Get clusters in the instance's environment
+  const environmentClusters = useMemo(() => {
+    if (!instance || !clusters || !instance.environment) return []
+    return clusters.filter(
       (cluster) => cluster.environment?.uuid === instance.environment.uuid
     )
-    return environmentClusters.some((cluster) => cluster.gateway?.api?.enabled === true)
   }, [instance, clusters])
+
+  const hasNoClusters = instance?.environment && environmentClusters.length === 0
+
+  // Check if any cluster in the instance's environment has gateway_api available
+  const hasGatewayApi = useMemo(() => {
+    return environmentClusters.some((cluster) => cluster.gateway?.api?.enabled === true)
+  }, [environmentClusters])
 
   // Get Gateway API resources available in environment clusters
   const gatewayResources = useMemo(() => {
-    if (!instance || !clusters || !instance.environment) return []
-    const environmentClusters = clusters.filter(
-      (cluster) => cluster.environment?.uuid === instance.environment.uuid
-    )
+    if (environmentClusters.length === 0) return []
     // Get resources from all clusters that have Gateway API enabled
     const allResources = new Set<string>()
     environmentClusters.forEach((cluster) => {
@@ -58,14 +61,11 @@ function InstanceDetail() {
       }
     })
     return Array.from(allResources)
-  }, [instance, clusters])
+  }, [environmentClusters])
 
   // Get Gateway reference (namespace and name) from environment clusters
   const gatewayReference = useMemo(() => {
-    if (!instance || !clusters || !instance.environment) return { namespace: '', name: '' }
-    const environmentClusters = clusters.filter(
-      (cluster) => cluster.environment?.uuid === instance.environment.uuid
-    )
+    if (environmentClusters.length === 0) return { namespace: '', name: '' }
     // Get the first gateway reference found that has namespace and name filled
     // Use private gateway as default reference (both public and private use same auto-discovery if not configured)
     for (const cluster of environmentClusters) {
@@ -79,7 +79,7 @@ function InstanceDetail() {
       }
     }
     return { namespace: '', name: '' }
-  }, [instance, clusters])
+  }, [environmentClusters])
 
   const [editingComponentUuid, setEditingComponentUuid] = useState<string | null>(null)
   const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null)
@@ -916,7 +916,19 @@ function InstanceDetail() {
 
           {Object.values(componentsByType).every((components) => components.length === 0) && (
             <div className="bg-white rounded-xl shadow-soft border border-slate-200/60 p-12 text-center">
-              <p className="text-slate-500 text-lg">No components found. Click "Add Component" to get started.</p>
+              {hasNoClusters ? (
+                <div className="space-y-3">
+                  <p className="text-amber-600 text-lg font-medium">⚠️ No clusters in this environment</p>
+                  <p className="text-slate-500">
+                    You need to add a cluster to the <span className="font-medium">{instance?.environment?.name}</span> environment before you can create components.
+                  </p>
+                  <p className="text-sm text-slate-400">
+                    Go to <span className="font-medium">Settings → Clusters</span> to add one.
+                  </p>
+                </div>
+              ) : (
+                <p className="text-slate-500 text-lg">No components found. Click "Add Component" to get started.</p>
+              )}
             </div>
           )}
         </div>
@@ -962,6 +974,19 @@ function InstanceDetail() {
                     >
                       <X size={16} />
                     </button>
+                  </div>
+                )}
+                {hasNoClusters && !editingComponentUuid && (
+                  <div className="mb-4 p-4 rounded-lg bg-amber-50 border border-amber-200 text-amber-800">
+                    <div className="flex items-start gap-2">
+                      <span className="text-amber-500 mt-0.5">⚠️</span>
+                      <div>
+                        <p className="font-medium text-sm">No clusters in this environment</p>
+                        <p className="text-sm mt-1">
+                          Components cannot be deployed without a cluster. Go to <span className="font-medium">Settings → Clusters</span> to add one.
+                        </p>
+                      </div>
+                    </div>
                   </div>
                 )}
                 {component ? (
