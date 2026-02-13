@@ -1,5 +1,4 @@
-# Use docker-compose or docker compose based on availability
-DOCKER_COMPOSE := $(shell command -v docker-compose 2>/dev/null || echo "docker compose")
+DOCKER_COMPOSE := docker compose
 COMPOSE_FILE := docker/docker-compose.yaml
 COMPOSE_TEST_FILE := docker/docker-compose.test.yaml
 COMPOSE_CLUSTER2_FILE := docker/docker-compose.cluster2.yaml
