@@ -1,4 +1,4 @@
-from fastapi import Depends, HTTPException, status, Header
+from fastapi import Depends, HTTPException, Request, status, Header
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.orm import Session
 from typing import Optional, Union
@@ -15,6 +15,7 @@ security = HTTPBearer(auto_error=False)
 
 
 async def get_current_user_or_token(
+    request: Request,
     x_tron_token: Optional[str] = Header(None, alias="x-tron-token"),
     credentials: Optional[HTTPAuthorizationCredentials] = Depends(security),
     db: Session = Depends(get_db),
@@ -46,6 +47,7 @@ async def get_current_user_or_token(
                 status_code=status.HTTP_401_UNAUTHORIZED, detail="Token expirado"
             )
 
+        request.state.audit_actor = f"token:{token.name}"
         return token
 
     # Fallback para JWT
@@ -82,6 +84,7 @@ async def get_current_user_or_token(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="User inactive"
         )
 
+    request.state.audit_actor = user.email
     return user
 
 

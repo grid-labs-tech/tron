@@ -4,7 +4,9 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.docs import get_redoc_html
 
+from app.audit.core.audit_config import get_siem_url, is_audit_enabled
 from app.shared.database.database import Base, engine
+from app.shared.middleware.audit_middleware import AuditMiddleware
 
 # Also import Base from old database to ensure compatibility
 from app.database import Base as OldBase
@@ -94,6 +96,10 @@ CORS_ALLOW_HEADERS = os.getenv(
     "Content-Type,Authorization,Accept,Origin,X-Requested-With,x-tron-token",
 ).split(",")
 CORS_ALLOW_HEADERS = [header.strip() for header in CORS_ALLOW_HEADERS if header.strip()]
+
+# Audit logging - only add when enabled and SIEM URL is configured
+if is_audit_enabled() and get_siem_url():
+    app.add_middleware(AuditMiddleware)
 
 app.add_middleware(
     CORSMiddleware,

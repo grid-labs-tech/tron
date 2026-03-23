@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
 from uuid import UUID
 
@@ -461,6 +461,7 @@ def get_worker_pod_describe(
 
 @router.post("/{uuid}/pods/{pod_name}/exec", response_model=PodCommandResponse)
 def exec_worker_pod_command(
+    http_request: Request,
     uuid: UUID,
     pod_name: str,
     request: PodCommandRequest,
@@ -469,6 +470,12 @@ def exec_worker_pod_command(
     current_user: User = Depends(get_current_user),
 ):
     """Execute a command in a pod."""
+    http_request.state.audit_exec_payload = {
+        "request": {
+            "command": request.command,
+            "container_name": request.container_name,
+        }
+    }
     repository = WorkerRepository(database_session)
     worker = repository.find_by_uuid(uuid, load_relations=True)
 
@@ -503,8 +510,14 @@ def exec_worker_pod_command(
         result = exec_worker_pod_command_from_cluster(
             cluster, namespace, pod_name, request.command, request.container_name
         )
+        http_request.state.audit_exec_payload["response"] = {
+            "stdout": result.get("stdout", ""),
+            "stderr": result.get("stderr", ""),
+            "return_code": result.get("return_code", -1),
+        }
         return result
     except Exception as e:
+        http_request.state.audit_exec_payload["response"] = {"error": str(e)}
         raise HTTPException(
             status_code=500,
             detail=f"Failed to execute command in pod {pod_name}: {str(e)}",

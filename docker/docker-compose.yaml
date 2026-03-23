@@ -25,6 +25,11 @@ x-env-api: &shared_env_api
     TRON_DEFAULT_ORG_PASSWORD: "admin"
     # Encryption key for secrets (development only - generate new key for production)
     TRON_SECRETS_KEY: "NfMA_cWx0cuHAGiwl-qWYfl7u1S6bXvADFt5T9WMfUM="
+    # Audit logging - pass from .env (AUDIT_LOG_ENABLED=true, AUDIT_SIEM_URL=http://...)
+    AUDIT_LOG_ENABLED: "${AUDIT_LOG_ENABLED:-false}"
+    AUDIT_SIEM_URL: "${AUDIT_SIEM_URL:-}"
+    AUDIT_SIEM_TOKEN: "${AUDIT_SIEM_TOKEN:-}"
+    AUDIT_SIEM_TIMEOUT: "${AUDIT_SIEM_TIMEOUT:-5}"
     # SSO/OAuth: public API URL (redirect_uri base) and portal URL (post-login redirect)
     API_PUBLIC_URL: "http://localhost:8000"
     FRONTEND_URL: "http://localhost:3000"
