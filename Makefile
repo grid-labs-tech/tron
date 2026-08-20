@@ -4,7 +4,11 @@ COMPOSE_FILE := docker/docker-compose.yaml
 COMPOSE_TEST_FILE := docker/docker-compose.test.yaml
 COMPOSE_CLUSTER2_FILE := docker/docker-compose.cluster2.yaml
 
-.PHONY: start stop restart build logs status test api-test portal-test setup-cluster setup-cluster2 clean help lint api-lint portal-lint
+VOLUME_DIRS := docker/volumes docker/volumes/postgres docker/volumes/postgres-test docker/volumes/kubeconfig docker/volumes/kubeconfig2 docker/volumes/token
+HOST_UID := $(shell id -u)
+HOST_GID := $(shell id -g)
+
+.PHONY: start stop restart build logs status test api-test portal-test setup-cluster setup-cluster2 clean help lint api-lint portal-lint ensure-volumes clean-volumes
 
 help:
 	@echo "Tron Development Commands:"
@@ -24,7 +28,23 @@ help:
 	@echo "  make api-lint       - Run API linter (format then ruff check)"
 	@echo "  make portal-lint    - Run Portal linter (eslint + tsc --noEmit)"
 
+# Create bind-mount dirs as the current user before Docker does (as root).
+ensure-volumes:
+	@echo "🧹 Ensuring volumes are created..."
+	@mkdir -p $(VOLUME_DIRS)
+	@echo "✅ Volumes created!"
+
+clean-volumes:
+	@echo "🧹 Cleaning up volumes..."
+	@if [ -d docker/volumes ]; then \
+		docker run --rm -v "$(CURDIR)/docker/volumes:/volumes" alpine \
+			chown -R $(HOST_UID):$(HOST_GID) /volumes; \
+	fi
+	@rm -rf $(VOLUME_DIRS)
+	@echo "✅ Volumes cleaned!"
+
 start:
+	@make ensure-volumes
 	@echo "🚀 Starting Tron development environment..."
 	@$(DOCKER_COMPOSE) -f $(COMPOSE_FILE) up -d
 	@echo ""
@@ -53,7 +73,7 @@ clean:
 	@$(DOCKER_COMPOSE) -f $(COMPOSE_FILE) down -v --remove-orphans
 	@$(DOCKER_COMPOSE) -f $(COMPOSE_TEST_FILE) down -v --remove-orphans 2>/dev/null || true
 	@$(DOCKER_COMPOSE) -f $(COMPOSE_CLUSTER2_FILE) down -v --remove-orphans 2>/dev/null || true
-	@rm -rf docker/volumes/postgres docker/volumes/postgres-test docker/volumes/kubeconfig docker/volumes/kubeconfig2 docker/volumes/token
+	@make clean-volumes
 	@echo "✅ Cleaned!"
 
 build:
@@ -68,10 +88,12 @@ status:
 	@$(DOCKER_COMPOSE) -f $(COMPOSE_FILE) ps
 
 setup-cluster:
+	@make ensure-volumes
 	@echo "🔧 Setting up local k3s cluster..."
 	@cd docker && ./scripts/setup-k3s-cluster.sh 2>/dev/null || ../scripts/setup-k3s-cluster.sh
 
 setup-cluster2:
+	@make ensure-volumes
 	@echo "🔧 Setting up k3s cluster2..."
 	@$(DOCKER_COMPOSE) -f $(COMPOSE_CLUSTER2_FILE) up -d
 	@sleep 5
