@@ -101,3 +101,19 @@ export const useTemplatesForComponent = (organizationUuid: string | undefined, c
     enabled: !!organizationUuid && !!component_type,
   })
 }
+
+export const useTemplateSettingsForComponent = (
+  organizationUuid: string | undefined,
+  componentType: string | undefined,
+) => {
+  return useQuery({
+    queryKey: ['template-settings', organizationUuid, componentType],
+    queryFn: () => {
+      if (!organizationUuid || !componentType) {
+        throw new Error('Organization UUID and component type are required')
+      }
+      return componentTemplateConfigsApi.getTemplateSettings(organizationUuid, componentType)
+    },
+    enabled: !!organizationUuid && !!componentType,
+  })
+}

@@ -36,6 +36,13 @@ export interface TemplateUpdate {
   template_settings?: TemplateSettingDefinition[]
 }
 
+export interface TemplateSettingsGroup {
+  template_uuid: string
+  template_name: string
+  template_slug: string
+  settings: TemplateSettingDefinition[]
+}
+
 export interface ComponentTemplateConfig {
   uuid: string
   component_type: string

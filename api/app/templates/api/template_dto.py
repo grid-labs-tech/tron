@@ -42,3 +42,12 @@ class Template(TemplateBase):
     model_config = ConfigDict(
         from_attributes=True,
     )
+
+
+class TemplateSettingsGroup(BaseModel):
+    """Schema of template settings for a component type, grouped by template."""
+
+    template_uuid: UUID
+    template_name: str
+    template_slug: str
+    settings: List[TemplateSettingDefinition]
