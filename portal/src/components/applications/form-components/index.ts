@@ -6,5 +6,5 @@ export { ExposureInput } from './ExposureInput'
 export { CustomMetricsInput } from './CustomMetricsInput'
 export { ScalingThresholdsInput } from './ScalingThresholdsInput'
 export { ScheduleInput } from './ScheduleInput'
-export { AutoscalingInput } from './AutoscalingInput'
+export { TemplateSettingsInput } from './TemplateSettingsInput'
 

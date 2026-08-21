@@ -13,6 +13,7 @@ import type {
 } from '../../features/templates'
 import { DataTable, Breadcrumbs, PageHeader } from '../../shared/components'
 import { useOrganization } from '../../contexts/OrganizationContext'
+import { TemplateSettingsEditor } from './TemplateSettingsEditor'
 
 // Available variables for webapp templates
 const WEBAPP_VARIABLES = {
@@ -60,6 +61,13 @@ const WEBAPP_VARIABLES = {
         failure_threshold: 'number',
       },
     },
+    template: {
+      '[slug]': {
+        settings: {
+          '[name]': 'boolean | string',
+        },
+      },
+    },
   },
   environment: {
     // Dynamic keys based on environment settings
@@ -74,6 +82,22 @@ const WEBAPP_VARIABLES = {
       },
     },
   },
+}
+
+function previewSlug(name: string): string {
+  let slug = name.trim().toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/_+/g, '_').replace(/^_|_$/g, '')
+  if (!slug) return 'template'
+  if (!/^[a-z]/.test(slug)) return `t_${slug}`
+  return slug
+}
+
+const emptyForm: TemplateCreate = {
+  name: '',
+  description: '',
+  category: 'webapp',
+  content: '',
+  variables_schema: '',
+  template_settings: [],
 }
 
 function Templates() {
@@ -103,20 +127,16 @@ function Templates() {
     enabled: true,
   })
 
-  const [formData, setFormData] = useState<TemplateCreate>({
-    name: '',
-    description: '',
-    category: 'webapp',
-    content: '',
-    variables_schema: '',
-  })
+  const [formData, setFormData] = useState<TemplateCreate>(emptyForm)
+  const [editingSlug, setEditingSlug] = useState<string>('')
 
   useEffect(() => {
     if (createMutation.isSuccess) {
       setNotification({ type: 'success', message: 'Template created successfully' })
       setIsOpen(false)
       setEditingTemplate(null)
-      setFormData({ name: '', description: '', category: 'webapp', content: '', variables_schema: '' })
+      setFormData(emptyForm)
+      setEditingSlug('')
       setTimeout(() => setNotification(null), 5000)
       createMutation.reset()
     }
@@ -140,7 +160,8 @@ function Templates() {
       setIsOpen(false)
       setEditingTemplate(null)
       setSelectedTemplate(null)
-      setFormData({ name: '', description: '', category: 'webapp', content: '', variables_schema: '' })
+      setFormData(emptyForm)
+      setEditingSlug('')
       setTimeout(() => setNotification(null), 5000)
       updateMutation.reset()
     }
@@ -193,21 +214,27 @@ function Templates() {
         description: formData.description || undefined,
         content: formData.content,
         variables_schema: formData.variables_schema || undefined,
+        template_settings: (formData.template_settings || []).filter((s) => s.name.trim()),
       }
       updateMutation.mutate({ uuid: editingTemplate.uuid, data: updateData })
     } else {
-      createMutation.mutate(formData)
+      createMutation.mutate({
+        ...formData,
+        template_settings: (formData.template_settings || []).filter((s) => s.name.trim()),
+      })
     }
   }
 
   const handleEdit = (template: Template) => {
     setEditingTemplate(template)
+    setEditingSlug(template.slug)
     setFormData({
       name: template.name,
       description: template.description || '',
       category: template.category,
       content: template.content,
       variables_schema: template.variables_schema || '',
+      template_settings: template.template_settings || [],
     })
     setIsOpen(true)
   }
@@ -219,7 +246,8 @@ function Templates() {
   const handleCloseModal = () => {
     setIsOpen(false)
     setEditingTemplate(null)
-    setFormData({ name: '', description: '', category: 'webapp', content: '', variables_schema: '' })
+    setEditingSlug('')
+    setFormData(emptyForm)
   }
 
   const handleDelete = (uuid: string) => {
@@ -407,13 +435,8 @@ function Templates() {
             <button
               onClick={() => {
                 setEditingTemplate(null)
-                setFormData({
-                  name: '',
-                  description: '',
-                  category: 'webapp',
-                  content: '',
-                  variables_schema: '',
-                })
+                setEditingSlug('')
+                setFormData(emptyForm)
                 setIsOpen(true)
               }}
               className="btn-primary flex items-center gap-2"
@@ -721,6 +744,25 @@ function Templates() {
                   required
                 />
               </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1.5">Slug</label>
+                <input
+                  type="text"
+                  value={editingTemplate ? editingSlug : previewSlug(formData.name)}
+                  readOnly
+                  className="w-full px-3 py-2 border border-slate-200 rounded-lg bg-slate-50 text-sm font-mono text-slate-600"
+                />
+                <p className="text-xs text-slate-500 mt-1">
+                  {editingTemplate
+                    ? 'Slug is generated from the name on create and cannot be changed.'
+                    : 'Generated from the name when you create the template.'}
+                </p>
+              </div>
+              <TemplateSettingsEditor
+                settings={formData.template_settings || []}
+                onChange={(template_settings) => setFormData({ ...formData, template_settings })}
+                slugPreview={editingTemplate ? editingSlug : previewSlug(formData.name)}
+              />
               <div className="flex justify-end gap-2.5 pt-3">
                 <button
                   type="button"

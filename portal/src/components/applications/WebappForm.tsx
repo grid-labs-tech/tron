@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { ChevronDown, ChevronRight, Settings2 } from 'lucide-react'
+import { ChevronDown, ChevronRight, Settings2, FileCode } from 'lucide-react'
 import type { WebappSettings } from './types'
 import type { EnvironmentSettingsLimits } from '../../features/environments'
 import { CpuMemoryInput } from './form-components/CpuMemoryInput'
@@ -11,6 +11,8 @@ import { CustomMetricsInput } from './form-components/CustomMetricsInput'
 import { EnvVarsInput } from './form-components/EnvVarsInput'
 import { SecretsInput } from './form-components/SecretsInput'
 import { CommandInput } from './form-components/CommandInput'
+import { TemplateSettingsInput } from './form-components/TemplateSettingsInput'
+import { useTemplateSettingsForComponent } from '../../features/templates'
 
 interface WebappFormProps {
   settings: WebappSettings
@@ -30,6 +32,8 @@ interface WebappFormProps {
 
 export function WebappForm({ settings, onChange, url, onUrlChange, hasGatewayApi = true, gatewayResources = [], gatewayReference = { namespace: '', name: '' }, isAdmin = false, organizationUuid, componentUuid, hasEnvironmentSelected = true, envLimits }: WebappFormProps) {
   const [showAdvanced, setShowAdvanced] = useState(false)
+  const [showTemplateSettings, setShowTemplateSettings] = useState(false)
+  const { data: templateSettingGroups = [] } = useTemplateSettingsForComponent(organizationUuid, 'webapp')
   
   const updateField = <K extends keyof WebappSettings>(field: K, value: WebappSettings[K]) => {
     onChange({ ...settings, [field]: value })
@@ -50,6 +54,10 @@ export function WebappForm({ settings, onChange, url, onUrlChange, hasGatewayApi
     const hasCustomMemory = settings.memory !== undefined && settings.memory !== 512
     return hasEnvs || hasSecrets || hasCommand || hasCustomCpu || hasCustomMemory
   }
+
+  const hasTemplateSettingsValues = Object.values(settings.template_settings || {}).some(
+    (group) => group && Object.keys(group).length > 0
+  )
 
   return (
     <div className="mt-3 space-y-3">
@@ -135,6 +143,32 @@ export function WebappForm({ settings, onChange, url, onUrlChange, hasGatewayApi
             onChange={(customMetrics) => updateField('custom_metrics', customMetrics)}
           />
         </div>
+      )}
+
+      {templateSettingGroups.length > 0 && (
+        <>
+          <button
+            type="button"
+            onClick={() => setShowTemplateSettings(!showTemplateSettings)}
+            className="flex items-center gap-2 text-sm text-slate-600 hover:text-slate-900 transition-colors py-1"
+          >
+            {showTemplateSettings ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+            <FileCode size={14} />
+            <span className="font-medium">Template Settings</span>
+            {hasTemplateSettingsValues && !showTemplateSettings && (
+              <span className="text-xs text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">Modified</span>
+            )}
+          </button>
+          {showTemplateSettings && (
+            <div className="space-y-3 pl-4 border-l-2 border-slate-200">
+              <TemplateSettingsInput
+                groups={templateSettingGroups}
+                values={settings.template_settings || {}}
+                onChange={(template_settings) => updateField('template_settings', template_settings)}
+              />
+            </div>
+          )}
+        </>
       )}
     </div>
   )

@@ -40,6 +40,7 @@ class WorkerSettings(BaseModel):
     cpu_scaling_threshold: int = 80
     memory_scaling_threshold: int = 80
     autoscaling: WorkerAutoscaling
+    template_settings: Dict[str, Dict[str, Union[bool, str]]] = {}
 
     @model_validator(mode="after")
     def parse_command(self):

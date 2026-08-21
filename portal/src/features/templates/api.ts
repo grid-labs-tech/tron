@@ -83,4 +83,13 @@ export const componentTemplateConfigsApi = {
     const response = await api.get(`/organizations/${organizationUuid}/component-template-configs/component/${component_type}/templates`)
     return response.data
   },
+  getTemplateSettings: async (organizationUuid: string, componentType: string): Promise<import('./types').TemplateSettingsGroup[]> => {
+    if (!organizationUuid) {
+      throw new Error('Organization UUID is required')
+    }
+    const response = await api.get<import('./types').TemplateSettingsGroup[]>(
+      `/organizations/${organizationUuid}/component-template-configs/component/${componentType}/template-settings`
+    )
+    return response.data
+  },
 }

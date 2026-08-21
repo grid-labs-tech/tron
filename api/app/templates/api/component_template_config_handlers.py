@@ -24,7 +24,11 @@ from app.templates.core.component_template_config_validators import (
 from app.organizations.api.dependencies.organization_context import (
     getOrganizationContext,
 )
-from app.organizations.core.authorization import OrganizationAccessContext, isOrgAdmin
+from app.organizations.core.authorization import (
+    OrganizationAccessContext,
+    isOrgAdmin,
+)
+from app.templates.api.template_dto import TemplateSettingsGroup
 
 
 router = APIRouter(
@@ -213,6 +217,24 @@ def delete_component_template_config(
         return service.delete_component_template_config(uuid)
     except ComponentTemplateConfigNotFoundError as e:
         raise HTTPException(status_code=404, detail=str(e))
+
+
+@router.get(
+    "/component/{component_type}/template-settings",
+    response_model=List[TemplateSettingsGroup],
+)
+def get_template_settings_for_component(
+    organization_uuid: UUID,
+    component_type: str,
+    service: ComponentTemplateConfigService = Depends(
+        get_component_template_config_service
+    ),
+    ctx: OrganizationAccessContext = Depends(getOrganizationContext),
+):
+    """Return enabled templates' settings schema for a component type. Any org member can read."""
+    return service.get_template_settings_for_component_type(
+        component_type, organization_id=ctx.organization.id
+    )
 
 
 @router.get(

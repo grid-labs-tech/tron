@@ -49,6 +49,9 @@ from app.environments.infra.environment_settings_repository import (
 from app.environments.core.environment_settings_defaults import (
     get_environment_limits_from_settings,
 )
+from app.templates.core.template_settings import (
+    validate_component_template_settings_for_org,
+)
 
 
 class WebappService:
@@ -70,6 +73,13 @@ class WebappService:
         validate_instance_exists(self.repository, dto.instance_uuid)
 
         instance = self.repository.find_instance_by_uuid(dto.instance_uuid)
+
+        validate_component_template_settings_for_org(
+            self.db,
+            instance.application.organization_id,
+            "webapp",
+            dto.settings.template_settings,
+        )
 
         if self.settings_repository:
             settings_row = self.settings_repository.find_by_environment_id(
@@ -112,6 +122,14 @@ class WebappService:
 
         webapp = self.repository.find_by_uuid(uuid)
         validate_webapp_type(webapp)
+
+        if dto.settings is not None:
+            validate_component_template_settings_for_org(
+                self.db,
+                webapp.instance.application.organization_id,
+                "webapp",
+                dto.settings.template_settings,
+            )
 
         if dto.settings is not None and self.settings_repository:
             settings_row = self.settings_repository.find_by_environment_id(

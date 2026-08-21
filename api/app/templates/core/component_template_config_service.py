@@ -120,6 +120,28 @@ class ComponentTemplateConfigService:
             component_type, organization_id=organization_id
         )
 
+    def get_template_settings_for_component_type(
+        self, component_type: str, organization_id: int | None = None
+    ) -> List[dict]:
+        """Enabled templates that define settings, grouped for component forms."""
+        templates = self.get_templates_for_component_type(
+            component_type, organization_id=organization_id
+        )
+        groups: List[dict] = []
+        for template in templates:
+            settings = template.template_settings or []
+            if not settings:
+                continue
+            groups.append(
+                {
+                    "template_uuid": template.uuid,
+                    "template_name": template.name,
+                    "template_slug": template.slug,
+                    "settings": settings,
+                }
+            )
+        return groups
+
     def delete_component_template_config(self, config_uuid: UUID) -> dict:
         """Delete a component template config."""
         config = self.config_repository.find_by_uuid(config_uuid)

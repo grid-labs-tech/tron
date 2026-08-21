@@ -137,10 +137,12 @@ export interface WebappDeployCreate {
 export interface Template {
   uuid: string
   name: string
+  slug: string
   description?: string
   category: string
   content: string
   variables_schema?: string
+  template_settings?: Array<{ name: string; description?: string; type: string }>
   created_at: string
   updated_at: string
 }
@@ -151,6 +153,7 @@ export interface TemplateCreate {
   category: string
   content: string
   variables_schema?: string
+  template_settings?: Array<{ name: string; description?: string; type: string }>
 }
 
 export interface TemplateUpdate {
@@ -158,6 +161,7 @@ export interface TemplateUpdate {
   description?: string
   content?: string
   variables_schema?: string
+  template_settings?: Array<{ name: string; description?: string; type: string }>
 }
 
 export interface ComponentTemplateConfig {

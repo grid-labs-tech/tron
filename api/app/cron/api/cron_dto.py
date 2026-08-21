@@ -24,6 +24,7 @@ class CronSettings(BaseModel):
     cpu: float
     memory: int
     schedule: str  # Cron schedule expression (e.g., "0 0 * * *")
+    template_settings: Dict[str, Dict[str, Union[bool, str]]] = {}
 
     @model_validator(mode="after")
     def parse_command(self):

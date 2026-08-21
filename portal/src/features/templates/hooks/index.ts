@@ -6,4 +6,5 @@ export {
   useDeleteTemplate,
   useComponentTemplateConfigs,
   useTemplatesForComponent,
+  useTemplateSettingsForComponent,
 } from './useTemplates'
