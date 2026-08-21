@@ -1,13 +1,12 @@
 """Tests for TemplateService."""
+
 import pytest
 from uuid import uuid4, UUID
 from unittest.mock import MagicMock, patch
 from app.templates.core.template_service import TemplateService
 from app.templates.infra.template_repository import TemplateRepository
 from app.templates.api.template_dto import TemplateCreate, TemplateUpdate
-from app.templates.core.template_validators import (
-    TemplateNotFoundError
-)
+from app.templates.core.template_validators import TemplateNotFoundError
 
 
 @pytest.fixture
@@ -39,26 +38,70 @@ def mock_template():
     template.category = "webapp"
     template.content = "template content"
     template.variables_schema = '{"type": "object"}'
+    template.slug = "test_template"
+    template.template_settings = []
     return template
 
 
-def test_create_template_success(template_service, mock_repository, mock_template, mock_organization_id):
+def test_create_template_success(
+    template_service, mock_repository, mock_template, mock_organization_id
+):
     """Test successful template creation."""
     dto = TemplateCreate(
         name="test-template",
         description="Test description",
         category="webapp",
         content="template content",
-        variables_schema='{"type": "object"}'
+        variables_schema='{"type": "object"}',
     )
 
     mock_repository.create.return_value = mock_template
 
-    with patch.object(template_service, '_build_template_entity', return_value=mock_template):
+    with patch.object(
+        template_service, "_build_template_entity", return_value=mock_template
+    ):
         result = template_service.create_template(dto, mock_organization_id)
 
         assert result == mock_template
         mock_repository.create.assert_called_once()
+
+
+def test_create_template_generates_unique_slug(
+    template_service, mock_repository, mock_organization_id
+):
+    """Slug is derived from name and disambiguated per organization."""
+    dto = TemplateCreate(
+        name="Webapp Deployment",
+        category="webapp",
+        content="kind: Deployment",
+        template_settings=[
+            {"name": "enable_pdb", "description": "PDB", "type": "boolean"}
+        ],
+    )
+    mock_repository.find_slugs_by_organization_id.return_value = ["webapp_deployment"]
+    mock_repository.create.side_effect = lambda template: template
+
+    result = template_service.create_template(dto, mock_organization_id)
+
+    assert result.slug == "webapp_deployment_2"
+    assert result.template_settings == [
+        {"name": "enable_pdb", "description": "PDB", "type": "boolean"}
+    ]
+
+
+def test_update_template_does_not_change_slug(
+    template_service, mock_repository, mock_template
+):
+    """Slug is immutable after create."""
+    mock_template.slug = "original_slug"
+    dto = TemplateUpdate(name="Renamed Template")
+    mock_repository.find_by_uuid.return_value = mock_template
+    mock_repository.update.return_value = mock_template
+
+    template_service.update_template(mock_template.uuid, dto)
+
+    assert mock_template.slug == "original_slug"
+    assert mock_template.name == "Renamed Template"
 
 
 def test_update_template_success(template_service, mock_repository, mock_template):
@@ -67,7 +110,7 @@ def test_update_template_success(template_service, mock_repository, mock_templat
     dto = TemplateUpdate(
         name="updated-template",
         description="Updated description",
-        content="updated content"
+        content="updated content",
     )
 
     updated_template = MagicMock()
@@ -136,7 +179,9 @@ def test_get_template_not_found(template_service, mock_repository):
         template_service.get_template(template_uuid)
 
 
-def test_get_templates(template_service, mock_repository, mock_template, mock_organization_id):
+def test_get_templates(
+    template_service, mock_repository, mock_template, mock_organization_id
+):
     """Test getting all templates."""
     mock_template2 = MagicMock()
     mock_template2.uuid = uuid4()
@@ -144,20 +189,30 @@ def test_get_templates(template_service, mock_repository, mock_template, mock_or
 
     mock_repository.find_all.return_value = [mock_template, mock_template2]
 
-    result = template_service.get_templates(skip=0, limit=10, organization_id=mock_organization_id)
+    result = template_service.get_templates(
+        skip=0, limit=10, organization_id=mock_organization_id
+    )
 
     assert len(result) == 2
-    mock_repository.find_all.assert_called_once_with(skip=0, limit=10, category=None, organization_id=mock_organization_id)
+    mock_repository.find_all.assert_called_once_with(
+        skip=0, limit=10, category=None, organization_id=mock_organization_id
+    )
 
 
-def test_get_templates_with_category(template_service, mock_repository, mock_template, mock_organization_id):
+def test_get_templates_with_category(
+    template_service, mock_repository, mock_template, mock_organization_id
+):
     """Test getting templates filtered by category."""
     mock_repository.find_all.return_value = [mock_template]
 
-    result = template_service.get_templates(skip=0, limit=10, category="webapp", organization_id=mock_organization_id)
+    result = template_service.get_templates(
+        skip=0, limit=10, category="webapp", organization_id=mock_organization_id
+    )
 
     assert len(result) == 1
-    mock_repository.find_all.assert_called_once_with(skip=0, limit=10, category="webapp", organization_id=mock_organization_id)
+    mock_repository.find_all.assert_called_once_with(
+        skip=0, limit=10, category="webapp", organization_id=mock_organization_id
+    )
 
 
 def test_delete_template_success(template_service, mock_repository, mock_template):
@@ -166,10 +221,13 @@ def test_delete_template_success(template_service, mock_repository, mock_templat
     mock_repository.find_by_uuid.return_value = mock_template
     mock_repository.find_component_configs_by_template_id.return_value = []
 
-    with patch('app.templates.core.template_service.validate_template_can_be_deleted'):
+    with patch("app.templates.core.template_service.validate_template_can_be_deleted"):
         result = template_service.delete_template(template_uuid)
 
-        assert result == {"status": "success", "message": "Template deleted successfully"}
+        assert result == {
+            "status": "success",
+            "message": "Template deleted successfully",
+        }
         # Validator also calls find_by_uuid
         assert mock_repository.find_by_uuid.call_count >= 1
         mock_repository.delete.assert_called_once_with(mock_template)
@@ -182,13 +240,21 @@ def test_delete_template_with_configs(template_service, mock_repository, mock_te
     mock_config2 = MagicMock()
 
     mock_repository.find_by_uuid.return_value = mock_template
-    mock_repository.find_component_configs_by_template_id.return_value = [mock_config1, mock_config2]
+    mock_repository.find_component_configs_by_template_id.return_value = [
+        mock_config1,
+        mock_config2,
+    ]
 
-    with patch('app.templates.core.template_service.validate_template_can_be_deleted'):
+    with patch("app.templates.core.template_service.validate_template_can_be_deleted"):
         result = template_service.delete_template(template_uuid)
 
-        assert result == {"status": "success", "message": "Template deleted successfully"}
-        mock_repository.delete_component_configs.assert_called_once_with([mock_config1, mock_config2])
+        assert result == {
+            "status": "success",
+            "message": "Template deleted successfully",
+        }
+        mock_repository.delete_component_configs.assert_called_once_with(
+            [mock_config1, mock_config2]
+        )
         mock_repository.delete.assert_called_once_with(mock_template)
 
 

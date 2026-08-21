@@ -1,7 +1,7 @@
-
 import pytest
 from unittest.mock import MagicMock
 from app.shared.serializers.serializers import serialize_webapp_deploy
+
 
 def test_serialize_webapp_deploy():
 
@@ -16,6 +16,7 @@ def test_serialize_webapp_deploy():
 
     # Type enum
     from app.webapps.infra.application_component_model import WebappType
+
     mock_webapp_deploy.type = WebappType.webapp
 
     # Instance attributes
@@ -55,13 +56,9 @@ def test_serialize_webapp_deploy():
             "timeout": 5,
             "interval": 31,
             "initial_interval": 30,
-            "failure_threshold": 2
+            "failure_threshold": 2,
         },
-        "exposure": {
-            "type": "http",
-            "port": 80,
-            "visibility": "cluster"
-        }
+        "exposure": {"type": "http", "port": 80, "visibility": "cluster"},
     }
 
     result = serialize_webapp_deploy(mock_webapp_deploy)
@@ -83,3 +80,44 @@ def test_serialize_webapp_deploy():
     assert "settings" in result
     assert result["settings"]["cpu"] == 0.25
     assert result["settings"]["memory"] == 128
+    assert "template_settings" not in result["settings"]
+    assert result["template"] == {}
+
+
+def test_serialize_application_component_nests_template_settings():
+    from app.shared.serializers.serializers import serialize_application_component
+    from app.webapps.infra.application_component_model import WebappType
+
+    mock_component = MagicMock()
+    mock_component.name = "test-webapp"
+    mock_component.uuid = "123e4567-e89b-12d3-a456-426614174000"
+    mock_component.url = None
+    mock_component.enabled = True
+    mock_component.type = WebappType.webapp
+
+    mock_instance = MagicMock()
+    mock_instance.image = "nginx"
+    mock_instance.version = "1.0.0"
+    mock_application = MagicMock()
+    mock_application.name = "test-app"
+    mock_application.uuid = "223e4567-e89b-12d3-a456-426614174001"
+    mock_application.namespace = None
+    mock_instance.application = mock_application
+    mock_environment = MagicMock()
+    mock_environment.name = "staging"
+    mock_environment.uuid = "323e4567-e89b-12d3-a456-426614174002"
+    mock_instance.environment = mock_environment
+    mock_component.instance = mock_instance
+    mock_component.settings = {
+        "cpu": 0.25,
+        "memory": 128,
+        "template_settings": {
+            "webapp_deployment": {"enable_pdb": True},
+        },
+        "exposure": {"type": "http", "port": 80, "visibility": "cluster"},
+    }
+
+    result = serialize_application_component(mock_component)
+
+    assert "template_settings" not in result["settings"]
+    assert result["template"]["webapp_deployment"]["settings"]["enable_pdb"] is True
