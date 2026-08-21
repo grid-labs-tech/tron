@@ -13,6 +13,7 @@ from app.database import Base as OldBase
 from app.applications.api.application_handlers import router as applications_router
 from app.instances.api.instance_handlers import router as instances_router
 from app.environments.api.environment_handlers import router as environments_router
+from app.crossplane.api.crossplane_handlers import router as crossplane_router
 from app.clusters.api.cluster_handlers import (
     router as clusters_router,
     router_env_clusters as clusters_by_environment_router,
@@ -58,6 +59,7 @@ from app.clusters.infra.cluster_model import Cluster  # noqa: F401, E402
 from app.templates.infra.template_model import Template  # noqa: F401, E402
 from app.templates.infra.component_template_config_model import ComponentTemplateConfig  # noqa: F401, E402
 from app.environments.infra.environment_settings_model import EnvironmentSettings  # noqa: F401, E402
+from app.crossplane.infra.crossplane_config_model import EnvironmentCrossplaneConfig  # noqa: F401, E402
 from app.auth.infra.token_model import Token  # noqa: F401, E402
 from app.auth.infra.identity_provider_model import IdentityProvider  # noqa: F401, E402
 from app.auth.infra.user_social_account_model import UserSocialAccount  # noqa: F401, E402
@@ -107,6 +109,7 @@ app.add_middleware(
 app.include_router(applications_router)
 app.include_router(instances_router)
 app.include_router(environments_router)
+app.include_router(crossplane_router)
 app.include_router(clusters_router)
 app.include_router(clusters_by_environment_router)
 app.include_router(templates_router)

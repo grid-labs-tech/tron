@@ -12,6 +12,7 @@ from app.environments.infra.environment_model import Environment
 from app.instances.infra.instance_model import Instance
 from app.environments.infra.environment_settings_model import EnvironmentSettings
 from app.clusters.infra.cluster_model import Cluster
+from app.crossplane.infra.crossplane_config_model import EnvironmentCrossplaneConfig
 from app.webapps.infra.application_component_model import ApplicationComponent
 from app.shared.infra.cluster_instance_model import ClusterInstance
 from app.users.infra.user_model import User

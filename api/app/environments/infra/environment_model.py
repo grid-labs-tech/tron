@@ -26,6 +26,12 @@ class Environment(Base):
         uselist=False,
         cascade="all, delete-orphan",
     )
+    crossplane_config = relationship(
+        "EnvironmentCrossplaneConfig",
+        back_populates="environment",
+        uselist=False,
+        cascade="all, delete-orphan",
+    )
     clusters = relationship("Cluster", back_populates="environment")
     instances = relationship("Instance", back_populates="environment")
     groups = relationship("Group", back_populates="environment")

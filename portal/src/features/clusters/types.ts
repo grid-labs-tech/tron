@@ -20,6 +20,17 @@ export interface GatewayFeatures {
   reference: GatewayReferences
 }
 
+export interface CrossplaneProviderStatus {
+  name: string
+  healthy: boolean
+}
+
+export interface CrossplaneFeatures {
+  available: boolean
+  healthy: boolean
+  providers: CrossplaneProviderStatus[]
+}
+
 export interface Cluster {
   uuid: string
   name: string
@@ -34,6 +45,7 @@ export interface Cluster {
     }
   }
   gateway?: GatewayFeatures
+  crossplane?: CrossplaneFeatures
   created_at: string
   updated_at: string
 }

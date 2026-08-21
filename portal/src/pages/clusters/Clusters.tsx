@@ -345,6 +345,47 @@ function Clusters() {
               )
             },
           },
+          {
+            key: 'crossplane',
+            label: 'Crossplane',
+            render: (cluster) => {
+              const crossplane = cluster.crossplane
+              const available = crossplane?.available ?? false
+              const healthy = crossplane?.healthy ?? false
+              const providers = crossplane?.providers ?? []
+
+              let icon = <XCircle size={16} className="text-slate-400" />
+              let label = 'Not Available'
+              let labelClass = 'text-sm text-slate-500'
+
+              if (available && healthy) {
+                icon = <CheckCircle size={16} className="text-green-600" />
+                label = 'Available'
+                labelClass = 'text-sm text-green-700 font-medium'
+              } else if (available) {
+                icon = <XCircle size={16} className="text-amber-500" />
+                label = 'Unhealthy'
+                labelClass = 'text-sm text-amber-700 font-medium'
+              }
+
+              return (
+                <div className="flex flex-col gap-1">
+                  <div className="flex items-center gap-2">
+                    {icon}
+                    <span className={labelClass}>{label}</span>
+                  </div>
+                  {available && providers.length > 0 && (
+                    <div className="text-xs text-slate-600 ml-6">
+                      Providers:{' '}
+                      {providers
+                        .map((p) => `${p.name}${p.healthy ? '' : ' (unhealthy)'}`)
+                        .join(', ')}
+                    </div>
+                  )}
+                </div>
+              )
+            },
+          },
         ]}
         data={clusters}
         isLoading={isLoading}

@@ -33,6 +33,21 @@ DEFAULT_ENVIRONMENT_SETTINGS = [
     },
 ]
 
+
+def merge_missing_default_settings(settings_list: list | None) -> list:
+    """Append default setting items missing from an existing environment settings list."""
+    current = list(settings_list) if settings_list else []
+    existing_keys = {
+        item.get("key")
+        for item in current
+        if isinstance(item, dict) and item.get("key")
+    }
+    for default in DEFAULT_ENVIRONMENT_SETTINGS:
+        if default["key"] not in existing_keys:
+            current.append(dict(default))
+    return current
+
+
 # Keys used for component validation (CPU, memory, replicas)
 ENVIRONMENT_LIMIT_KEYS = (
     "min_cpu_cores",

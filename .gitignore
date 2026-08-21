@@ -20,3 +20,5 @@ docker/.env
 
 coverage/
 figma/
+# Local PR notes (not for remote)
+docs/pr-*.md

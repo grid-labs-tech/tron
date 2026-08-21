@@ -1405,6 +1405,51 @@ class K8sClient:
             traceback.print_exc()
             return False
 
+    def check_crossplane_status(self) -> dict:
+        """
+        Probe Crossplane installation health on the cluster.
+
+        Returns:
+            dict with:
+              - available: True when pkg.crossplane.io API group is present
+              - healthy: True when at least one Provider exists and all are Healthy
+              - providers: list of {name, healthy} for each Provider
+        """
+        empty = {"available": False, "healthy": False, "providers": []}
+        if not self.check_api_available("pkg.crossplane.io"):
+            return empty
+
+        providers: list[dict] = []
+        try:
+            custom_api = client.CustomObjectsApi(self.api_client)
+            result = custom_api.list_cluster_custom_object(
+                group="pkg.crossplane.io",
+                version="v1",
+                plural="providers",
+            )
+            for item in result.get("items", []):
+                name = item.get("metadata", {}).get("name", "")
+                conditions = item.get("status", {}).get("conditions", []) or []
+                is_healthy = any(
+                    c.get("type") == "Healthy" and str(c.get("status")) == "True"
+                    for c in conditions
+                    if isinstance(c, dict)
+                )
+                providers.append({"name": name, "healthy": is_healthy})
+        except ApiException as e:
+            print(f"Error listing Crossplane providers: {e}")
+            return {"available": True, "healthy": False, "providers": []}
+        except Exception as e:
+            print(f"Unexpected error checking Crossplane status: {e}")
+            return {"available": True, "healthy": False, "providers": []}
+
+        healthy = bool(providers) and all(p["healthy"] for p in providers)
+        return {
+            "available": True,
+            "healthy": healthy,
+            "providers": providers,
+        }
+
     def get_gateway_api_resources(self) -> list[str]:
         """
         List Gateway API resources available in the cluster using the discovery API.

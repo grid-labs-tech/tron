@@ -113,15 +113,28 @@ def test_create_cluster_missing_fields(client, admin_token, test_environment):
     assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
 
 
+@patch('app.crossplane.infra.k8s_crossplane_probe.K8sClient')
 @patch('app.clusters.core.cluster_service.get_gateway_reference_from_cluster')
 @patch('app.clusters.core.cluster_service.K8sClient')
-def test_list_clusters_success(mock_k8s_client, mock_gateway_ref, client, admin_token, test_environment):
+def test_list_clusters_success(
+    mock_k8s_client, mock_gateway_ref, mock_probe_k8s_client, client, admin_token, test_environment
+):
     """Test successful cluster listing."""
     # Mock Kubernetes connection validation
     mock_client_instance = MagicMock()
     mock_client_instance.validate_connection.return_value = (True, {"message": "Connection successful"})
+    mock_client_instance.check_api_available.return_value = False
     mock_k8s_client.return_value = mock_client_instance
     mock_gateway_ref.return_value = {"namespace": "", "name": ""}
+
+    mock_probe_client = MagicMock()
+    mock_probe_client.validate_connection.return_value = (True, {"message": "ok"})
+    mock_probe_client.check_crossplane_status.return_value = {
+        "available": False,
+        "healthy": False,
+        "providers": [],
+    }
+    mock_probe_k8s_client.return_value = mock_probe_client
 
     # First create a cluster
     create_response = client.post(
@@ -146,7 +159,13 @@ def test_list_clusters_success(mock_k8s_client, mock_gateway_ref, client, admin_
     data = response.json()
     assert isinstance(data, list)
     assert len(data) >= 1
-    assert any(cluster["name"] == "test-cluster" for cluster in data)
+    listed = next(c for c in data if c["name"] == "test-cluster")
+    assert listed["crossplane"] == {
+        "available": False,
+        "healthy": False,
+        "providers": [],
+    }
+    assert "crossplane_available" not in listed
 
 
 def test_list_clusters_requires_authentication(client, test_organization):
@@ -156,9 +175,12 @@ def test_list_clusters_requires_authentication(client, test_organization):
     assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
 
+@patch('app.crossplane.infra.k8s_crossplane_probe.K8sClient')
 @patch('app.clusters.core.cluster_service.get_gateway_reference_from_cluster')
 @patch('app.clusters.core.cluster_service.K8sClient')
-def test_get_cluster_success(mock_k8s_client, mock_gateway_ref, client, admin_token, test_environment):
+def test_get_cluster_success(
+    mock_k8s_client, mock_gateway_ref, mock_probe_k8s_client, client, admin_token, test_environment
+):
     """Test successful cluster retrieval."""
     # Mock Kubernetes connection validation and gateway methods
     mock_client_instance = MagicMock()
@@ -169,6 +191,15 @@ def test_get_cluster_success(mock_k8s_client, mock_gateway_ref, client, admin_to
     mock_client_instance.get_available_memory.return_value = None
     mock_k8s_client.return_value = mock_client_instance
     mock_gateway_ref.return_value = {"namespace": "", "name": ""}
+
+    mock_probe_client = MagicMock()
+    mock_probe_client.validate_connection.return_value = (True, {"message": "ok"})
+    mock_probe_client.check_crossplane_status.return_value = {
+        "available": True,
+        "healthy": True,
+        "providers": [{"name": "provider-aws", "healthy": True}],
+    }
+    mock_probe_k8s_client.return_value = mock_probe_client
 
     # First create a cluster
     create_response = client.post(
@@ -196,6 +227,12 @@ def test_get_cluster_success(mock_k8s_client, mock_gateway_ref, client, admin_to
     data = response.json()
     assert data["name"] == "test-cluster"
     assert data["uuid"] == cluster_uuid
+    assert data["crossplane"] == {
+        "available": True,
+        "healthy": True,
+        "providers": [{"name": "provider-aws", "healthy": True}],
+    }
+    assert "crossplane_available" not in data
 
 
 def test_get_cluster_not_found(client, admin_token, test_organization):

@@ -1,6 +1,7 @@
 import json
+from collections.abc import Callable
 from uuid import uuid4, UUID
-from typing import List
+from typing import Any, List
 from fastapi import HTTPException
 
 from app.clusters.infra.cluster_repository import ClusterRepository
@@ -86,8 +87,14 @@ def get_all_gateway_references_from_cluster(cluster: ClusterModel) -> dict:
 class ClusterService:
     """Business logic for clusters. No direct database access."""
 
-    def __init__(self, repository: ClusterRepository):
+    def __init__(
+        self,
+        repository: ClusterRepository,
+        probe_crossplane: Callable[[str, str], dict[str, Any]],
+    ):
         self.repository = repository
+        # Crossplane health is owned by the Crossplane BC; injected at composition root.
+        self.probe_crossplane = probe_crossplane
 
     def create_cluster(self, dto: ClusterCreate) -> ClusterResponse:
         """Create a new cluster."""
@@ -251,6 +258,7 @@ class ClusterService:
                 },
                 "reference": gateway_refs,
             },
+            crossplane=self.probe_crossplane(cluster.api_address, cluster.token),
         )
 
     def _build_cluster_completed_response(
@@ -266,6 +274,9 @@ class ClusterService:
             k8s_client.get_gateway_api_resources() if gateway_api_available else []
         )
         gateway_refs = get_all_gateway_references_from_cluster(cluster)
+        crossplane_status = self.probe_crossplane(
+            cluster.api_address, cluster.token
+        )
 
         # Get available CPU and memory from cluster
         try:
@@ -289,4 +300,5 @@ class ClusterService:
                 },
                 "reference": gateway_refs,
             },
+            crossplane=crossplane_status,
         )

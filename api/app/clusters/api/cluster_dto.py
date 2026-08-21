@@ -2,6 +2,7 @@ from pydantic import BaseModel, ConfigDict
 from typing import Optional
 from uuid import UUID
 from app.environments.api.environment_dto import Environment
+from app.crossplane.api.crossplane_dto import CrossplaneFeatures
 
 
 class ClusterBase(BaseModel):
@@ -57,6 +58,7 @@ class ClusterResponseWithValidation(BaseModel):
     environment: Environment
     detail: dict
     gateway: GatewayFeatures
+    crossplane: CrossplaneFeatures = CrossplaneFeatures()
 
     model_config = ConfigDict(
         from_attributes=True,
@@ -71,6 +73,7 @@ class ClusterCompletedResponse(BaseModel):
     available_memory: Optional[int]
     environment: Environment
     gateway: GatewayFeatures
+    crossplane: CrossplaneFeatures = CrossplaneFeatures()
 
     model_config = ConfigDict(
         from_attributes=True,
