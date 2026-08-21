@@ -5,15 +5,16 @@ Does not commit; caller is responsible for commit.
 """
 
 from pathlib import Path
-from uuid import uuid4
 from typing import List
+from uuid import uuid4
 
 from sqlalchemy.orm import Session
 
-from app.templates.infra.template_model import Template as TemplateModel
+from app.templates.core.template_settings import slugify_template_name
 from app.templates.infra.component_template_config_model import (
     ComponentTemplateConfig as ComponentTemplateConfigModel,
 )
+from app.templates.infra.template_model import Template as TemplateModel
 
 
 def _get_templates_base_path() -> Path:
@@ -219,10 +220,12 @@ def seed_templates_for_organization(
         new_template = TemplateModel(
             uuid=uuid4(),
             name=template_data["name"],
+            slug=slugify_template_name(template_data["name"]),
             description=template_data["description"],
             category=template_data["category"],
             content=content,
             variables_schema=variables_schema,
+            template_settings=[],
             organization_id=organization_id,
         )
         db.add(new_template)

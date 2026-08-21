@@ -1,6 +1,12 @@
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, field_validator
 from uuid import UUID
-from typing import Optional
+from typing import List, Literal, Optional
+
+
+class TemplateSettingDefinition(BaseModel):
+    name: str
+    description: Optional[str] = None
+    type: Literal["boolean", "string"]
 
 
 class TemplateBase(BaseModel):
@@ -9,6 +15,12 @@ class TemplateBase(BaseModel):
     category: str
     content: str
     variables_schema: Optional[str] = None
+    template_settings: List[TemplateSettingDefinition] = []
+
+    @field_validator("template_settings", mode="before")
+    @classmethod
+    def default_template_settings(cls, v):
+        return v or []
 
 
 class TemplateCreate(TemplateBase):
@@ -20,10 +32,12 @@ class TemplateUpdate(BaseModel):
     description: Optional[str] = None
     content: Optional[str] = None
     variables_schema: Optional[str] = None
+    template_settings: Optional[List[TemplateSettingDefinition]] = None
 
 
 class Template(TemplateBase):
     uuid: UUID
+    slug: str
 
     model_config = ConfigDict(
         from_attributes=True,

@@ -32,6 +32,15 @@ class TemplateRepository:
             query = query.filter(TemplateModel.category == category)
         return query.offset(skip).limit(limit).all()
 
+    def find_slugs_by_organization_id(self, organization_id: int) -> List[str]:
+        """Return all template slugs for an organization."""
+        rows = (
+            self.db.query(TemplateModel.slug)
+            .filter(TemplateModel.organization_id == organization_id)
+            .all()
+        )
+        return [row[0] for row in rows if row[0]]
+
     def find_by_organization_id(
         self,
         organization_id: int,

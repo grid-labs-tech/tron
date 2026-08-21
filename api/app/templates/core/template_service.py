@@ -9,6 +9,10 @@ from app.templates.core.template_validators import (
     validate_template_exists,
     validate_template_can_be_deleted,
 )
+from app.templates.core.template_settings import (
+    slugify_template_name,
+    uniquify_slug,
+)
 
 
 class TemplateService:
@@ -42,6 +46,12 @@ class TemplateService:
 
         if dto.variables_schema is not None:
             template.variables_schema = dto.variables_schema
+
+        if dto.template_settings is not None:
+            template.template_settings = [
+                item.model_dump() if hasattr(item, "model_dump") else item
+                for item in dto.template_settings
+            ]
 
         return self.repository.update(template)
 
@@ -83,12 +93,22 @@ class TemplateService:
         self, dto: TemplateCreate, organization_id: int
     ) -> TemplateModel:
         """Build Template entity from DTO."""
+        existing_slugs = set(
+            self.repository.find_slugs_by_organization_id(organization_id)
+        )
+        slug = uniquify_slug(slugify_template_name(dto.name), existing_slugs)
+        template_settings = [
+            item.model_dump() if hasattr(item, "model_dump") else item
+            for item in (dto.template_settings or [])
+        ]
         return TemplateModel(
             uuid=uuid4(),
             name=dto.name,
+            slug=slug,
             description=dto.description,
             category=dto.category,
             content=dto.content,
             variables_schema=dto.variables_schema,
+            template_settings=template_settings,
             organization_id=organization_id,
         )

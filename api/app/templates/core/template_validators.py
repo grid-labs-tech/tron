@@ -1,5 +1,6 @@
 from uuid import UUID
 from app.templates.infra.template_repository import TemplateRepository
+from app.templates.core.template_settings import validate_template_settings_schema
 
 
 class TemplateNotFoundError(Exception):
@@ -25,6 +26,8 @@ def validate_template_create_dto(dto) -> None:
     if not dto.content or not dto.content.strip():
         raise ValueError("Template content is required and cannot be empty")
 
+    validate_template_settings_schema(dto.template_settings)
+
 
 def validate_template_update_dto(dto) -> None:
     """Validate template update DTO. Raises ValueError if validation fails."""
@@ -33,6 +36,9 @@ def validate_template_update_dto(dto) -> None:
 
     if dto.content is not None and not dto.content.strip():
         raise ValueError("Template content cannot be empty")
+
+    if dto.template_settings is not None:
+        validate_template_settings_schema(dto.template_settings)
 
 
 def validate_template_exists(repository: TemplateRepository, uuid: UUID) -> None:
