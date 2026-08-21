@@ -3,6 +3,8 @@ export interface SecretVar {
   value: string
 }
 
+export type TemplateSettingValues = Record<string, Record<string, boolean | string>>
+
 export interface WebappSettings {
   custom_metrics: {
     enabled: boolean
@@ -37,6 +39,7 @@ export interface WebappSettings {
     min: number
     max: number
   }
+  template_settings?: TemplateSettingValues
 }
 
 export interface CronSettings {
@@ -49,6 +52,7 @@ export interface CronSettings {
   cpu: number
   memory: number
   schedule: string
+  template_settings?: TemplateSettingValues
 }
 
 export interface WorkerSettings {
@@ -71,6 +75,7 @@ export interface WorkerSettings {
     min: number
     max: number
   }
+  template_settings?: TemplateSettingValues
 }
 
 export type VisibilityType = 'public' | 'private' | 'cluster'
@@ -115,6 +120,7 @@ export const getDefaultWebappSettings = (): WebappSettings => ({
     min: 1,
     max: 2,
   },
+  template_settings: {},
 })
 
 export const getDefaultCronSettings = (): CronSettings => ({
@@ -124,6 +130,7 @@ export const getDefaultCronSettings = (): CronSettings => ({
   cpu: 0.5,
   memory: 512,
   schedule: '0 0 * * *', // Daily at midnight
+  template_settings: {},
 })
 
 export const getDefaultWorkerSettings = (): WorkerSettings => ({
@@ -143,5 +150,6 @@ export const getDefaultWorkerSettings = (): WorkerSettings => ({
     min: 1,
     max: 2,
   },
+  template_settings: {},
 })
 

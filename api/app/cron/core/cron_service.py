@@ -47,6 +47,9 @@ from app.environments.infra.environment_settings_repository import (
 from app.environments.core.environment_settings_defaults import (
     get_environment_limits_from_settings,
 )
+from app.templates.core.template_settings import (
+    validate_component_template_settings_for_org,
+)
 from app.webapps.core.webapp_validators import (
     validate_webapp_settings_against_environment_limits,
 )
@@ -71,6 +74,13 @@ class CronService:
         validate_instance_exists(self.repository, dto.instance_uuid)
 
         instance = self.repository.find_instance_by_uuid(dto.instance_uuid)
+
+        validate_component_template_settings_for_org(
+            self.db,
+            instance.application.organization_id,
+            "cron",
+            dto.settings.template_settings,
+        )
 
         if self.settings_repository:
             settings_row = self.settings_repository.find_by_environment_id(
@@ -113,6 +123,14 @@ class CronService:
 
         cron = self.repository.find_by_uuid(uuid)
         validate_cron_type(cron)
+
+        if dto.settings is not None:
+            validate_component_template_settings_for_org(
+                self.db,
+                cron.instance.application.organization_id,
+                "cron",
+                dto.settings.template_settings,
+            )
 
         if dto.settings is not None and self.settings_repository:
             settings_row = self.settings_repository.find_by_environment_id(

@@ -81,6 +81,7 @@ class WebappSettings(BaseModel):
     cpu: float
     memory: int
     autoscaling: WebappAutoscaling
+    template_settings: Dict[str, Dict[str, Union[bool, str]]] = {}
 
     @model_validator(mode="before")
     @classmethod
