@@ -1,10 +1,20 @@
+export type TemplateSettingType = 'boolean' | 'string'
+
+export interface TemplateSettingDefinition {
+  name: string
+  description?: string | null
+  type: TemplateSettingType
+}
+
 export interface Template {
   uuid: string
   name: string
+  slug: string
   description?: string
   category: string
   content: string
   variables_schema?: string
+  template_settings: TemplateSettingDefinition[]
   created_at: string
   updated_at: string
 }
@@ -15,6 +25,7 @@ export interface TemplateCreate {
   category: string
   content: string
   variables_schema?: string
+  template_settings?: TemplateSettingDefinition[]
 }
 
 export interface TemplateUpdate {
@@ -22,6 +33,7 @@ export interface TemplateUpdate {
   description?: string
   content?: string
   variables_schema?: string
+  template_settings?: TemplateSettingDefinition[]
 }
 
 export interface ComponentTemplateConfig {
