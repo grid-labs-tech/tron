@@ -74,6 +74,13 @@ def serialize_application_component(application_component):
     if not settings:
         settings = {}
 
+    stored_template_settings = settings.pop("template_settings", None) or {}
+    template_context = {}
+    if isinstance(stored_template_settings, dict):
+        for slug, values in stored_template_settings.items():
+            if isinstance(values, dict):
+                template_context[slug] = {"settings": values}
+
     # Ensure webapps always have exposure defined
     component_type = (
         application_component.type.value
@@ -123,6 +130,7 @@ def serialize_application_component(application_component):
         "url": application_component.url,
         "enabled": application_component.enabled,
         "settings": settings,
+        "template": template_context,
     }
 
 

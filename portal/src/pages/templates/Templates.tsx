@@ -61,6 +61,13 @@ const WEBAPP_VARIABLES = {
         failure_threshold: 'number',
       },
     },
+    template: {
+      '[slug]': {
+        settings: {
+          '[name]': 'boolean | string',
+        },
+      },
+    },
   },
   environment: {
     // Dynamic keys based on environment settings

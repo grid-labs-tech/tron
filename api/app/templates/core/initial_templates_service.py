@@ -74,6 +74,13 @@ def _get_variables_schema() -> str:
       },
       "schedule": "string",
       "command": "array"
+    },
+    "template": {
+      "[slug]": {
+        "settings": {
+          "[name]": "boolean | string"
+        }
+      }
     }
   },
   "environment": {

@@ -13,6 +13,7 @@ from app.templates.infra.template_repository import TemplateRepository
 from app.templates.core.component_template_config_service import (
     ComponentTemplateConfigService,
 )
+from app.templates.core.template_settings import build_template_settings_context
 
 # When set, rendered Jinja outputs are written here for debugging (one file per template + one combined)
 TRON_DEBUG_RENDER_DIR = os.environ.get("TRON_DEBUG_RENDER_DIR", "").strip()
@@ -125,6 +126,18 @@ class KubernetesApplicationComponentManager:
                 seen_ids.add(t.id)
                 unique_templates.append(t)
         templates = unique_templates
+
+        stored_template_values = {}
+        serialized_template = application_component.get("template") or {}
+        if isinstance(serialized_template, dict):
+            for slug, payload in serialized_template.items():
+                if isinstance(payload, dict) and "settings" in payload:
+                    stored_template_values[slug] = payload.get("settings") or {}
+                elif isinstance(payload, dict):
+                    stored_template_values[slug] = payload
+        application_component["template"] = build_template_settings_context(
+            templates, stored_template_values
+        )
 
         if not templates:
             raise ValueError(
